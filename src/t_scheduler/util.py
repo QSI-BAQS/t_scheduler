@@ -4,7 +4,7 @@ from itertools import cycle, islice
 
 
 class GateType(Enum):
-    NO_RESOURCE = 1
+    LOCAL_GATE = 1
     ANCILLA = 2
     T_STATE = 3
 
@@ -58,16 +58,17 @@ class Gate(BaseGate):
         pass
 
 class RotateGate(BaseGate):
-    def __init__(self, path, dependent_gate):
+    def __init__(self, path, dependent_gate, duration:int):
         self.t_patch = path[0]
         self.path = [path[0], path[1], path[-1]]
         self.dependent_gate = dependent_gate
         self.timer = 0
         self.lock = None
         self.targ = dependent_gate.targ
+        self.duration = duration
     
     def activate(self):
-        self.lock = PatchLock(self, self.path, 3)
+        self.lock = PatchLock(self, self.path, self.duration)
         self.lock.lock()
 
     
@@ -75,20 +76,20 @@ class RotateGate(BaseGate):
         self.timer += 1
     
     def cleanup(self):
-        if self.timer >= 3:
+        if self.timer >= self.duration:
             assert self.lock
             self.lock.unlock()
     
     def completed(self):
-        return self.timer >= 3
+        return self.timer >= self.duration
 
     def next(self, scheduler):
         if self.completed():
             self.t_patch.orientation = self.t_patch.orientation.inverse()
             scheduler.deferred.append(self.dependent_gate)
 
-class MeasureGate(BaseGate):
-    def __init__(self, reg_patch, t_patch):
+class CorrectionGate(BaseGate):
+    def __init__(self, reg_patch, t_patch, duration: int):
         self.reg_patch = reg_patch
         self.t_patch = t_patch
     
@@ -96,6 +97,7 @@ class MeasureGate(BaseGate):
         self.timer = 0
         self.lock = None
         self.targ = reg_patch.col // 2
+        self.duration = duration
     
     def activate(self):
         self.lock = PatchLock(self, self.path, 3)
@@ -106,19 +108,21 @@ class MeasureGate(BaseGate):
         self.timer += 1
     
     def cleanup(self):
-        if self.timer >= 3:
+        if self.timer >= self.duration:
             assert self.lock
             self.lock.unlock()
             self.t_patch.release()
 
     def completed(self):
-        return self.timer >= 3        
+        return self.timer >= self.duration
     
     
 
 class T_Gate(Gate):
-    def __init__(self, targ):
-        super().__init__(targ, GateType.T_STATE, 6)
+    def __init__(self, targ, measure_duration, corr_duration = 3):
+        super().__init__(targ, GateType.T_STATE, measure_duration)
+        self.duration = measure_duration
+        self.corr_duration = corr_duration
 
     def activate(self, path, resource: "Patch"):
         self.path = path
@@ -133,18 +137,18 @@ class T_Gate(Gate):
         self.timer += 1
     
     def cleanup(self):
-        if self.timer >= 3:
+        if self.timer >= self.duration:
             assert self.lock
             self.lock.unlock()
     
     def completed(self):
-        return self.timer >= 3
+        return self.timer >= self.duration
 
     def next(self, scheduler):
         if self.completed():
-            m_gate = MeasureGate(self.path[-1], self.path[0])
-            m_gate.activate()
-            scheduler.next_active.append(m_gate)
+            c_gate = CorrectionGate(self.path[-1], self.path[0], self.corr_duration)
+            c_gate.activate()
+            scheduler.next_active.append(c_gate)
 
 
 class PatchType(Enum):
@@ -229,6 +233,7 @@ class Widget:
         self.height: int = height
 
         self.board = board
+        self.reg_t_frontier = [{board[2][2*i], board[2][2*i+1]} for i in range(width // 2)]
 
     @classmethod
     def default_widget(cls, width, height):
@@ -262,15 +267,3 @@ class Widget:
             return self.board[index[0]][index[1]]
         return self.board[index]
     
-
-
-
-
-def roundrobin(*iterables):
-    "Visit input iterables in a cycle until each is exhausted."
-    # roundrobin('ABC', 'D', 'EF') → A D E B F C
-    # Algorithm credited to George Sakkis
-    iterators = map(iter, iterables)
-    for num_active in range(len(iterables), 0, -1):
-        iterators = cycle(islice(iterators, num_active))
-        yield from map(next, iterators)

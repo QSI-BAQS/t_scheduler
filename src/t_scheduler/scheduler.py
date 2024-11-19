@@ -3,15 +3,19 @@ from util import *
 from itertools import chain
 from collections import deque
 
+
+
+
 def debug_gates():
     # gate_layers = [[0, 2, 1], [0, 2, 1]]
     gate_layers = [[*chain(*(([x] * 8) for x in [5,0,6,8,7]))], ]
-    gate_layers2 = [[T_Gate(t) for t in layer] for layer in gate_layers]
+    # gate_layers  = [[t for t in islice(cycle([0, 9, 5]), 8 * 3)]]
+    gate_layers2 = [[T_Gate(t, 2, 3) for t in layer] for layer in gate_layers]
     print(gate_layers)
     # output = schedule_undermine(20, 5, gate_layers2, True)
 
     wid = Widget.default_widget(20, 5)
-    sched = Scheduler(RotationStrategy.BACKPROP_INIT, wid, gate_layers2, True)
+    sched = Scheduler(RotationStrategy.INJECT, wid, gate_layers2, True)
     sched.schedule()
     print(sched.output_layers)
     print(len(sched.output_layers))
@@ -38,6 +42,9 @@ class Scheduler:
         self.curr_layer = []
 
         self.debug = debug
+
+
+        self.ROTATION_DURATION = 3
 
     def schedule(self):
         while self.waiting:
@@ -99,7 +106,7 @@ class Scheduler:
                 return False
             return self.process_rotation(path, gate)
 
-        elif gate.gate_type == GateType.NO_RESOURCE:
+        elif gate.gate_type == GateType.LOCAL_GATE:
             reg = self.widget[0, gate.targ*2]
             if reg.locked():
                 return False
@@ -133,7 +140,7 @@ class Scheduler:
             self.active.append(gate)
         elif self.rot_strat == RotationStrategy.INJECT:
             reg_patch = self.widget[0, gate.targ * 2]
-            rot_gate = RotateGate(path, gate)
+            rot_gate = RotateGate(path, gate, self.ROTATION_DURATION)
             rot_gate.activate()
             self.active.append(rot_gate)
         else:
@@ -235,6 +242,17 @@ def validate_T_path(path):
     if path[-1].locked():
         return False
     return True
+
+def tree_search(widget, reg):
+    if widget[0, 2*reg].locked():
+        return None
+    
+    t_patch = None
+    cleared = []
+    for patch in widget.reg_t_frontier[reg]:
+        if patch.T_available():
+            t_patch = patch
+
 
 def vertical_search(widget, reg):
     if widget[0,2*reg].locked():
