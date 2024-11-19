@@ -10,7 +10,7 @@ def debug_gates():
     print(gate_layers)
     # output = schedule_undermine(20, 5, gate_layers2, True)
 
-    wid = Widget(20, 5)
+    wid = Widget.default_widget(20, 5)
     sched = Scheduler(RotationStrategy.BACKPROP_INIT, wid, gate_layers2, True)
     sched.schedule()
     print(sched.output_layers)
@@ -22,7 +22,7 @@ class RotationStrategy(Enum):
     INJECT = 2
 
 class Scheduler:
-    def __init__(self, rot_strat: RotationStrategy, widget: Widget, gate_layers: List[List[Gate]], debug:bool=False):
+    def __init__(self, rot_strat: RotationStrategy, widget: Widget, gate_layers, debug:bool=False):
         self.rot_strat = rot_strat
         self.widget = widget
 
@@ -276,7 +276,10 @@ def print_board(board):
             elif cell.patch_type == PatchType.ROUTE:
                 print(" ", end='')
             elif cell.T_available():
-                print("T", end='')
+                if cell.orientation == PatchOrientation.Z_TOP:
+                    print("T", end='')
+                else:
+                    print("t", end='')
             else:
                 print(".", end='')
         print()

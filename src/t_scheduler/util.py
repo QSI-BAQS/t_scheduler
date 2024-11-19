@@ -161,12 +161,12 @@ class PatchOrientation(IntEnum):
         return PatchOrientation(1 - int(self))
 
 class Patch:
-    def __init__(self, patch_type: PatchType, row: int, col: int):
+    def __init__(self, patch_type: PatchType, row: int, col: int, ori = PatchOrientation.Z_TOP):
         self.patch_type = patch_type
         self.row = row
         self.col = col
         self.lock: None | PatchLock = None
-        self.orientation = PatchOrientation.Z_TOP
+        self.orientation = ori
         self.used = False
     
     def __repr__(self):
@@ -224,10 +224,14 @@ class Route:
 
 
 class Widget:
-    def __init__(self, width, height):
+    def __init__(self, width, height, board):
         self.width: int = width
         self.height: int = height
 
+        self.board = board
+
+    @classmethod
+    def default_widget(cls, width, height):
         reg_row = [Patch(PatchType.REG, 0, c) for c in range(width)]
         route_row = [Patch(PatchType.ROUTE, 1, c) for c in range(width)]
         board = [reg_row, route_row]
@@ -236,7 +240,22 @@ class Widget:
                 *(Patch(PatchType.T, r, c) for c in range(1, width-1)),
                 Patch(PatchType.BELL, r, width-1)]
             board.append(row)
-        self.board = board
+        return Widget(width, height, board)
+    
+    @classmethod
+    def chessboard_widget(cls, width, height):
+        reg_row = [Patch(PatchType.REG, 0, c) for c in range(width)]
+        route_row = [Patch(PatchType.ROUTE, 1, c) for c in range(width)]
+        top_T = [Patch(PatchType.BELL, 2, 0), 
+                *(Patch(PatchType.T, 2, c,) for c in range(1, width-1)),
+                Patch(PatchType.BELL, 2, width-1)]
+        board = [reg_row, route_row, top_T]
+        for r in range(3, height):
+            row = [Patch(PatchType.BELL, r, 0), Patch(PatchType.T, r, 1),
+                *(Patch(PatchType.T, r, c, PatchOrientation((r ^ c) & 1) ^ (c >= width // 2)) for c in range(2, width-2)),
+                Patch(PatchType.T, r, width-2), Patch(PatchType.BELL, r, width-1)]
+            board.append(row)
+        return Widget(width, height, board)
 
     def __getitem__(self, index):
         if isinstance(index, tuple):
