@@ -1,4 +1,4 @@
-from enum import Enum
+from enum import Enum, IntEnum
 from abc import ABC
 from itertools import cycle, islice
 
@@ -8,7 +8,24 @@ class GateType(Enum):
     ANCILLA = 2
     T_STATE = 3
 
-class Gate():
+class BaseGate(ABC):
+    def available(self):
+        return True
+
+    def tick(self):
+        pass
+    def completed(self) -> bool:
+        return False
+    def activate(self, *args):
+        pass
+
+    def cleanup(self):
+        pass
+    def next(self, scheduler):
+        pass
+
+
+class Gate(BaseGate):
     def __init__(self, targ, gate_type = GateType.T_STATE, duration = 1):
         self.targ: int = targ
         self.lock: None | PatchLock = None
@@ -20,7 +37,7 @@ class Gate():
     def tick(self):
         self.timer += 1
     
-    def retirable(self):
+    def completed(self):
         return self.timer >= self.duration
     
     def activate(self, path, resource = None):
@@ -31,13 +48,103 @@ class Gate():
             self.resource = resource
         self.lock.lock()
     
-    def retire(self):
+    def cleanup(self):
         if self.resource:
             self.resource.release()
         assert self.lock is not None
         self.lock.unlock()
-        
+    
+    def next(self):
+        pass
 
+class RotateGate(BaseGate):
+    def __init__(self, path, dependent_gate):
+        self.t_patch = path[0]
+        self.path = [path[0], path[1], path[-1]]
+        self.dependent_gate = dependent_gate
+        self.timer = 0
+        self.lock = None
+        self.targ = dependent_gate.targ
+    
+    def activate(self):
+        self.lock = PatchLock(self, self.path, 3)
+        self.lock.lock()
+
+    
+    def tick(self):
+        self.timer += 1
+    
+    def cleanup(self):
+        if self.timer >= 3:
+            assert self.lock
+            self.lock.unlock()
+    
+    def completed(self):
+        return self.timer >= 3
+
+    def next(self, scheduler):
+        if self.completed():
+            self.t_patch.orientation = self.t_patch.orientation.inverse()
+            scheduler.deferred.append(self.dependent_gate)
+
+class MeasureGate(BaseGate):
+    def __init__(self, reg_patch, t_patch):
+        self.reg_patch = reg_patch
+        self.t_patch = t_patch
+    
+        self.path = [t_patch, reg_patch]
+        self.timer = 0
+        self.lock = None
+        self.targ = reg_patch.col // 2
+    
+    def activate(self):
+        self.lock = PatchLock(self, self.path, 3)
+        self.lock.lock()
+
+    
+    def tick(self):
+        self.timer += 1
+    
+    def cleanup(self):
+        if self.timer >= 3:
+            assert self.lock
+            self.lock.unlock()
+            self.t_patch.release()
+
+    def completed(self):
+        return self.timer >= 3        
+    
+    
+
+class T_Gate(Gate):
+    def __init__(self, targ):
+        super().__init__(targ, GateType.T_STATE, 6)
+
+    def activate(self, path, resource: "Patch"):
+        self.path = path
+        self.resource = resource
+
+        self.resource.use()
+      
+        self.lock = PatchLock(self, self.path, 3)
+        self.lock.lock()
+   
+    def tick(self):
+        self.timer += 1
+    
+    def cleanup(self):
+        if self.timer >= 3:
+            assert self.lock
+            self.lock.unlock()
+    
+    def completed(self):
+        return self.timer >= 3
+
+    def next(self, scheduler):
+        if self.completed():
+            m_gate = MeasureGate(self.path[-1], self.path[0])
+            m_gate.activate()
+            scheduler.next_active.append(m_gate)
 
 
 class PatchType(Enum):
@@ -46,9 +153,12 @@ class PatchType(Enum):
     T = 3
     BELL = 4
 
-class PatchOrientation(Enum):
+class PatchOrientation(IntEnum):
     X_TOP = 0
     Z_TOP = 1
+
+    def inverse(self):
+        return PatchOrientation(1 - int(self))
 
 class Patch:
     def __init__(self, patch_type: PatchType, row: int, col: int):
@@ -66,7 +176,7 @@ class Patch:
         return self.lock is not None
 
     def T_available(self):
-        return self.patch_type == PatchType.T and not self.used
+        return self.patch_type == PatchType.T and not self.used and not self.locked()
     
     def route_available(self):
         return self.patch_type == PatchType.ROUTE and not self.locked()
@@ -74,6 +184,8 @@ class Patch:
     def use(self):
         if self.patch_type == PatchType.T:
             self.used = True
+        elif self.used == True:
+            raise Exception("T already used!")
         else:
             raise Exception("Can't use non-T!")
         
@@ -84,14 +196,20 @@ class Patch:
         self.patch_type = PatchType.ROUTE
 
 class PatchLock:
-    def __init__(self, owner: "Gate", holds: list[Patch], duration: int):
+    def __init__(self, owner: "BaseGate", holds: list[Patch], duration: int):
         self.owner = owner
         self.holds = holds
         self.duration = duration
 
     def lock(self):
         for patch in self.holds:
+            assert patch.lock == None
+                # return False
+
+        for patch in self.holds:
             patch.lock = self
+
+        return True
 
     def unlock(self):
         for patch in self.holds:

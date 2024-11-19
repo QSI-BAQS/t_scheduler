@@ -1,121 +1,144 @@
+from typing import *
 from util import *
 from itertools import chain
+from collections import deque
 
 def debug_gates():
     # gate_layers = [[0, 2, 1], [0, 2, 1]]
     gate_layers = [[*chain(*(([x] * 8) for x in [5,0,6,8,7]))], ]
-    gate_layers2 = [[Gate(t) for t in layer] for layer in gate_layers]
+    gate_layers2 = [[T_Gate(t) for t in layer] for layer in gate_layers]
     print(gate_layers)
-    output = schedule_undermine(20, 5, gate_layers2, True)
-    print(output)
+    # output = schedule_undermine(20, 5, gate_layers2, True)
 
-"""
-Perform basic scheduler pass
-"""
-def schedule_undermine(width, height, gate_layers:list[list["Gate"]], debug: bool=False):
-    board = Widget(width, height)
+    wid = Widget(20, 5)
+    sched = Scheduler(RotationStrategy.BACKPROP_INIT, wid, gate_layers2, True)
+    sched.schedule()
+    print(sched.output_layers)
+    print(len(sched.output_layers))
 
-    # global curr_mined_row
-    # curr_mined_row = height - 1
-    # breakpoint()
-    active = []
-    deferred = []
-    output_layers = []
+class RotationStrategy(Enum):
+    BACKPROP_INIT = 0
+    LOOKBACK = 1
+    INJECT = 2
 
-    for layer in gate_layers + [[]]:
-        while deferred:
-            output_layer = []
-            new_deferred = []
-            for gate in deferred:
-                success = alloc_gate(board, gate)
-                if success:
-                    active.append(gate)
-                else:
-                    new_deferred.append(gate)
+class Scheduler:
+    def __init__(self, rot_strat: RotationStrategy, widget: Widget, gate_layers: List[List[Gate]], debug:bool=False):
+        self.rot_strat = rot_strat
+        self.widget = widget
 
-            for gate in active:
-                output_layer.append(gate.path)
+        self.waiting = deque(gate_layers)
+        self.queued = deque()
+        self.deferred = []
+        self.next_deferred = []
+        self.active = []
+        self.next_active = []
+
+        self.output_layers = []
+
+        self.curr_layer = []
+
+        self.debug = debug
+
+    def schedule(self):
+        while self.waiting:
+            self.queued.extend(self.waiting.popleft())
+
+            while self.queued or self.deferred or self.active:
+                self.schedule_pass()
             
-            deferred = new_deferred
+    def schedule_pass(self):
+        # breakpoint()
+        for gate in self.deferred:
+            if gate.available() and self.alloc_gate(gate):
+                pass
+            else:
+                self.next_deferred.append(gate)
 
-            if debug:
-                print_board(board)
-            
-            if not active:
-                raise Exception("No progress made!")
+        self.deferred = self.next_deferred
+        self.next_deferred = []
 
-            for gate in active:
-                gate.tick()
-                if gate.retirable():
-                    gate.retire()
+        next_queued = []
+        for gate in self.queued:
+            if gate.available() and self.alloc_gate(gate):
+                pass
+            else:
+                next_queued.append(gate)
 
-            active = []
-            output_layers.append(output_layer)
+        self.queued = next_queued
+
+        if self.debug:
+            print_board(self.widget)
+
+        if not self.active:
+            raise Exception("No progress!")
 
         output_layer = []
-        for gate in layer:
-            success = alloc_gate(board, gate)
-            if success:
-                active.append(gate)
-            else:
-                deferred.append(gate)
-
-
-        # print(deferred)
-
-        if debug:
-            print_board(board)
-
-        for gate in active:
+        for gate in self.active:
             output_layer.append(gate.path)
+        self.output_layers.append(output_layer)
 
-        for gate in active:
+        for gate in self.active:
             gate.tick()
-            if gate.retirable():
-                gate.retire()
-        active = []
-        output_layers.append(output_layer)
+        
+        for gate in self.active:
+            gate.cleanup()
+        
+        for gate in self.active:
+            gate.next(self)
+            if not gate.completed():
+                self.next_active.append(gate)
+        self.active = self.next_active
+        self.next_active = []
 
 
-    return output_layers
 
+    def alloc_gate(self, gate):
+        if gate.gate_type == GateType.T_STATE:
+            path = vertical_search(self.widget, gate.targ)
+            if path is None:
+                return False
+            return self.process_rotation(path, gate)
 
-def alloc_gate(widget, gate):
-    if gate.gate_type == GateType.T_STATE:
-        path = vertical_search(widget, gate.targ)
-        if path is None:
-            return False
-        path[0].use()
-
-        gate.activate(path, path[0])
-        return True
-    elif gate.gate_type == GateType.NO_RESOURCE:
-        reg = widget[0, gate.targ*2]
-        if reg.locked():
-            return False
-        gate.activate([reg])
-        return True
-    elif gate.gate_type == GateType.ANCILLA:
-        reg = widget[0, gate.targ*2]
-        anc = widget[1, gate.targ*2]
-        if reg.locked() or anc.locked():
-            return False
-        gate.activate([reg, anc])
-        return True
-
-def col_search_order(start_col, width):
-    return chain(range(start_col - 1, 0, -1), range(start_col + 1, width - 1))
-
-# def vertical_search(*args):
-#     return fix_left_col(vertical_search_main(*args))
-
-def fix_left_col(path):
-    if path is None:
-        return None
+        elif gate.gate_type == GateType.NO_RESOURCE:
+            reg = self.widget[0, gate.targ*2]
+            if reg.locked():
+                return False
+            gate.activate([reg])
+            self.active.append(gate)
+            return True
+        elif gate.gate_type == GateType.ANCILLA:
+            reg = self.widget[0, gate.targ*2]
+            anc = self.widget[0, gate.targ*2 + 1]
+            if reg.locked() or anc.locked():
+                return False
+            gate.activate([reg, anc])
+            self.active.append(gate)
+            return True
     
-    return [(r, max(c,1)) for r,c in path]
+    def process_rotation(self, path, gate):
+        
+        T_patch = path[0]
+        attack_patch = path[1]
+        
+        matching_rotation = (T_patch.row == attack_patch.row) ^ (T_patch.orientation == PatchOrientation.Z_TOP)
 
-
+        if matching_rotation:
+            T_patch.use()
+            gate.activate(path, path[0])
+            self.active.append(gate)
+        elif self.rot_strat == RotationStrategy.BACKPROP_INIT:
+            T_patch.orientation = T_patch.orientation.inverse()
+            T_patch.use()
+            gate.activate(path, path[0])
+            self.active.append(gate)
+        elif self.rot_strat == RotationStrategy.INJECT:
+            reg_patch = self.widget[0, gate.targ * 2]
+            rot_gate = RotateGate(path, gate)
+            rot_gate.activate()
+            self.active.append(rot_gate)
+        else:
+            raise NotImplementedError()
+        return True
 
 def T_search_owning(widget, reg) -> Patch | None:
     for r in range(2, widget.height):
@@ -154,7 +177,7 @@ def probe_left_nonowning(widget, reg, prefix):
         for c in range(start_col - 1, 0, -1):
             if (patch := widget[r,c]).route_available():
                 next_left_path.append(patch)
-            elif patch.T_available() and patch.col >= left_path[-1].col:
+            elif patch.T_available() and left_path and patch.col >= left_path[-1].col:
                 # breakpoint()
                 return [patch] + left_path[:start_col - c][::-1] + prefix[:r+2][::-1]
             else:
@@ -181,45 +204,12 @@ def probe_right_nonowning(widget, reg, prefix):
         for c in range(start_col+1, widget.width-1):
             if (patch := widget[r,c]).route_available():
                 next_right_path.append(patch)
-            elif patch.T_available() and patch.col <= right_path[-1].col:
+            elif patch.T_available() and right_path and patch.col <= right_path[-1].col:
                 return [patch] + right_path[c - start_col :-1:-1] + prefix[r::-1]
             else:
                 break
         right_path = next_right_path
-
-# def T_search_nonowning(widget, reg):
-#     for r in range(widget.height-1,1,-1):
-#         # left col of reg -> left edge
-#         for c in range(reg * 2-1,0,-1):
-#             if (patch := widget[r,c]).T_available():
-#                 return patch
-#         for c in range(reg * 2+2,widget.width):
-#             if (patch := widget[r,c]).T_available():
-#                 return patch
-
-# def T_path_nonowning(widget, reg, T_patch):
-#     if T_patch.row == widget.height - 1:
-#         # T on left of reg
-#         if T_patch.col < 2 * reg:
-#             down_path = [widget[r, 2 * reg] for r in range(widget.height - 1, -1, -1)]
-#             left_path = [widget[T_patch.row, c] for c in range(T_patch.col, 2 * reg)]
-#             return left_path + down_path
-#         else:
-#             down_path = [widget[r, 2 * reg] for r in range(widget.height - 1, -1, -1)]
-#             right_path = [widget[T_patch.row, c] for c in range(T_patch.col, 2 * reg, -1)]
-#             return right_path + down_path
-#     else:
-#         if T_patch.col < 2 * reg:
-#             down_path = [widget[r, 2 * reg] for r in range(T_patch.row + 1, -1, -1)]
-#             left_path = [widget[T_patch.row + 1, c] for c in range(T_patch.col, 2 * reg)]
-#             target = [T_patch]
-#             return target + left_path + down_path
-#         else:
-#             down_path = [widget[r, 2 * reg] for r in range(T_patch.row + 1, -1, -1)]
-#             left_path = [widget[T_patch.row + 1, c] for c in range(T_patch.col, 2 * reg, -1)]
-#             target = [T_patch]
-#             return target + left_path + down_path
-        
+   
 def probe_down(widget, reg):
     if widget[0, 2*reg].locked() or widget[0, 2*reg + 1].locked():
         return []
