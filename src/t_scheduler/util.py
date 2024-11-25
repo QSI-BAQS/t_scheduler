@@ -8,25 +8,29 @@ class GateType(Enum):
     ANCILLA = 2
     T_STATE = 3
 
+
 class BaseGate(ABC):
     def available(self):
         return True
 
     def tick(self):
         pass
+
     def completed(self) -> bool:
         return False
+
     def activate(self, *args):
         pass
 
     def cleanup(self, scheduler):
         pass
+
     def next(self, scheduler):
         pass
 
 
 class Gate(BaseGate):
-    def __init__(self, targ, gate_type = GateType.T_STATE, duration = 1):
+    def __init__(self, targ, gate_type=GateType.T_STATE, duration=1):
         self.targ: int = targ
         self.lock: None | PatchLock = None
         self.gate_type = gate_type
@@ -36,29 +40,30 @@ class Gate(BaseGate):
 
     def tick(self):
         self.timer += 1
-    
+
     def completed(self):
         return self.timer >= self.duration
-    
-    def activate(self, path, resource = None):
+
+    def activate(self, path, resource=None):
         self.path = path
         self.lock = PatchLock(self, path, self.duration)
         if resource:
             resource.use()
             self.resource = resource
         self.lock.lock()
-    
+
     def cleanup(self, scheduler):
         if self.resource:
             self.resource.release()
         assert self.lock is not None
         self.lock.unlock()
-    
+
     def next(self):
         pass
 
+
 class RotateGate(BaseGate):
-    def __init__(self, path, dependent_gate, duration:int):
+    def __init__(self, path, dependent_gate, duration: int):
         self.t_patch = path[0]
         self.t_patch.register_rotation(self)
         self.path = [path[0], path[1], path[-1]]
@@ -68,21 +73,20 @@ class RotateGate(BaseGate):
         self.targ = dependent_gate.targ
         self.duration = duration
         self.completed_at = None
-    
+
     def activate(self):
         self.lock = PatchLock(self, self.path, self.duration)
         self.lock.lock()
 
-    
     def tick(self):
         self.timer += 1
-    
+
     def cleanup(self, scheduler):
         if self.timer >= self.duration:
             assert self.lock
             self.lock.unlock()
             self.completed_at = scheduler.time
-    
+
     def completed(self):
         return self.timer >= self.duration
 
@@ -91,25 +95,25 @@ class RotateGate(BaseGate):
             self.t_patch.orientation = self.t_patch.orientation.inverse()
             scheduler.deferred.append(self.dependent_gate)
 
+
 class CorrectionGate(BaseGate):
     def __init__(self, reg_patch, t_patch, duration: int):
         self.reg_patch = reg_patch
         self.t_patch = t_patch
-    
+
         self.path = [t_patch, reg_patch]
         self.timer = 0
         self.lock = None
         self.targ = reg_patch.col // 2
         self.duration = duration
-    
+
     def activate(self):
         self.lock = PatchLock(self, self.path, 3)
         self.lock.lock()
 
-    
     def tick(self):
         self.timer += 1
-    
+
     def cleanup(self, scheduler):
         if self.timer >= self.duration:
             assert self.lock
@@ -118,11 +122,10 @@ class CorrectionGate(BaseGate):
 
     def completed(self):
         return self.timer >= self.duration
-    
-    
+
 
 class T_Gate(Gate):
-    def __init__(self, targ, measure_duration, corr_duration = 3):
+    def __init__(self, targ, measure_duration, corr_duration=3):
         super().__init__(targ, GateType.T_STATE, measure_duration)
         self.duration = measure_duration
         self.corr_duration = corr_duration
@@ -132,18 +135,18 @@ class T_Gate(Gate):
         self.resource = resource
 
         self.resource.use()
-      
+
         self.lock = PatchLock(self, self.path, 3)
         self.lock.lock()
-   
+
     def tick(self):
         self.timer += 1
-    
+
     def cleanup(self, scheduler):
         if self.timer >= self.duration:
             assert self.lock
             self.lock.unlock()
-    
+
     def completed(self):
         return self.timer >= self.duration
 
@@ -160,6 +163,7 @@ class PatchType(Enum):
     T = 3
     BELL = 4
 
+
 class PatchOrientation(IntEnum):
     X_TOP = 0
     Z_TOP = 1
@@ -167,8 +171,11 @@ class PatchOrientation(IntEnum):
     def inverse(self):
         return PatchOrientation(1 - int(self))
 
+
 class Patch:
-    def __init__(self, patch_type: PatchType, row: int, col: int, ori = PatchOrientation.Z_TOP):
+    def __init__(
+        self, patch_type: PatchType, row: int, col: int, ori=PatchOrientation.Z_TOP
+    ):
         self.patch_type = patch_type
         self.row = row
         self.col = col
@@ -177,16 +184,16 @@ class Patch:
         self.used = False
         self.release_time = None
         self.rotation = None
-    
+
     def __repr__(self):
         return f"P({self.row}, {self.col})"
 
-    def locked(self): 
+    def locked(self):
         return self.lock is not None
 
     def T_available(self):
         return self.patch_type == PatchType.T and not self.used and not self.locked()
-    
+
     def route_available(self):
         return self.patch_type == PatchType.ROUTE and not self.locked()
 
@@ -200,13 +207,14 @@ class Patch:
             raise Exception("T already used!")
         else:
             raise Exception("Can't use non-T!")
-        
+
     def release(self, time):
         if self.patch_type != PatchType.T or not (self.used):
             raise Exception("Can't release non-T or unused T!")
         self.used = False
         self.release_time = time
         self.patch_type = PatchType.ROUTE
+
 
 class PatchLock:
     def __init__(self, owner: "BaseGate", holds: list[Patch], duration: int):
@@ -216,8 +224,8 @@ class PatchLock:
 
     def lock(self):
         for patch in self.holds:
-            assert patch.lock == None
-                # return False
+            assert patch.lock is None
+            # return False
 
         for patch in self.holds:
             patch.lock = self
@@ -230,6 +238,7 @@ class PatchLock:
                 patch.lock = None
         self.owner = None
 
+
 class Route:
     def __init__(self, gate: Gate, patches: list[Patch]):
         self.gate = gate
@@ -237,14 +246,19 @@ class Route:
 
 
 class Widget:
-    def __init__(self, width, height, board):
+    def __init__(self, width, height, board, depth_offset=2 / 3):
+
+        if depth_offset < 0 or depth_offset > 1:
+            # TODO Bounds exception?
+            raise Exception()
+
         self.width: int = width
         self.height: int = height
 
         self.board = board
-        self.reg_t_frontier = [Tree_node(None, [], q) for q in range(width // 2)]
-        
-        self.DEPTH = self.height//3 * 2
+        self.reg_t_frontier = [TreeNode(None, [], q) for q in range(width // 2)]
+
+        self.DEPTH = int(self.height * depth_offset)
 
     @classmethod
     def default_widget(cls, width, height):
@@ -252,25 +266,46 @@ class Widget:
         route_row = [Patch(PatchType.ROUTE, 1, c) for c in range(width)]
         board = [reg_row, route_row]
         for r in range(2, height):
-            row = [Patch(PatchType.BELL, r, 0), 
-                *(Patch(PatchType.T, r, c) for c in range(1, width-1)),
-                Patch(PatchType.BELL, r, width-1)]
+            row = [
+                Patch(PatchType.BELL, r, 0),
+                *(Patch(PatchType.T, r, c) for c in range(1, width - 1)),
+                Patch(PatchType.BELL, r, width - 1),
+            ]
             board.append(row)
         return Widget(width, height, board)
-    
+
     @classmethod
     def chessboard_widget(cls, width, height):
         reg_row = [Patch(PatchType.REG, 0, c) for c in range(width)]
         route_row = [Patch(PatchType.ROUTE, 1, c) for c in range(width)]
-        top_T = [Patch(PatchType.BELL, 2, 0), 
-                *(Patch(PatchType.T, 2, c,) for c in range(1, width-1)),
-                Patch(PatchType.BELL, 2, width-1)]
+        top_T = [
+            Patch(PatchType.BELL, 2, 0),
+            *(
+                Patch(
+                    PatchType.T,
+                    2,
+                    c,
+                )
+                for c in range(1, width - 1)
+            ),
+            Patch(PatchType.BELL, 2, width - 1),
+        ]
         board = [reg_row, route_row, top_T]
         for r in range(3, height):
-            row = [Patch(PatchType.BELL, r, 0), #Patch(PatchType.T, r, 1),
-                *(Patch(PatchType.T, r, c, PatchOrientation((r ^ c) & 1) ^ (c < width // 2)) for c in range(1, width-1)),
-                #Patch(PatchType.T, r, width-2), 
-                Patch(PatchType.BELL, r, width-1)]
+            row = [
+                Patch(PatchType.BELL, r, 0),  # Patch(PatchType.T, r, 1),
+                *(
+                    Patch(
+                        PatchType.T,
+                        r,
+                        c,
+                        PatchOrientation((r ^ c) & 1) ^ (c < width // 2),
+                    )
+                    for c in range(1, width - 1)
+                ),
+                # Patch(PatchType.T, r, width-2),
+                Patch(PatchType.BELL, r, width - 1),
+            ]
             board.append(row)
         return Widget(width, height, board)
 
@@ -278,9 +313,9 @@ class Widget:
         if isinstance(index, tuple):
             return self.board[index[0]][index[1]]
         return self.board[index]
-    
 
-class Tree_node:
+
+class TreeNode:
     def __init__(self, parent, path, reg=None):
         self.parent = parent
         self.children = []
@@ -289,7 +324,7 @@ class Tree_node:
 
         if parent is not None:
             self.reg = parent.reg
-            self.path_fragment = path[len(parent.path):]
+            self.path_fragment = path[len(parent.path) :]
         else:
             self.reg = reg
             self.path_fragment = path
