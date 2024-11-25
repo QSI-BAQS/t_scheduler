@@ -5,62 +5,6 @@ from enum import Enum
 
 from t_scheduler import util
 
-
-def debug_gates():
-    # gate_layers = [[0, 2, 1], [0, 2, 1]]
-    gate_layers = [
-        [*chain(*(([x] * 8) for x in [5, 0, 6, 8, 7]))],
-    ]
-
-    print(gate_layers)
-    # gate_layers  = [[t for t in islice(cycle([0, 9, 5]), 8 * 3)]]
-    gate_layers = [[util.T_Gate(t, 2, 3) for t in layer] for layer in gate_layers]
-    # output = schedule_undermine(20, 5, gate_layers, True)
-
-    wid = util.Widget.default_widget(20, 5)
-    sched = Scheduler(
-        RotationStrategy.LOOKBACK, wid, gate_layers, vertical_search, True
-    )
-    sched.schedule()
-    print(sched.output_layers)
-    print(len(sched.output_layers))
-
-
-def debug_gates():
-    # gate_layers = [[0, 2, 1], [0, 2, 1]]
-    gate_layers = [
-        [*chain(*(([x] * 10) for x in [5, 0, 6, 8, 7]))],
-    ]
-    # gate_layers  = [[t for t in islice(cycle([0, 9, 5]), 8 * 3)]]
-    gate_layers2 = [[util.T_Gate(t, 1, 1) for t in layer] for layer in gate_layers]
-    print(gate_layers)
-    # output = schedule_undermine(20, 5, gate_layers2, True)
-
-    wid = util.Widget.chessboard_widget(20, 5)
-    sched = Scheduler(RotationStrategy.REJECT, wid, gate_layers2, tree_search, True)
-    sched.schedule()
-    print(sched.output_layers)
-    print(len(sched.output_layers))
-
-
-def debug_gates():
-    # gate_layers = [[0, 2, 1], [0, 2, 1]]
-    gate_layers = [
-        [*chain(*(([x] * 100) for x in [6, 7, 9]))],
-    ]
-    # gate_layers  = [[t for t in islice(cycle([0, 9, 5]), 8 * 3)]]
-    gate_layers2 = [[util.T_Gate(t, 1, 1) for t in layer] for layer in gate_layers]
-    print(gate_layers)
-    # output = schedule_undermine(20, 5, gate_layers2, True)
-
-    wid = util.Widget.chessboard_widget(40, 20)
-    sched = Scheduler(RotationStrategy.REJECT, wid, gate_layers2, tree_search, True)
-    sched.schedule()
-    print(sched.output_layers)
-    print(len(sched.output_layers))
-    print(sched.hazard)
-
-
 class RotationStrategy(Enum):
     BACKPROP_INIT = 0
     LOOKBACK = 1
@@ -71,10 +15,10 @@ class RotationStrategy(Enum):
 class Scheduler:
     def __init__(
         self,
-        rot_strat: RotationStrategy,
-        widget: util.Widget,
         gate_layers,
+        widget,
         search,
+        rot_strat: RotationStrategy,
         debug: bool = False,
     ):
         self.rot_strat = rot_strat
@@ -248,7 +192,7 @@ class Scheduler:
             self.active.append(gate)
         elif self.rot_strat == RotationStrategy.INJECT:
             # reg_patch = self.widget[0, gate.targ * 2]
-            rot_gate = RotateGate(path, gate, self.ROTATION_DURATION)
+            rot_gate = util.RotateGate(path, gate, self.ROTATION_DURATION)
             rot_gate.activate()
             self.active.append(rot_gate)
         elif self.rot_strat == RotationStrategy.LOOKBACK:
@@ -256,12 +200,12 @@ class Scheduler:
                 lookback_cycles := self.time - attack_patch.release_time - 1 <= 0
             ):
                 # reg_patch = self.widget[0, gate.targ * 2]
-                rot_gate = RotateGate(path, gate, self.ROTATION_DURATION)
+                rot_gate = util.RotateGate(path, gate, self.ROTATION_DURATION)
                 rot_gate.activate()
                 self.active.append(rot_gate)
             else:
                 lookback_cycles = min(lookback_cycles, self.ROTATION_DURATION)
-                rot_gate = RotateGate(path, gate, self.ROTATION_DURATION)
+                rot_gate = util.RotateGate(path, gate, self.ROTATION_DURATION)
                 rot_gate.timer += lookback_cycles
                 rot_gate.activate()
                 for i in range(lookback_cycles):
@@ -272,7 +216,6 @@ class Scheduler:
                 else:
                     self.active.append(rot_gate)
         elif self.rot_strat == RotationStrategy.REJECT:
-            print("rotation rejected!")
             return False
         else:
             raise NotImplementedError()
@@ -381,7 +324,6 @@ def probe_down(widget, reg):
 
 # T --> reg
 def validate_T_path(path):
-    # print(path)
     if not path[0].T_available():
         return False
     if not all(p.route_available() for p in path[1:-1]):
@@ -531,6 +473,36 @@ def print_board(board):
                 print(".", end="")
         print()
     print("-" * len(board[0]))
+
+
+class VerticalScheduler(Scheduler):
+    '''
+        TODO: Docstring this class
+    '''
+    def __init__(
+        self,
+        layers,
+        widget,
+        rotation_strategy=RotationStrategy.BACKPROP_INIT,
+        **kwargs):
+        '''
+        TODO: Comment on the rotation strategy
+        '''
+        super().__init__(layers, widget, vertical_search, rotation_strategy, **kwargs)
+
+class TreeScheduler(Scheduler):
+    '''
+        TODO: Docstring this class
+    '''
+    def __init__(
+        self,
+        layers,
+        widget,
+        **kwargs):
+        '''
+        TODO: Comment on the rotation strategy
+        '''
+        super().__init__(layers, widget, tree_search, RotationStrategy.REJECT, **kwargs)
 
 
 if __name__ == "__main__":
