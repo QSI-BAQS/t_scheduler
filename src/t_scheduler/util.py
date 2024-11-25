@@ -19,7 +19,7 @@ class BaseGate(ABC):
     def activate(self, *args):
         pass
 
-    def cleanup(self):
+    def cleanup(self, scheduler):
         pass
     def next(self, scheduler):
         pass
@@ -48,7 +48,7 @@ class Gate(BaseGate):
             self.resource = resource
         self.lock.lock()
     
-    def cleanup(self):
+    def cleanup(self, scheduler):
         if self.resource:
             self.resource.release()
         assert self.lock is not None
@@ -60,12 +60,14 @@ class Gate(BaseGate):
 class RotateGate(BaseGate):
     def __init__(self, path, dependent_gate, duration:int):
         self.t_patch = path[0]
+        self.t_patch.register_rotation(self)
         self.path = [path[0], path[1], path[-1]]
         self.dependent_gate = dependent_gate
         self.timer = 0
         self.lock = None
         self.targ = dependent_gate.targ
         self.duration = duration
+        self.completed_at = None
     
     def activate(self):
         self.lock = PatchLock(self, self.path, self.duration)
@@ -75,10 +77,11 @@ class RotateGate(BaseGate):
     def tick(self):
         self.timer += 1
     
-    def cleanup(self):
+    def cleanup(self, scheduler):
         if self.timer >= self.duration:
             assert self.lock
             self.lock.unlock()
+            self.completed_at = scheduler.time
     
     def completed(self):
         return self.timer >= self.duration
@@ -107,11 +110,11 @@ class CorrectionGate(BaseGate):
     def tick(self):
         self.timer += 1
     
-    def cleanup(self):
+    def cleanup(self, scheduler):
         if self.timer >= self.duration:
             assert self.lock
             self.lock.unlock()
-            self.t_patch.release()
+            self.t_patch.release(scheduler.time)
 
     def completed(self):
         return self.timer >= self.duration
@@ -136,7 +139,7 @@ class T_Gate(Gate):
     def tick(self):
         self.timer += 1
     
-    def cleanup(self):
+    def cleanup(self, scheduler):
         if self.timer >= self.duration:
             assert self.lock
             self.lock.unlock()
@@ -172,6 +175,8 @@ class Patch:
         self.lock: None | PatchLock = None
         self.orientation = ori
         self.used = False
+        self.release_time = None
+        self.rotation = None
     
     def __repr__(self):
         return f"P({self.row}, {self.col})"
@@ -185,6 +190,9 @@ class Patch:
     def route_available(self):
         return self.patch_type == PatchType.ROUTE and not self.locked()
 
+    def register_rotation(self, gate):
+        self.rotation = gate
+
     def use(self):
         if self.patch_type == PatchType.T:
             self.used = True
@@ -193,10 +201,11 @@ class Patch:
         else:
             raise Exception("Can't use non-T!")
         
-    def release(self):
+    def release(self, time):
         if self.patch_type != PatchType.T or not (self.used):
             raise Exception("Can't release non-T or unused T!")
         self.used = False
+        self.release_time = time
         self.patch_type = PatchType.ROUTE
 
 class PatchLock:
@@ -233,7 +242,15 @@ class Widget:
         self.height: int = height
 
         self.board = board
-        self.reg_t_frontier = [{board[2][2*i], board[2][2*i+1]} for i in range(width // 2)]
+        self.reg_t_frontier = [tree_node(None, [], q) for q in range(width // 2)]
+        for q in range(width//2):
+            root = self.reg_t_frontier[q]
+            if q != 0:
+                c = 2*q
+                root.children.append(tree_node(root, [self[0, c],self[1, c],self[2, c]]))
+            if q != width//2 - 1:
+                c = 2*q+1
+                root.children.append(tree_node(root, [self[0, c-1],self[0, c],self[1, c],self[2, c]]))
 
     @classmethod
     def default_widget(cls, width, height):
@@ -267,3 +284,24 @@ class Widget:
             return self.board[index[0]][index[1]]
         return self.board[index]
     
+
+    def get_t_tree_neighbours(self, row, col):
+        output = []
+        for r, c in [(row + 1, col), (row, col - 1), (row, col + 1), (row - 1, col)]:
+            if 0 <= r < self.height and 0 <= c < self.width:
+                if (patch := self[r,c]).T_available():
+                    output.append(patch)
+        return output
+    
+
+class tree_node:
+    def __init__(self, parent, path, reg=None):
+        self.parent = parent
+        self.children = []
+        self.path = path
+        if parent is not None:
+            self.reg = parent.reg
+            self.path_fragment = path[len(parent.path):]
+        else:
+            self.reg = reg
+            self.path_fragment = path

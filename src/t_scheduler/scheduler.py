@@ -15,7 +15,22 @@ def debug_gates():
     # output = schedule_undermine(20, 5, gate_layers2, True)
 
     wid = Widget.default_widget(20, 5)
-    sched = Scheduler(RotationStrategy.INJECT, wid, gate_layers2, True)
+    sched = Scheduler(RotationStrategy.LOOKBACK, wid, gate_layers2, vertical_search, True)
+    sched.schedule()
+    print(sched.output_layers)
+    print(len(sched.output_layers))
+
+
+def debug_gates():
+    # gate_layers = [[0, 2, 1], [0, 2, 1]]
+    gate_layers = [[*chain(*(([x] * 12) for x in [1]))], ]
+    # gate_layers  = [[t for t in islice(cycle([0, 9, 5]), 8 * 3)]]
+    gate_layers2 = [[T_Gate(t, 1, 1) for t in layer] for layer in gate_layers]
+    print(gate_layers)
+    # output = schedule_undermine(20, 5, gate_layers2, True)
+
+    wid = Widget.chessboard_widget(20, 5)
+    sched = Scheduler(RotationStrategy.REJECT, wid, gate_layers2, tree_search, True)
     sched.schedule()
     print(sched.output_layers)
     print(len(sched.output_layers))
@@ -24,9 +39,11 @@ class RotationStrategy(Enum):
     BACKPROP_INIT = 0
     LOOKBACK = 1
     INJECT = 2
+    REJECT = 3
+
 
 class Scheduler:
-    def __init__(self, rot_strat: RotationStrategy, widget: Widget, gate_layers, debug:bool=False):
+    def __init__(self, rot_strat: RotationStrategy, widget: Widget, gate_layers, search, debug:bool=False):
         self.rot_strat = rot_strat
         self.widget = widget
 
@@ -45,6 +62,8 @@ class Scheduler:
 
 
         self.ROTATION_DURATION = 3
+        self.time = 0
+        self.search = search
 
     def schedule(self):
         while self.waiting:
@@ -88,7 +107,7 @@ class Scheduler:
             gate.tick()
         
         for gate in self.active:
-            gate.cleanup()
+            gate.cleanup(self)
         
         for gate in self.active:
             gate.next(self)
@@ -97,11 +116,13 @@ class Scheduler:
         self.active = self.next_active
         self.next_active = []
 
+        self.time += 1
+
 
 
     def alloc_gate(self, gate):
         if gate.gate_type == GateType.T_STATE:
-            path = vertical_search(self.widget, gate.targ)
+            path = self.search(self.widget, gate.targ)
             if path is None:
                 return False
             return self.process_rotation(path, gate)
@@ -133,16 +154,46 @@ class Scheduler:
             T_patch.use()
             gate.activate(path, path[0])
             self.active.append(gate)
+        elif T_patch.rotation:
+            T_patch.orientation = T_patch.orientation.inverse()
+            rotate_gate = T_patch.rotation
+            for layer in range(rotate_gate.completed_at, rotate_gate.completed_at - rotate_gate.duration, -1):
+                self.output_layers[layer].remove(rotate_gate.path)
+            T_patch.rotation = None
+            T_patch.use()
+            gate.activate(path, path[0])
+            self.active.append(gate)
         elif self.rot_strat == RotationStrategy.BACKPROP_INIT:
             T_patch.orientation = T_patch.orientation.inverse()
             T_patch.use()
             gate.activate(path, path[0])
             self.active.append(gate)
         elif self.rot_strat == RotationStrategy.INJECT:
-            reg_patch = self.widget[0, gate.targ * 2]
+            # reg_patch = self.widget[0, gate.targ * 2]
             rot_gate = RotateGate(path, gate, self.ROTATION_DURATION)
             rot_gate.activate()
             self.active.append(rot_gate)
+        elif self.rot_strat == RotationStrategy.LOOKBACK:
+            if not attack_patch.release_time or (lookback_cycles := self.time - attack_patch.release_time - 1<= 0):
+                # reg_patch = self.widget[0, gate.targ * 2]
+                rot_gate = RotateGate(path, gate, self.ROTATION_DURATION)
+                rot_gate.activate()
+                self.active.append(rot_gate)
+            else:
+                lookback_cycles = min(lookback_cycles, self.ROTATION_DURATION)
+                rot_gate = RotateGate(path, gate, self.ROTATION_DURATION)
+                rot_gate.timer += lookback_cycles
+                rot_gate.activate()
+                for i in range(lookback_cycles):
+                    self.output_layers[-i-1].append(rot_gate)
+                if rot_gate.completed():
+                    rot_gate.cleanup(self)
+                    rot_gate.next(self)
+                else:
+                    self.active.append(rot_gate)
+        elif self.rot_strat == RotationStrategy.REJECT:
+            print("rotation rejected!")
+            return False
         else:
             raise NotImplementedError()
         return True
@@ -171,7 +222,7 @@ def probe_left_nonowning(widget, reg, prefix):
     left_path = []
 
     if start_row > 1:
-        for c in range(start_col-1, 0, -1):
+        for c in range(start_col, 0, -1):
             if (patch := widget[start_row,c]).route_available():
                 left_path.append(patch)
             elif patch.T_available():
@@ -185,11 +236,14 @@ def probe_left_nonowning(widget, reg, prefix):
             if (patch := widget[r,c]).route_available():
                 next_left_path.append(patch)
             elif patch.T_available() and left_path and patch.col >= left_path[-1].col:
-                # breakpoint()
-                return [patch] + left_path[:start_col - c][::-1] + prefix[:r+2][::-1]
+                return [patch] + left_path[:start_col - c + 1][::-1] + prefix[:r+1][::-1]
+            elif patch.T_available():
+                return [patch] + next_left_path[::-1] + prefix[:r+1][::-1]
             else:
                 break
         left_path = next_left_path
+        next_left_path = []
+
 
 def probe_right_nonowning(widget, reg, prefix):
     start_row = prefix[-1].row
@@ -198,7 +252,7 @@ def probe_right_nonowning(widget, reg, prefix):
     right_path = []
 
     if start_row > 1:
-        for c in range(start_col+1, widget.width - 1):
+        for c in range(start_col, widget.width - 1):
             if (patch := widget[start_row,c]).route_available():
                 right_path.append(patch)
             elif patch.T_available():
@@ -212,10 +266,13 @@ def probe_right_nonowning(widget, reg, prefix):
             if (patch := widget[r,c]).route_available():
                 next_right_path.append(patch)
             elif patch.T_available() and right_path and patch.col <= right_path[-1].col:
-                return [patch] + right_path[c - start_col :-1:-1] + prefix[r::-1]
+                return [patch] + right_path[:c - start_col + 1][::-1] + prefix[:r+1][::-1]
+            elif patch.T_available():
+                return [patch] + next_right_path[::-1] + prefix[:r+1][::-1]
             else:
                 break
         right_path = next_right_path
+        next_right_path = []
    
 def probe_down(widget, reg):
     if widget[0, 2*reg].locked() or widget[0, 2*reg + 1].locked():
@@ -244,14 +301,32 @@ def validate_T_path(path):
     return True
 
 def tree_search(widget, reg):
-    if widget[0, 2*reg].locked():
-        return None
-    
     t_patch = None
     cleared = []
-    for patch in widget.reg_t_frontier[reg]:
-        if patch.T_available():
-            t_patch = patch
+    stack = [(widget.reg_t_frontier[reg], 0)]
+    while stack:
+        curr, child_idx = stack.pop()
+        if child_idx >= len(curr.children):
+            continue
+        stack.append((curr, child_idx + 1))
+        curr_child = curr.children[child_idx]
+        if any(p.locked() for p in curr_child.path_fragment):
+            continue
+
+        if curr_child.path[-1].T_available():
+            return curr_child.path[::-1]
+        elif not curr_child.children:
+            curr_patch = curr_child.path[-1]
+            new_patches = widget.get_t_tree_neighbours(curr_patch.row, curr_patch.col)
+            new_children = []
+            for patch in new_patches:
+                matching_rotation = (patch.row == curr_patch.row) ^ (patch.orientation == PatchOrientation.Z_TOP)
+                if matching_rotation:
+                    new_children.append(tree_node(curr_child, curr_child.path + [patch]))
+            curr_child.children = new_children
+        stack.append((curr_child, 0))
+
+    return None
 
 
 def vertical_search(widget, reg):
