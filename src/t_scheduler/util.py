@@ -242,15 +242,9 @@ class Widget:
         self.height: int = height
 
         self.board = board
-        self.reg_t_frontier = [tree_node(None, [], q) for q in range(width // 2)]
-        for q in range(width//2):
-            root = self.reg_t_frontier[q]
-            if q != 0:
-                c = 2*q
-                root.children.append(tree_node(root, [self[0, c],self[1, c],self[2, c]]))
-            if q != width//2 - 1:
-                c = 2*q+1
-                root.children.append(tree_node(root, [self[0, c-1],self[0, c],self[1, c],self[2, c]]))
+        self.reg_t_frontier = [Tree_node(None, [], q) for q in range(width // 2)]
+        
+        self.DEPTH = self.height//3 * 2
 
     @classmethod
     def default_widget(cls, width, height):
@@ -273,9 +267,10 @@ class Widget:
                 Patch(PatchType.BELL, 2, width-1)]
         board = [reg_row, route_row, top_T]
         for r in range(3, height):
-            row = [Patch(PatchType.BELL, r, 0), Patch(PatchType.T, r, 1),
-                *(Patch(PatchType.T, r, c, PatchOrientation((r ^ c) & 1) ^ (c >= width // 2)) for c in range(2, width-2)),
-                Patch(PatchType.T, r, width-2), Patch(PatchType.BELL, r, width-1)]
+            row = [Patch(PatchType.BELL, r, 0), #Patch(PatchType.T, r, 1),
+                *(Patch(PatchType.T, r, c, PatchOrientation((r ^ c) & 1) ^ (c < width // 2)) for c in range(1, width-1)),
+                #Patch(PatchType.T, r, width-2), 
+                Patch(PatchType.BELL, r, width-1)]
             board.append(row)
         return Widget(width, height, board)
 
@@ -285,20 +280,13 @@ class Widget:
         return self.board[index]
     
 
-    def get_t_tree_neighbours(self, row, col):
-        output = []
-        for r, c in [(row + 1, col), (row, col - 1), (row, col + 1), (row - 1, col)]:
-            if 0 <= r < self.height and 0 <= c < self.width:
-                if (patch := self[r,c]).T_available():
-                    output.append(patch)
-        return output
-    
-
-class tree_node:
+class Tree_node:
     def __init__(self, parent, path, reg=None):
         self.parent = parent
         self.children = []
         self.path = path
+        self.reparsed = False
+
         if parent is not None:
             self.reg = parent.reg
             self.path_fragment = path[len(parent.path):]
