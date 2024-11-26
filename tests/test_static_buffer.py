@@ -1,6 +1,6 @@
 import unittest
 from itertools import chain
-from t_scheduler import util, scheduler
+from t_scheduler import gate, widget, scheduler
 
 
 class StaticBufferTest(unittest.TestCase): 
@@ -8,9 +8,9 @@ class StaticBufferTest(unittest.TestCase):
         gate_layers = [
             [*chain(*(([x] * 8) for x in [5, 0, 6, 8, 7]))],
         ]
-        gate_layers = [[util.T_Gate(t, 2, 3) for t in layer] for layer in gate_layers]
+        gate_layers = [[gate.T_Gate(t, 2, 3) for t in layer] for layer in gate_layers]
 
-        wid = util.Widget.default_widget(20, 5)
+        wid = widget.Widget.default_widget(20, 5)
         sched = scheduler.VerticalScheduler(
             gate_layers,
             wid,
@@ -22,9 +22,9 @@ class StaticBufferTest(unittest.TestCase):
         gate_layers = [
             [*chain(*(([x] * 8) for x in [5, 0, 6, 8, 7]))],
         ]
-        gate_layers = [[util.T_Gate(t, 2, 3) for t in layer] for layer in gate_layers]
+        gate_layers = [[gate.T_Gate(t, 2, 3) for t in layer] for layer in gate_layers]
 
-        wid = util.Widget.default_widget(20, 5)
+        wid = widget.Widget.default_widget(20, 5)
         sched = scheduler.VerticalScheduler(
             gate_layers,
             wid,
@@ -41,9 +41,9 @@ class StaticBufferTest(unittest.TestCase):
         gate_layers = [
             [*chain(*(([x] * 8) for x in [5, 0, 6, 8, 7]))],
         ]
-        gate_layers = [[util.T_Gate(t, 2, 3) for t in layer] for layer in gate_layers]
+        gate_layers = [[gate.T_Gate(t, 2, 3) for t in layer] for layer in gate_layers]
 
-        wid = util.Widget.default_widget(20, 5)
+        wid = widget.Widget.default_widget(20, 5)
         sched = scheduler.VerticalScheduler(
             gate_layers,
             wid,
@@ -60,9 +60,9 @@ class StaticBufferTest(unittest.TestCase):
         gate_layers = [
             [*chain(*(([x] * 8) for x in [5, 0, 6, 8, 7]))],
         ]
-        gate_layers = [[util.T_Gate(t, 2, 3) for t in layer] for layer in gate_layers]
+        gate_layers = [[gate.T_Gate(t, 2, 3) for t in layer] for layer in gate_layers]
 
-        wid = util.Widget.default_widget(20, 5)
+        wid = widget.Widget.default_widget(20, 5)
         sched = scheduler.VerticalScheduler(
             gate_layers,
             wid
@@ -80,9 +80,9 @@ class StaticBufferTest(unittest.TestCase):
         gate_layers = [
             [*chain(*(([x] * 10) for x in [5, 0, 6, 8, 7]))],
         ]
-        gate_layers = [[util.T_Gate(t, 1, 1) for t in layer] for layer in gate_layers]
+        gate_layers = [[gate.T_Gate(t, 1, 1) for t in layer] for layer in gate_layers]
 
-        wid = util.Widget.chessboard_widget(20, 5)
+        wid = widget.Widget.chessboard_widget(20, 5)
         sched = scheduler.TreeScheduler(gate_layers, wid)
         sched.schedule()
 
@@ -91,9 +91,9 @@ class StaticBufferTest(unittest.TestCase):
         gate_layers = [
             [*chain(*(([x] * 100) for x in [6, 7, 9]))],
         ]
-        gate_layers = [[util.T_Gate(t, 1, 1) for t in layer] for layer in gate_layers]
+        gate_layers = [[gate.T_Gate(t, 1, 1) for t in layer] for layer in gate_layers]
 
-        wid = util.Widget.chessboard_widget(40, 20)
+        wid = widget.Widget.chessboard_widget(40, 20)
         sched = scheduler.TreeScheduler(gate_layers, wid)
         sched.schedule()
 

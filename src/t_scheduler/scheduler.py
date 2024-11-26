@@ -1,9 +1,10 @@
-from typing import List 
-from itertools import chain
 from collections import deque
 from enum import Enum
 
-from t_scheduler import util
+from t_scheduler.patch import Patch, PatchOrientation, PatchType
+from t_scheduler.widget import TreeNode
+from t_scheduler.gate import RotateGate, GateType
+
 
 class RotationStrategy(Enum):
     BACKPROP_INIT = 0
@@ -48,14 +49,15 @@ class Scheduler:
             if q != 0:
                 c = 2 * q
                 root.children.append(
-                    util.TreeNode(root, [widget[0, c], widget[1, c], widget[2, c]])
+                    TreeNode(root, [widget[0, c], widget[1, c], widget[2, c]])
                 )
             if q != widget.width // 2 - 1:
                 c = 2 * q + 1
                 root.children.append(
-                    util.TreeNode(
+                    TreeNode(
                         root,
-                        [widget[0, c - 1], widget[0, c], widget[1, c], widget[2, c]],
+                        [widget[0, c - 1], widget[0, c],
+                            widget[1, c], widget[2, c]],
                     )
                 )
             root.children.sort(
@@ -65,17 +67,19 @@ class Scheduler:
                 self.generate_mining(root.children[1])
 
     def generate_mining(self, root):
-        depth = self.widget.DEPTH
+        depth = self.widget.dig_depth
         curr = root
         q = root.reg
         for r in range(3, depth):
             curr.reparsed = True
-            child = util.TreeNode(root, curr.path + [self.widget[r, curr.path[-1].col]])
+            child = TreeNode(root, curr.path +
+                             [self.widget[r, curr.path[-1].col]])
             curr.children.append(child)
             curr = child
             curr.reparsed = True
-            child = util.TreeNode(
-                root, curr.path + [self.widget[r, 2 * q + (curr.path[-1].col == 2 * q)]]
+            child = TreeNode(
+                root, curr.path +
+                [self.widget[r, 2 * q + (curr.path[-1].col == 2 * q)]]
             )
             curr.children.append(child)
             curr = child
@@ -134,7 +138,7 @@ class Scheduler:
         self.time += 1
 
     def alloc_gate(self, gate):
-        if gate.gate_type == util.GateType.T_STATE:
+        if gate.gate_type == GateType.T_STATE:
             path = self.search(self.widget, gate.targ)
             # TODO unhack
             if path is None and not self.widget[0, 2 * gate.targ].locked():
@@ -143,14 +147,14 @@ class Scheduler:
                 return False
             return self.process_rotation(path, gate)
 
-        elif gate.gate_type == util.GateType.LOCAL_GATE:
+        elif gate.gate_type == GateType.LOCAL_GATE:
             reg = self.widget[0, gate.targ * 2]
             if reg.locked():
                 return False
             gate.activate([reg])
             self.active.append(gate)
             return True
-        elif gate.gate_type == util.GateType.ANCILLA:
+        elif gate.gate_type == GateType.ANCILLA:
             reg = self.widget[0, gate.targ * 2]
             anc = self.widget[0, gate.targ * 2 + 1]
             if reg.locked() or anc.locked():
@@ -165,7 +169,7 @@ class Scheduler:
         attack_patch = path[1]
 
         matching_rotation = (T_patch.row == attack_patch.row) ^ (
-            T_patch.orientation == util.PatchOrientation.Z_TOP
+            T_patch.orientation == PatchOrientation.Z_TOP
         )
 
         if matching_rotation:
@@ -192,7 +196,7 @@ class Scheduler:
             self.active.append(gate)
         elif self.rot_strat == RotationStrategy.INJECT:
             # reg_patch = self.widget[0, gate.targ * 2]
-            rot_gate = util.RotateGate(path, gate, self.ROTATION_DURATION)
+            rot_gate = RotateGate(path, gate, self.ROTATION_DURATION)
             rot_gate.activate()
             self.active.append(rot_gate)
         elif self.rot_strat == RotationStrategy.LOOKBACK:
@@ -200,12 +204,12 @@ class Scheduler:
                 lookback_cycles := self.time - attack_patch.release_time - 1 <= 0
             ):
                 # reg_patch = self.widget[0, gate.targ * 2]
-                rot_gate = util.RotateGate(path, gate, self.ROTATION_DURATION)
+                rot_gate = RotateGate(path, gate, self.ROTATION_DURATION)
                 rot_gate.activate()
                 self.active.append(rot_gate)
             else:
                 lookback_cycles = min(lookback_cycles, self.ROTATION_DURATION)
-                rot_gate = util.RotateGate(path, gate, self.ROTATION_DURATION)
+                rot_gate = RotateGate(path, gate, self.ROTATION_DURATION)
                 rot_gate.timer += lookback_cycles
                 rot_gate.activate()
                 for i in range(lookback_cycles):
@@ -222,7 +226,7 @@ class Scheduler:
         return True
 
 
-def T_search_owning(widget, reg) -> util.Patch | None:
+def T_search_owning(widget, reg) -> Patch | None:
     for r in range(2, widget.height):
         for c in range(2 * reg, 2 * reg + 2):
             if (patch := widget[r, c]).T_available():
@@ -337,8 +341,6 @@ def tree_search(widget, reg, retry=True):
     if widget[0, 2 * reg].locked():
         return None
 
-    t_patch = None
-    cleared = []
     stack = deque([(widget.reg_t_frontier[reg], 0)])
     while stack:
         curr, child_idx = stack.popleft()
@@ -360,7 +362,7 @@ def tree_search(widget, reg, retry=True):
     if retry:
         reparse_tree(widget, widget.reg_t_frontier[reg].children[0])
         widget.reg_t_frontier[reg].children[0].children.sort(
-            key=lambda x: abs(x.path[-1].row - widget.DEPTH)
+            key=lambda x: abs(x.path[-1].row - widget.dig_depth)
             + abs(x.path[-1].col - reg * 2)
         )
         tree_search(widget, reg, False)
@@ -378,17 +380,18 @@ def reparse_tree(widget, tree_node):
 
     for r, c in [(row + 1, col), (row, col - 1), (row, col + 1), (row - 1, col)]:
         if 2 <= r < widget.height and 0 <= c < widget.width:
-            if (patch := widget[r, c]).patch_type == util.PatchType.T:
+            if (patch := widget[r, c]).patch_type == PatchType.T:
                 new_patches.append(patch)
 
     new_children = []
     if new_patches:
         for patch in new_patches:
             matching_rotation = (patch.row == curr_patch.row) ^ (
-                patch.orientation == util.PatchOrientation.Z_TOP
+                patch.orientation == PatchOrientation.Z_TOP
             )
             if matching_rotation:
-                new_children.append(util.TreeNode(tree_node, tree_node.path + [patch]))
+                new_children.append(
+                    TreeNode(tree_node, tree_node.path + [patch]))
         tree_node.children = new_children
 
     if not new_children:
@@ -410,12 +413,12 @@ def reparse_tree(widget, tree_node):
                 if 2 <= r < widget.height and 0 <= c < widget.width:
                     patch = widget[r, c]
                     matching_rotation = (row == r) ^ (
-                        patch.orientation == util.PatchOrientation.Z_TOP
+                        patch.orientation == PatchOrientation.Z_TOP
                     )
-                    if patch.patch_type == util.PatchType.T and matching_rotation:
+                    if patch.patch_type == PatchType.T and matching_rotation:
                         parent[r, c] = (row, col)
                         results.append((r, c))
-                    elif patch.patch_type == util.PatchType.ROUTE and (r, c) not in seen:
+                    elif patch.patch_type == PatchType.ROUTE and (r, c) not in seen:
                         parent[r, c] = (row, col)
                         bfs_queue.append((r, c))
                         seen.add((r, c))
@@ -425,7 +428,8 @@ def reparse_tree(widget, tree_node):
                 r, c = parent[r, c]
                 fragment.append(widget[r, c])
             fragment.pop()
-            new_children.append(util.TreeNode(tree_node, tree_node.path + fragment[::-1]))
+            new_children.append(
+                TreeNode(tree_node, tree_node.path + fragment[::-1]))
         tree_node.children = new_children
 
 
@@ -456,16 +460,16 @@ def vertical_search(widget, reg):
 def print_board(board):
     for row in board:
         for cell in row:
-            if cell.patch_type == util.PatchType.BELL:
+            if cell.patch_type == PatchType.BELL:
                 print("$", end="")
             elif cell.locked():
                 print(cell.lock.owner.targ, end="")
-            elif cell.patch_type == util.PatchType.REG:
+            elif cell.patch_type == PatchType.REG:
                 print("R", end="")
-            elif cell.patch_type == util.PatchType.ROUTE:
+            elif cell.patch_type == PatchType.ROUTE:
                 print(" ", end="")
             elif cell.T_available():
-                if cell.orientation == util.PatchOrientation.Z_TOP:
+                if cell.orientation == PatchOrientation.Z_TOP:
                     print("T", end="")
                 else:
                     print("t", end="")
@@ -479,31 +483,30 @@ class VerticalScheduler(Scheduler):
     '''
         TODO: Docstring this class
     '''
+
     def __init__(
-        self,
-        layers,
-        widget,
-        rotation_strategy=RotationStrategy.BACKPROP_INIT,
-        **kwargs):
+            self,
+            layers,
+            widget,
+            rotation_strategy=RotationStrategy.BACKPROP_INIT,
+            **kwargs):
         '''
         TODO: Comment on the rotation strategy
         '''
         super().__init__(layers, widget, vertical_search, rotation_strategy, **kwargs)
 
+
 class TreeScheduler(Scheduler):
     '''
         TODO: Docstring this class
     '''
+
     def __init__(
-        self,
-        layers,
-        widget,
-        **kwargs):
+            self,
+            layers,
+            widget,
+            **kwargs):
         '''
         TODO: Comment on the rotation strategy
         '''
         super().__init__(layers, widget, tree_search, RotationStrategy.REJECT, **kwargs)
-
-
-if __name__ == "__main__":
-    debug_gates()
