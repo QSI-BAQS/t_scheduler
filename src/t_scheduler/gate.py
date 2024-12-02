@@ -1,7 +1,7 @@
-
+from __future__ import annotations
 from abc import ABC
 from enum import Enum
-from typing import List
+from typing import Any, List, Set
 
 from t_scheduler.patch import Patch, PatchLock
 
@@ -19,6 +19,16 @@ class BaseGate(ABC):
     duration: int = 0
     path: List[Patch]
     lock: None | PatchLock
+
+    pre: List[BaseGate] | Set[BaseGate]
+    post: List[BaseGate] | Set[BaseGate]
+    weight: float = 1
+    schedule_weight: float = 0
+    flag: Any = None
+
+    def __init__(self):
+        self.pre = []
+        self.post = []
 
     def available(self):
         # TODO: implement for when converting to dependency graph
@@ -52,6 +62,7 @@ class BaseGate(ABC):
 
 class Gate(BaseGate):
     def __init__(self, targ, gate_type=GateType.T_STATE, duration=1):
+        super().__init__()
         self.targ: int = targ
         self.lock: None | PatchLock = None
         self.gate_type: GateType = gate_type
@@ -68,7 +79,7 @@ class Gate(BaseGate):
 
 
 class T_Gate(Gate):
-    def __init__(self, targ: int, measure_duration: int, corr_duration: int = 3):
+    def __init__(self, targ: int, measure_duration: int = 1, corr_duration: int = 3):
         super().__init__(targ, GateType.T_STATE, measure_duration)
         self.duration = measure_duration
         self.correction_duration = corr_duration
@@ -92,6 +103,8 @@ class T_Gate(Gate):
             scheduler.next_active.append(c_gate)
             # TODO add schedule_next to scheduler
 
+    def __repr__(self) -> str:
+        return f"{','.join([str(x.targ) for x in self.pre])}->T{self.targ}->{','.join([str(x.targ) for x in self.post])}"
 
 class RotateGate(BaseGate):
     def __init__(self, path: List[Patch], dependent_gate: Gate, duration: int):
