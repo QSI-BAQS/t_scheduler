@@ -2,12 +2,15 @@ from __future__ import annotations
 from enum import Enum, IntEnum
 from typing import List
 
+from t_scheduler.t_generation import t_cultivator
+
 
 class PatchType(Enum):
     REG = 1
     ROUTE = 2
     T = 3
     BELL = 4
+    CUSTOM = 5
 
 
 class PatchOrientation(IntEnum):
@@ -89,3 +92,32 @@ class Patch:
         self.used = False
         self.release_time = time
         self.patch_type = PatchType.ROUTE
+
+
+class TCultPatch(Patch):
+    def __init__(
+        self, row: int, col: int, starting_orientation=PatchOrientation.Z_TOP
+    ):
+        super().__init__(PatchType.CUSTOM, row, col, starting_orientation=starting_orientation)
+
+        self.has_T = False
+        self.cultivator = t_cultivator.TCultivator()
+
+    def T_available(self):
+        return self.has_T and not self.locked()
+    
+    def route_available(self):
+        return not self.has_T and not self.locked()
+    
+    def update(self):
+        if not self.has_T and not self.locked():
+            self.has_T = self.cultivator() > 0
+
+    def use(self):
+        if self.has_T:
+            self.has_T = False
+        else:
+            raise Exception("No T available to use!")
+    
+    def release(self):
+        pass

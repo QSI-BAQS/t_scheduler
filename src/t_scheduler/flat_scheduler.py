@@ -4,8 +4,8 @@ from multiprocessing import active_children
 from typing import List
 from t_scheduler import gate
 from t_scheduler.gate import BaseGate, GateType, T_Gate
-from t_scheduler.patch import Patch, PatchOrientation, PatchType
-from t_scheduler.scheduler import RotationStrategy, print_board
+from t_scheduler.patch import Patch, PatchOrientation, PatchType, TCultPatch
+from t_scheduler.scheduler import RotationStrategy
 from t_scheduler.widget import Widget
 
 
@@ -71,7 +71,7 @@ def toffoli_example_input():
     }
 
 def dag_create(obj):
-    gates = [T_Gate(q) for q in range(obj['n_qubits'])]
+    gates = [T_Gate(q, 2, 3) for q in range(obj['n_qubits'])]
 
     dag_layers = []
     for input_layer in obj['consumptionschedule']:
@@ -197,6 +197,7 @@ class FlatScheduler:
 
     def schedule_pass(self):
         # breakpoint()
+        self.widget.update()
         for gate in self.deferred:
             if gate.available() and self.alloc_gate(gate):
                 pass
@@ -218,8 +219,8 @@ class FlatScheduler:
         if self.debug:
             print_board(self.widget)
 
-        if not self.active:
-            raise Exception("No progress!")
+        # if not self.active:
+        #     raise Exception("No progress!")
 
         output_layer = []
         for gate in self.active:
@@ -246,13 +247,13 @@ class FlatScheduler:
         self.time += 1
 
     def alloc_gate(self, gate):
-        path = [self.widget[0, gate.targ * 2]]
-        if any(p.locked() for p in path): 
+        path = flat_search(self.widget, gate)
+        if not path or any(p.locked() for p in path): 
             return False
         gate.activate(path, Patch(PatchType.T, -1, -1))
         self.active.append(gate)
         return True
-    
+
     # def alloc_gate(self, gate):
     #     if gate.gate_type == GateType.T_STATE:
     #         path = self.search(self.widget, gate.targ)
@@ -282,5 +283,60 @@ class FlatScheduler:
     #     else:
     #         return False
 
-wid = Widget.default_widget(obj['n_qubits'] * 2, 3)
+
+SEARCH_WIDTH = 3
+def flat_search(widget, gate):
+    gate_col = gate.targ * 2
+    search_bounds = max(0, gate_col - SEARCH_WIDTH), min(widget.width, gate_col + SEARCH_WIDTH + 1)
+    for c in range(*search_bounds):
+        if widget[2, c].T_available():
+            hor_bounds = min(c, gate_col), max(c, gate_col) + 1
+            horizontal = [widget[1, i] for i in range(*hor_bounds)]
+            return [widget[2, c]] + horizontal + [widget[0, gate_col]]
+    return None
+
+
+wid = Widget.t_cultivator_widget_dense(obj['n_qubits'] * 2, 3)
 z = FlatScheduler(x, wid, True)
+
+last_output = ''
+rep_count = 1
+buf = ''
+def bprint(c='', end='\n'):
+    global buf
+    buf += str(c)
+    buf += end
+def print_board(board):
+    global last_output, buf, rep_count
+    bprint()
+    bprint("-" * len(board[0]))
+    for row in board:
+        for cell in row:
+            if cell.patch_type == PatchType.BELL:
+                bprint("$", end="")
+            elif cell.locked():
+                bprint(cell.lock.owner.targ, end="")
+            elif cell.patch_type == PatchType.REG:
+                bprint("R", end="")
+            elif cell.patch_type == PatchType.ROUTE:
+                bprint(" ", end="")
+            elif cell.T_available():
+                if cell.orientation == PatchOrientation.Z_TOP:
+                    bprint("T", end="")
+                else:
+                    bprint("t", end="")
+            elif isinstance(cell, TCultPatch):
+                bprint("@", end="")
+            else:
+                bprint(".", end="")
+        bprint()
+    bprint("-" * len(board[0]), end="")
+    if buf == last_output:
+        rep_count += 1
+        print(f'\rX{rep_count}', end='')
+        buf = ''
+    else:
+        print(buf)
+        last_output = buf
+        buf = ''
+        rep_count = 1

@@ -1,5 +1,5 @@
 from abc import ABC
-from t_generator import TGenerator
+from t_scheduler.t_generation.t_generator import TGenerator
 
 class TCultivator(TGenerator):
     '''

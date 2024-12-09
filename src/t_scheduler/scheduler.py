@@ -1,7 +1,7 @@
 from collections import deque
 from enum import Enum
 
-from t_scheduler.patch import Patch, PatchOrientation, PatchType
+from t_scheduler.patch import Patch, PatchOrientation, PatchType, TCultPatch
 from t_scheduler.widget import TreeNode
 from t_scheduler.gate import RotateGate, GateType
 
@@ -202,6 +202,8 @@ def print_board(board):
                     print("T", end="")
                 else:
                     print("t", end="")
+            elif isinstance(cell, TCultPatch):
+                print("@", end="")
             else:
                 print(".", end="")
         print()
