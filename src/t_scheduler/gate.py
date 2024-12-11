@@ -83,6 +83,7 @@ class T_Gate(Gate):
         super().__init__(targ, GateType.T_STATE, measure_duration)
         self.duration = measure_duration
         self.correction_duration = corr_duration
+        self.state = "JOINT"
 
     def activate(self, path, t_patch: Patch):
         self.t_patch = t_patch
@@ -94,14 +95,21 @@ class T_Gate(Gate):
         if self.completed():
             assert self.lock is not None
             self.lock.unlock()
+            if self.state == "JOINT":
+                self.t_patch.release(scheduler.time)
+                self.timer = 0
+                self.state = "CORRECTION"
+                self.duration = self.correction_duration
+                super().activate([self.path[0], self.path[-1]])
 
     def next(self, scheduler):
-        if self.completed():
-            c_gate = CorrectionGate(
-                self.path[-1], self.path[0], self.correction_duration)
-            c_gate.activate()
-            scheduler.next_active.append(c_gate)
-            # TODO add schedule_next to scheduler
+        return
+        # if self.completed():
+        #     c_gate = CorrectionGate(
+        #         self.path[-1], self.path[0], self.correction_duration)
+        #     c_gate.activate()
+        #     scheduler.next_active.append(c_gate)
+        #     # TODO add schedule_next to scheduler
 
     def __repr__(self) -> str:
         return f"{','.join([str(x.targ) for x in self.pre])}->T{self.targ}->{','.join([str(x.targ) for x in self.post])}"

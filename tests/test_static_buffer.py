@@ -1,6 +1,6 @@
 import unittest
 from itertools import chain
-from t_scheduler import gate, widget, scheduler
+from t_scheduler import gate, widget, scheduler, tree_scheduler, vertical_scheduler
 
 
 class StaticBufferTest(unittest.TestCase): 
@@ -11,7 +11,7 @@ class StaticBufferTest(unittest.TestCase):
         gate_layers = [[gate.T_Gate(t, 2, 3) for t in layer] for layer in gate_layers]
 
         wid = widget.Widget.default_widget(20, 5)
-        sched = scheduler.VerticalScheduler(
+        sched = vertical_scheduler.VerticalScheduler(
             gate_layers,
             wid,
             rotation_strategy=scheduler.RotationStrategy.LOOKBACK
@@ -25,7 +25,7 @@ class StaticBufferTest(unittest.TestCase):
         gate_layers = [[gate.T_Gate(t, 2, 3) for t in layer] for layer in gate_layers]
 
         wid = widget.Widget.default_widget(20, 5)
-        sched = scheduler.VerticalScheduler(
+        sched = vertical_scheduler.VerticalScheduler(
             gate_layers,
             wid,
             rotation_strategy=scheduler.RotationStrategy.REJECT
@@ -34,7 +34,7 @@ class StaticBufferTest(unittest.TestCase):
             # This should fail
             sched.schedule()
             raise Exception()
-        except:
+        except scheduler.SchedulerException:
             pass
 
     def test_end_to_end_inject_vertical(self):
@@ -44,17 +44,13 @@ class StaticBufferTest(unittest.TestCase):
         gate_layers = [[gate.T_Gate(t, 2, 3) for t in layer] for layer in gate_layers]
 
         wid = widget.Widget.default_widget(20, 5)
-        sched = scheduler.VerticalScheduler(
+        sched = vertical_scheduler.VerticalScheduler(
             gate_layers,
             wid,
             rotation_strategy=scheduler.RotationStrategy.INJECT
         )
-        try:
-            # This should fail
-            sched.schedule()
-            raise Exception()
-        except:
-            pass
+        
+        sched.schedule()
 
     def test_end_to_end_backprop_vertical(self):
         gate_layers = [
@@ -63,17 +59,12 @@ class StaticBufferTest(unittest.TestCase):
         gate_layers = [[gate.T_Gate(t, 2, 3) for t in layer] for layer in gate_layers]
 
         wid = widget.Widget.default_widget(20, 5)
-        sched = scheduler.VerticalScheduler(
+        sched = vertical_scheduler.VerticalScheduler(
             gate_layers,
             wid
         )
-        try:
-            # This should fail
-            sched.schedule()
-            raise Exception()
-        except:
-            pass
 
+        sched.schedule()
 
 
     def test_end_to_end_2(self):
@@ -83,7 +74,7 @@ class StaticBufferTest(unittest.TestCase):
         gate_layers = [[gate.T_Gate(t, 1, 1) for t in layer] for layer in gate_layers]
 
         wid = widget.Widget.chessboard_widget(20, 5)
-        sched = scheduler.TreeScheduler(gate_layers, wid)
+        sched = tree_scheduler.TreeScheduler(gate_layers, wid)
         sched.schedule()
 
 
@@ -94,7 +85,7 @@ class StaticBufferTest(unittest.TestCase):
         gate_layers = [[gate.T_Gate(t, 1, 1) for t in layer] for layer in gate_layers]
 
         wid = widget.Widget.chessboard_widget(40, 20)
-        sched = scheduler.TreeScheduler(gate_layers, wid)
+        sched = tree_scheduler.TreeScheduler(gate_layers, wid)
         sched.schedule()
 
      

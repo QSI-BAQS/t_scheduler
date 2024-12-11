@@ -1,5 +1,5 @@
 from abc import ABC
-from t_generator import TGenerator
+from t_scheduler.t_generation.t_generator import TGenerator
 
 class TCultivator(TGenerator):
     '''
@@ -55,3 +55,7 @@ class TCultivator(TGenerator):
             return 0
         self._curr_cycle += 1
         return 0
+
+    def reset(self):
+        self._curr_cycle = 0
+        self.curr_stage = 0
