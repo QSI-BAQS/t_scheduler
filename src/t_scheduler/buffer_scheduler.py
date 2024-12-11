@@ -6,11 +6,53 @@ from t_scheduler.patch import Patch, PatchOrientation, PatchType, TCultPatch
 from t_scheduler.scheduler import RotationStrategy
 from t_scheduler.widget import Widget
 
-from t_scheduler.flat_scheduler import obj
+from t_scheduler.flat_scheduler import *
 
 wid = Widget.factory_widget(obj['n_qubits'] * 2, 8)
 
+class NaiveBufferScheduler(FlatScheduler):
+    def flat_sparse_search(self, widget, gate):
+        curr_patch = self.widget[1, gate.targ*2]
+        bfs_queue = deque([(curr_patch.row, curr_patch.col)])
+        parent = {}
+        seen = {(curr_patch.row, curr_patch.col)}
+        results = []
+        while bfs_queue:
+            row, col = bfs_queue.popleft()
+            if (row, col) in parent:
+                pass
 
+            for r, c in [
+                (row + 1, col),
+                (row, col - 1),
+                (row, col + 1),
+                (row - 1, col),
+            ]:
+                if 2 <= r < widget.height and 0 <= c < widget.width:
+                    patch = widget[r, c]
+                    if patch.T_available():
+                        parent[r, c] = (row, col)
+                        results.append((r, c))
+                        break
+                    elif patch.route_available() and (r, c) not in seen:
+                        parent[r, c] = (row, col)
+                        bfs_queue.append((r, c))
+                        seen.add((r, c))
+            else:
+                continue
+            break
+        else:
+            return None
+        path = [patch]
+        curr = patch.row, patch.col
+        while curr in parent:
+            curr = parent[curr]
+            path.append(widget[curr])
+        path.append(self.widget[0, gate.targ*2])
+        return path
+
+
+z = NaiveBufferScheduler(x, wid, True)
 
 
 last_output = ''

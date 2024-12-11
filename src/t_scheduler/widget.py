@@ -1,6 +1,6 @@
 from __future__ import annotations
 from typing import List
-from t_scheduler.patch import Patch, PatchOrientation, PatchType, TCultPatch
+from t_scheduler.patch import BufferPatch, Patch, PatchOrientation, PatchType, TCultPatch, TFactoryOutputPatch
 
 
 class TreeNode:
@@ -93,11 +93,14 @@ class Widget:
         reg_row = [Patch(PatchType.REG, 0, c) for c in range(width)]
         route_row = [Patch(PatchType.ROUTE, 1, c) for c in range(width)]
         buffer_rows = [
-            [Patch(PatchType.ROUTE_BUFFER, 1, c) for c in range(width)]
+            [BufferPatch(1, c) for c in range(width)]
             for i in range(2)
         ]
         board = [reg_row, route_row]
-        board.extend(buffer_rows)
+        board.extend(buffer_rows) # type: ignore
+
+        update_cells = []
+
         for r in range(4, height):
             if r % 4 == 3:
                 row = [Patch(PatchType.BELL, r, 0),
@@ -109,13 +112,18 @@ class Widget:
             row = [Patch(PatchType.BELL, r, 0), Patch(PatchType.ROUTE, r, 1)]
             for c in range(2, width - 1):
                 if c % 5 == 0 and r % 4 == 2:
-                    row.append(Patch(PatchType.FACTORY_OUTPUT, r, c))
+                    output = TFactoryOutputPatch(r, c)
+                    row.append(output)
+                    update_cells.append(output)
                 else:
                     row.append(Patch(PatchType.RESERVED, r, c))
             row.append(Patch(PatchType.BELL, r, width - 1))
             
             board.append(row)
-        return Widget(width, height, board)
+
+        wid = Widget(width, height, board)
+        wid.update_cells = update_cells
+        return wid
 
     @classmethod
     def chessboard_widget(cls, width, height) -> Widget:

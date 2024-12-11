@@ -96,6 +96,52 @@ class Patch:
         self.release_time = time
         self.patch_type = PatchType.ROUTE
 
+class BufferPatch(Patch):
+    def __init__(
+        self, row: int, col: int, starting_orientation=PatchOrientation.Z_TOP
+    ):
+        super().__init__(PatchType.ROUTE, row, col)
+        
+    def store(self):
+        if not self.locked():
+            self.patch_type = PatchType.T
+        
+
+
+class TFactoryOutputPatch(Patch):
+    def __init__(
+        self, row: int, col: int, starting_orientation=PatchOrientation.Z_TOP
+    ):
+        super().__init__(PatchType.CULTIVATOR, row, col, starting_orientation=starting_orientation)
+
+        self.has_T = False
+        self.factory_timer = 0
+
+    def T_available(self):
+        return self.has_T and not self.locked()
+    
+    def route_available(self):
+        return False
+    
+    def update(self):
+        if not self.has_T and not self.locked():
+            self.factory_timer += 1
+            if self.factory_timer >= 5:
+                self.factory_timer = 0
+                self.has_T = True
+                return True
+        return False
+
+    def use(self):
+        if self.has_T:
+            self.has_T = False
+        else:
+            raise Exception("No T available to use!")
+    
+    def release(self, time):
+        self.factory_timer = 0
+
+
 
 class TCultPatch(Patch):
     def __init__(
