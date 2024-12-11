@@ -202,7 +202,7 @@ def print_board(board):
                     print("T", end="")
                 else:
                     print("t", end="")
-            elif isinstance(cell, TCultPatch):
+            elif cell.patch_type == PatchType.CULTIVATOR:
                 print("@", end="")
             else:
                 print(".", end="")

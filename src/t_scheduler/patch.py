@@ -11,6 +11,7 @@ class PatchType(Enum):
     T = 3
     BELL = 4
     CUSTOM = 5
+    CULTIVATOR = 6
 
 
 class PatchOrientation(IntEnum):
@@ -98,7 +99,7 @@ class TCultPatch(Patch):
     def __init__(
         self, row: int, col: int, starting_orientation=PatchOrientation.Z_TOP
     ):
-        super().__init__(PatchType.CUSTOM, row, col, starting_orientation=starting_orientation)
+        super().__init__(PatchType.CULTIVATOR, row, col, starting_orientation=starting_orientation)
 
         self.has_T = False
         self.cultivator = t_cultivator.TCultivator()

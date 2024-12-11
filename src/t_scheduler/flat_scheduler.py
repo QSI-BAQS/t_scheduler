@@ -237,7 +237,7 @@ class FlatScheduler:
             return False
         gate.activate(path, path[0])
         for p in path[1:-1]:
-            if isinstance(p, TCultPatch):
+            if p.patch_type == PatchType.CULTIVATOR:
                 p.cultivator.reset()
         self.active.append(gate)
         return True
@@ -294,7 +294,7 @@ def cancel_cost(patch):
         return float('inf')
     elif patch.patch_type == PatchType.ROUTE:
         return 0
-    elif isinstance(patch, TCultPatch):
+    elif patch.patch_type == PatchType.CULTIVATOR:
         return patch.cultivator.curr_stage * 10 + patch.cultivator._curr_cycle
     else:
         return float('inf')
@@ -307,7 +307,7 @@ def gen_sparse_path(widget, gate, T_patch):
     gate_col = gate.targ * 2
     path = [T_patch]
 
-    if isinstance(widget[row-1, col], TCultPatch):
+    if widget[row-1, col].patch_type == PatchType.CULTIVATOR:
         path.append(widget[row-1, col])
         row -= 1
 
@@ -373,7 +373,7 @@ def print_board(board):
                     bprint("T", end="")
                 else:
                     bprint("t", end="")
-            elif isinstance(cell, TCultPatch):
+            elif cell.patch_type == PatchType.CULTIVATOR:
                 bprint("@", end="")
             else:
                 bprint(".", end="")
