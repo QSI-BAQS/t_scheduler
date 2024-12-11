@@ -8,10 +8,12 @@ from t_scheduler.t_generation import t_cultivator
 class PatchType(Enum):
     REG = 1
     ROUTE = 2
-    T = 3
-    BELL = 4
-    CUSTOM = 5
+    ROUTE_BUFFER=3
+    T = 4
+    BELL = 5
     CULTIVATOR = 6
+    FACTORY_OUTPUT = 7
+    RESERVED = 8
 
 
 class PatchOrientation(IntEnum):

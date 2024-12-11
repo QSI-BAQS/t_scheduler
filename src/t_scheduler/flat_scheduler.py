@@ -1,6 +1,4 @@
-from ast import parse
 from collections import deque
-from multiprocessing import active_children
 from typing import List
 from t_scheduler import gate
 from t_scheduler.gate import BaseGate, GateType, T_Gate
@@ -181,8 +179,6 @@ class FlatScheduler:
         self.T_queue = []
         self.next_T_queue = []
 
-        self.SEARCH_WIDTH = 6
-
     def schedule(self):
         self.queued.extend(self.waiting.popleft())
 
@@ -301,8 +297,6 @@ def cancel_cost(patch):
 
 def gen_sparse_path(widget, gate, T_patch):
     row, col = T_patch.row, T_patch.col
-
-
 
     gate_col = gate.targ * 2
     path = [T_patch]
