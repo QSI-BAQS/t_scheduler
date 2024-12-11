@@ -95,7 +95,6 @@ def dag_prune(dag_layers: List[List[BaseGate]], gates: List[BaseGate]):
     stack = [(g, 0) for g in base_layer]
     while stack:
         curr, gate_idx = stack.pop()
-        # print(curr, gate_idx, stack, curr.post)
         if gate_idx == 0:
             seen.add(curr)
         if gate_idx >= len(curr.post):
@@ -104,10 +103,8 @@ def dag_prune(dag_layers: List[List[BaseGate]], gates: List[BaseGate]):
         stack.append((curr, gate_idx + 1))
 
         gate = curr.post[gate_idx] # type: ignore
-        # print(curr, gate)
         redundant = set(gate.pre) & seen
         redundant.discard(curr)
-        # print(redundant)
         for extra in redundant:
             extra.flag.add(gate)
             gate.pre.remove(extra)
@@ -143,10 +140,6 @@ def topological_sort(dag_roots):
 def parse_weights(gate_layers):
     parse_order = topological_sort(gate_layers[0])
 
-    # debug!
-    # for g in gates:
-    #     g.schedule_weight = None
-
     for gate in parse_order:
         if len(gate.post) == 0:
             gate.schedule_weight = 0
@@ -154,9 +147,6 @@ def parse_weights(gate_layers):
             gate.schedule_weight = sum(g.schedule_weight + g.weight for g in gate.post)
 
     
-    # for g in gates:
-    #     print(g, g.schedule_weight)
-
 
 
 class FlatScheduler:
@@ -164,16 +154,16 @@ class FlatScheduler:
         self,
         gate_layers,
         widget,
-        # rot_strat: RotationStrategy,
         debug: bool = False,
     ):
-        # self.rot_strat = rot_strat
         self.widget = widget
 
+        self.processed = set()
+
         self.waiting = deque(gate_layers)
-        self.queued = deque()
-        self.deferred = []
-        self.next_deferred = []
+        self.queued = []
+        # self.deferred = []
+        # self.next_deferred = []
         self.active = []
         self.next_active = []
 
@@ -188,25 +178,22 @@ class FlatScheduler:
 
         self.hazard = {}
 
+        self.T_queue = []
+        self.next_T_queue = []
+
+        self.SEARCH_WIDTH = 6
+
     def schedule(self):
-        # while self.waiting:
         self.queued.extend(self.waiting.popleft())
 
-        while self.queued or self.deferred or self.active:
+        while self.queued or self.active:
             self.schedule_pass()
 
     def schedule_pass(self):
         # breakpoint()
-        self.widget.update()
-        for gate in self.deferred:
-            if gate.available() and self.alloc_gate(gate):
-                pass
-            else:
-                self.next_deferred.append(gate)
-
-        self.deferred = self.next_deferred
-        self.next_deferred = []
-
+        self.T_queue.extend(self.widget.update())
+        # print(self.T_queue)
+        self.queued.sort(key = lambda g: g.targ)
         next_queued = []
         for gate in self.queued:
             if gate.available() and self.alloc_gate(gate):
@@ -218,9 +205,6 @@ class FlatScheduler:
 
         if self.debug:
             print_board(self.widget)
-
-        # if not self.active:
-        #     raise Exception("No progress!")
 
         output_layer = []
         for gate in self.active:
@@ -234,69 +218,130 @@ class FlatScheduler:
             gate.cleanup(self)
 
         for gate in self.active:
-            # gate.next(self)
+            gate.next(self)
             if not gate.completed():
                 self.next_active.append(gate)
             else:
                 for child in gate.post:
-                    if all(g.completed() for g in child.pre):
+                    if all(g.completed() for g in child.pre) and child not in self.processed:
                         self.queued.append(child)
+                        self.processed.add(child)
         self.active = self.next_active
         self.next_active = []
 
         self.time += 1
 
     def alloc_gate(self, gate):
-        path = flat_search(self.widget, gate)
+        path = self.flat_sparse_search(self.widget, gate)
         if not path or any(p.locked() for p in path): 
             return False
-        gate.activate(path, Patch(PatchType.T, -1, -1))
+        gate.activate(path, path[0])
+        for p in path[1:-1]:
+            if isinstance(p, TCultPatch):
+                p.cultivator.reset()
         self.active.append(gate)
         return True
 
-    # def alloc_gate(self, gate):
-    #     if gate.gate_type == GateType.T_STATE:
-    #         path = self.search(self.widget, gate.targ)
-    #         # TODO unhack
-    #         if path is None and not self.widget[0, 2 * gate.targ].locked():
-    #             self.hazard[self.time] = self.hazard.get(self.time, 0) + 1
-    #         if path is None:
-    #             return False
-    #         return self.process_rotation(path, gate)
-    #     else:
-    #         raise NotImplementedError()
+    def flat_dense_search(self, widget, gate, prefer_route_row=False):
+        gate_col = gate.targ * 2
+        if widget[0, gate_col].locked():
+            return None
 
-    # def process_rotation(self, path, gate):
+        # search_bounds = max(0, gate_col - self.SEARCH_WIDTH), min(widget.width, gate_col + self.SEARCH_WIDTH + 1)
+        self.T_queue.sort(key = lambda p: (abs(p.col - gate_col), p.row))
 
-    #     T_patch = path[0]
-    #     attack_patch = path[1]
+        for i, T_patch in enumerate(self.T_queue):
 
-    #     matching_rotation = (T_patch.row == attack_patch.row) ^ (
-    #         T_patch.orientation == PatchOrientation.Z_TOP
-    #     )
+            if prefer_route_row:
+                vert = [widget[x, T_patch.col]  for x in range(2, T_patch.row)]
+            else:
+                vert = [widget[x, gate_col]  for x in range(2, T_patch.row)]
+            
+            if all(p.route_available() for p in vert):
+                if prefer_route_row:
+                    horizontal = [widget[1, i] for i in range_directed(T_patch.col, gate_col)]
+                    path = [T_patch] + vert + horizontal + [widget[0, gate_col]]
+                else:
+                    horizontal = [widget[T_patch.row, i] for i in range_directed(T_patch.col, gate_col)]
+                    path = horizontal + vert + [widget[1, gate_col], widget[0, gate_col]]
 
-    #     if matching_rotation:
-    #         T_patch.use()
-    #         gate.activate(path, path[0])
-    #         self.active.append(gate)
-    #         return True
-    #     else:
-    #         return False
+                if all(p.route_available() for p in path[1:-1]):
+                    self.T_queue.pop(i)
+                    return path
+        return None
+    
+    def flat_sparse_search(self, widget, gate):
+        gate_col = gate.targ * 2
+        # search_bounds = max(0, gate_col - SEARCH_WIDTH), min(widget.width, gate_col + SEARCH_WIDTH + 1)
+        self.T_queue.sort(key = lambda p: (abs(p.col - gate_col), p.row))
+
+        for T_patch in self.T_queue:
+            r, c = T_patch.row, T_patch.col
+            vert = [widget[x, c]  for x in range(2, r)]
+            if widget[r, c].T_available() and all(p.route_available() for p in vert):
+                return gen_sparse_path(widget, gate, widget[r, c])
+        return None
+
+def range_directed(a, b):
+    if a <= b:
+        return range(a, b + 1)
+    else:
+        return range(a, b - 1, -1)
 
 
-SEARCH_WIDTH = 3
-def flat_search(widget, gate):
+def cancel_cost(patch):
+    if not patch.route_available():
+        return float('inf')
+    elif patch.patch_type == PatchType.ROUTE:
+        return 0
+    elif isinstance(patch, TCultPatch):
+        return patch.cultivator.curr_stage * 10 + patch.cultivator._curr_cycle
+    else:
+        return float('inf')
+
+def gen_sparse_path(widget, gate, T_patch):
+    row, col = T_patch.row, T_patch.col
+
+
+
     gate_col = gate.targ * 2
-    search_bounds = max(0, gate_col - SEARCH_WIDTH), min(widget.width, gate_col + SEARCH_WIDTH + 1)
-    for c in range(*search_bounds):
-        if widget[2, c].T_available():
-            hor_bounds = min(c, gate_col), max(c, gate_col) + 1
-            horizontal = [widget[1, i] for i in range(*hor_bounds)]
-            return [widget[2, c]] + horizontal + [widget[0, gate_col]]
-    return None
+    path = [T_patch]
+
+    if isinstance(widget[row-1, col], TCultPatch):
+        path.append(widget[row-1, col])
+        row -= 1
+
+    row -= 1
+    while row >= 4:
+        best_col = col
+        best_cost = max(cancel_cost(widget[row-2][col]), cancel_cost(widget[row-1][col]))
+
+        for i in range_directed(col, gate_col):
+            cost = max(cancel_cost(widget[row-2][i]), cancel_cost(widget[row-1][i]))
+            if cost < best_cost:
+                best_col, best_cost = i, cost
+        
+        # hor_bounds = min(col, best_col), max(col, best_col) + 1
+
+        path.extend(widget[row, c] for c in range_directed(col, best_col))
+
+        path.append(widget[row - 1][best_col])
+        path.append(widget[row - 2][best_col])
+        col = best_col
+        row -= 3
+    path.extend(widget[r, col] for r in range(row, 1, -1))
+    # hor_bounds = min(col, gate_col), max(col, gate_col) + 1
+    path.extend(widget[1, c] for c in range_directed(col, gate_col))
+    path.append(widget[0, gate_col])
+    
+    if all(p.route_available() for p in path[1:-1]):
+        return path
+    else:
+        return None
 
 
-wid = Widget.t_cultivator_widget_dense(obj['n_qubits'] * 2, 3)
+
+wid = Widget.t_cultivator_widget_row_sparse(obj['n_qubits'] * 2, 8)
 z = FlatScheduler(x, wid, True)
 
 last_output = ''
@@ -315,7 +360,10 @@ def print_board(board):
             if cell.patch_type == PatchType.BELL:
                 bprint("$", end="")
             elif cell.locked():
-                bprint(cell.lock.owner.targ, end="")
+                num = cell.lock.owner.targ
+                if num >= 10:
+                    num = '#'
+                bprint(num, end="")
             elif cell.patch_type == PatchType.REG:
                 bprint("R", end="")
             elif cell.patch_type == PatchType.ROUTE:

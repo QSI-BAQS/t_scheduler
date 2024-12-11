@@ -35,8 +35,11 @@ class Widget:
         self.update_cells = []
 
     def update(self):
+        updated = []
         for cell in self.update_cells:
-            cell.update()
+            if cell.update():
+                updated.append(cell)
+        return updated
 
     @classmethod
     def t_cultivator_widget_row_sparse(cls, width, height) -> Widget:

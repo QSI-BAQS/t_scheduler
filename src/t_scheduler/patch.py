@@ -112,6 +112,9 @@ class TCultPatch(Patch):
     def update(self):
         if not self.has_T and not self.locked():
             self.has_T = self.cultivator() > 0
+            if self.has_T:
+                return True
+        return False
 
     def use(self):
         if self.has_T:
@@ -119,5 +122,5 @@ class TCultPatch(Patch):
         else:
             raise Exception("No T available to use!")
     
-    def release(self):
-        pass
+    def release(self, time):
+        self.cultivator.reset()
