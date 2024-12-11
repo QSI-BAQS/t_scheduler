@@ -208,4 +208,3 @@ def print_board(board):
                 print(".", end="")
         print()
     print("-" * len(board[0]))
-

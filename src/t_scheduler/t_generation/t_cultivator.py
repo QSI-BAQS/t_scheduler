@@ -11,18 +11,18 @@ class TCultivator(TGenerator):
         [4, 0.7],  # Injection
         [5, 0.25],  # Cultivation
         [5, 0.3],  # Escape
-        [10, 1 / 6] # Gap   
+        [10, 1 / 6]  # Gap
     ]
 
     def __init__(self,
-        generator = None  # RNG  
-    ):
+                 generator=None  # RNG
+                 ):
         super().__init__(
-            n_cycles = 22,
-            height = 1,
-            width = 1,
-            n_emitted = 1,
-            generator = generator
+            n_cycles=22,
+            height=1,
+            width=1,
+            n_emitted=1,
+            generator=generator
         )
         self.curr_stage = 0
         self.n_stages = 4
@@ -41,17 +41,18 @@ class TCultivator(TGenerator):
         '''
         if self._curr_cycle == self.stages[self.curr_stage][self.STAGE_CYCLES]:
             self._curr_cycle = 0
-            if prob and self._generator.random() < self.stages[self.curr_stage][self.STAGE_PROB]: # Go to next stage
+            # Go to next stage
+            if prob and self._generator.random() < self.stages[self.curr_stage][self.STAGE_PROB]:
                 self.curr_stage += 1
-                if self.curr_stage == self.n_stages: 
+                if self.curr_stage == self.n_stages:
                     self.curr_stage = 0
                     return self.n_emitted
             elif not prob:
-                if self.curr_stage == self.n_stages: 
+                if self.curr_stage == self.n_stages:
                     self.curr_stage = 0
                     return self.n_emitted
 
-                return self.n_emitted 
+                return self.n_emitted
             return 0
         self._curr_cycle += 1
         return 0

@@ -3,12 +3,13 @@ from enum import Enum, IntEnum
 from typing import List
 
 from t_scheduler.t_generation import t_cultivator
+from t_scheduler.t_generation.t_factories import TFactory_Litinski_3x6
 
 
 class PatchType(Enum):
     REG = 1
     ROUTE = 2
-    ROUTE_BUFFER=3
+    ROUTE_BUFFER = 3
     T = 4
     BELL = 5
     CULTIVATOR = 6
@@ -101,33 +102,32 @@ class BufferPatch(Patch):
         self, row: int, col: int, starting_orientation=PatchOrientation.Z_TOP
     ):
         super().__init__(PatchType.ROUTE, row, col)
-        
+
     def store(self):
         if not self.locked():
             self.patch_type = PatchType.T
-        
 
 
 class TFactoryOutputPatch(Patch):
     def __init__(
         self, row: int, col: int, starting_orientation=PatchOrientation.Z_TOP
     ):
-        super().__init__(PatchType.CULTIVATOR, row, col, starting_orientation=starting_orientation)
+        super().__init__(PatchType.CULTIVATOR, row, col,
+                         starting_orientation=starting_orientation)
 
         self.has_T = False
-        self.factory_timer = 0
+        self.factory = TFactory_Litinski_3x6()
 
     def T_available(self):
         return self.has_T and not self.locked()
-    
+
     def route_available(self):
         return False
-    
+
     def update(self):
         if not self.has_T and not self.locked():
-            self.factory_timer += 1
-            if self.factory_timer >= 5:
-                self.factory_timer = 0
+            output = self.factory()
+            if output:
                 self.has_T = True
                 return True
         return False
@@ -137,27 +137,27 @@ class TFactoryOutputPatch(Patch):
             self.has_T = False
         else:
             raise Exception("No T available to use!")
-    
-    def release(self, time):
-        self.factory_timer = 0
 
+    def release(self, time):
+        self.factory._curr_cycle = 0
 
 
 class TCultPatch(Patch):
     def __init__(
         self, row: int, col: int, starting_orientation=PatchOrientation.Z_TOP
     ):
-        super().__init__(PatchType.CULTIVATOR, row, col, starting_orientation=starting_orientation)
+        super().__init__(PatchType.CULTIVATOR, row, col,
+                         starting_orientation=starting_orientation)
 
         self.has_T = False
         self.cultivator = t_cultivator.TCultivator()
 
     def T_available(self):
         return self.has_T and not self.locked()
-    
+
     def route_available(self):
         return not self.has_T and not self.locked()
-    
+
     def update(self):
         if not self.has_T and not self.locked():
             self.has_T = self.cultivator() > 0
@@ -170,6 +170,6 @@ class TCultPatch(Patch):
             self.has_T = False
         else:
             raise Exception("No T available to use!")
-    
+
     def release(self, time):
         self.cultivator.reset()

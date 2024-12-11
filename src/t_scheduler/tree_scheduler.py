@@ -96,7 +96,6 @@ def reparse_tree(widget, tree_node):
         tree_node.children = new_children
 
 
-
 class TreeScheduler(Scheduler):
     '''
         TODO: Docstring this class

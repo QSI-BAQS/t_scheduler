@@ -8,11 +8,10 @@ from t_scheduler.widget import Widget
 
 from t_scheduler.flat_scheduler import *
 
-wid = Widget.factory_widget(obj['n_qubits'] * 2, 8)
 
 class NaiveBufferScheduler(FlatScheduler):
     def flat_sparse_search(self, widget, gate):
-        curr_patch = self.widget[1, gate.targ*2]
+        curr_patch = self.widget[1, gate.targ * 2]
         bfs_queue = deque([(curr_patch.row, curr_patch.col)])
         parent = {}
         seen = {(curr_patch.row, curr_patch.col)}
@@ -48,12 +47,14 @@ class NaiveBufferScheduler(FlatScheduler):
         while curr in parent:
             curr = parent[curr]
             path.append(widget[curr])
-        path.append(self.widget[0, gate.targ*2])
+        path.append(self.widget[0, gate.targ * 2])
         return path
 
 
-z = NaiveBufferScheduler(x, wid, True)
-
+if __name__ == '__main__':
+    obj = toffoli_example_input()
+    wid = Widget.factory_widget(obj['n_qubits'] * 2, 8)
+    z = NaiveBufferScheduler(x, wid, True)
 
 last_output = ''
 rep_count = 1

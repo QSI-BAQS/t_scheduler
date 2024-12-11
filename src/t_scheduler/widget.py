@@ -55,7 +55,7 @@ class Widget:
             else:
                 row = [TCultPatch(r, c) for c in range(width)]
                 all_cult_cells.extend(row)
-            board.append(row) # type: ignore
+            board.append(row)  # type: ignore
         wid = Widget(width, height, board)
         wid.update_cells = all_cult_cells
         return wid
@@ -69,7 +69,7 @@ class Widget:
         for r in range(2, height):
             row = [TCultPatch(r, c) for c in range(width)]
             all_cult_cells.extend(row)
-            board.append(row) # type: ignore
+            board.append(row)  # type: ignore
         wid = Widget(width, height, board)
         wid.update_cells = all_cult_cells
         return wid
@@ -97,15 +97,16 @@ class Widget:
             for i in range(2)
         ]
         board = [reg_row, route_row]
-        board.extend(buffer_rows) # type: ignore
+        board.extend(buffer_rows)  # type: ignore
 
         update_cells = []
 
         for r in range(4, height):
             if r % 4 == 3:
                 row = [Patch(PatchType.BELL, r, 0),
-                *(Patch(PatchType.ROUTE, r, c) for c in range(1, width - 1)),
-                Patch(PatchType.BELL, r, width - 1)]
+                       *(Patch(PatchType.ROUTE, r, c)
+                         for c in range(1, width - 1)),
+                       Patch(PatchType.BELL, r, width - 1)]
                 board.append(row)
                 continue
 
@@ -118,7 +119,7 @@ class Widget:
                 else:
                     row.append(Patch(PatchType.RESERVED, r, c))
             row.append(Patch(PatchType.BELL, r, width - 1))
-            
+
             board.append(row)
 
         wid = Widget(width, height, board)
@@ -158,8 +159,6 @@ class Widget:
             ]
             board.append(row)
         return Widget(width, height, board)
-
-
 
     def __getitem__(self, index) -> Patch | List[Patch]:
         if isinstance(index, tuple) and len(index) == 2:
