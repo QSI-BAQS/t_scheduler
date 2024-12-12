@@ -47,8 +47,11 @@ class ScheduleOrchestrator:
 
         next_queued = []
         for gate in self.queued:
-            if gate.available() and self.strategy.alloc_gate(gate):
-                self.active.append(gate)
+            if gate in self.processed:
+                continue
+            elif gate.available() and (active_gate := self.strategy.alloc_gate(gate)):
+                self.active.append(active_gate)
+                self.processed.add(active_gate)
             else:
                 next_queued.append(gate)
 
@@ -72,9 +75,8 @@ class ScheduleOrchestrator:
                 self.next_active.append(gate)
             else:
                 for child in gate.post:
-                    if all(g.completed() for g in child.pre) and child not in self.processed:
+                    if all(g.completed() for g in child.pre):
                         self.queued.append(child)
-                        self.processed.add(child)
         self.active = self.next_active
         self.next_active = deque()
 
@@ -84,14 +86,17 @@ if __name__ == '__main__':
     import t_scheduler.util as util
     from t_scheduler.gate import T_Gate
     from itertools import chain
-    strat, wid = VerticalRoutingStrategy.with_prefilled_buffer_widget(20, 5)
+    # strat, wid = VerticalRoutingStrategy.with_prefilled_buffer_widget(20, 5)
+    # gate_layers = [
+    #         [*chain(*(([x] * 8) for x in [5, 0, 6, 8, 7]))],
+    #     ]
+    # gate_layers = [[T_Gate(t, 2, 3) for t in layer] for layer in gate_layers]
+
+    # orc = ScheduleOrchestrator(gate_layers[0], wid, strat, True)
+
+    strat, wid = VerticalRoutingStrategy.with_prefilled_buffer_widget(26, 5)
     obj = util.toffoli_example_input()
     dag_layers, all_gates = util.dag_create(obj)
     dag_roots = dag_layers[0]
 
-    gate_layers = [
-            [*chain(*(([x] * 8) for x in [5, 0, 6, 8, 7]))],
-        ]
-    gate_layers = [[T_Gate(t, 2, 3) for t in layer] for layer in gate_layers]
-
-    orc = ScheduleOrchestrator(gate_layers[0], wid, strat, True)
+    orc = ScheduleOrchestrator(dag_roots, wid, strat, True)
