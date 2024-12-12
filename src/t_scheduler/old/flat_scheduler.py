@@ -5,68 +5,8 @@ from t_scheduler.gate import BaseGate, GateType, T_Gate
 from t_scheduler.patch import Patch, PatchOrientation, PatchType, TCultPatch
 from t_scheduler.scheduler import RotationStrategy
 from t_scheduler.widget import Widget
+from .util import *
 
-
-def toffoli_example_input():
-    return {
-        "n_qubits": 13,
-        "statenodes": [0, 1, 2],
-        "adjacencies": {
-            0: [3],
-            1: [4],
-            2: [5, 6, 7, 8, 9],
-            3: [0, 6, 7, 8, 9, 10, 11],
-            4: [1, 5, 6, 8, 9, 10, 12],
-            5: [2, 4],
-            6: [2, 3, 4],
-            7: [2, 3],
-            8: [2, 3, 4],
-            9: [2, 3, 4],
-            10: [3, 4],
-            11: [3],
-            12: [4],
-        },
-        "local_cliffords": [
-            "I",
-            "I",
-            "I",
-            "I",
-            "I",
-            "H",
-            "H",
-            "H",
-            "H",
-            "I",
-            "H",
-            "H",
-            "H",
-        ],
-        "consumptionschedule": [
-            [{0: []}, {2: []}, {1: []}],
-            [{5: [2, 1]}],
-            [{6: [0, 5]}],
-            [{7: [1, 6]}],
-            [{4: [2, 7]}, {8: [7]}],
-            [{3: [0, 5, 4]}, {10: [0, 4]}, {9: [8]}],
-            [{11: [3, 10]}, {12: [10]}],
-        ],
-        "measurement_tags": [0, 0, 0, 1, 1, 2, 1, 2, 1, 0, 2, 0, 0],
-        "paulicorrections": [
-            {0: "IIIXIIXIIIXII"},
-            {1: "IIIIXXIXXIIII"},
-            {2: "IIIIZZIIIIIII"},
-            {5: "IIIZIIZIIIIII"},
-            {6: "IIIIZIIZIIIII"},
-            {7: "IIIIZIIIZIIII"},
-            {8: "IIIIIIIIIXIII"},
-            {4: "IIIZIIIIIIZII"},
-            {3: "IIIIIIIIIIIZI"},
-            {10: "IIIIIIIIIIIZZ"},
-        ],
-        "outputnodes": [11, 12, 9],
-        "time": 7,
-        "space": 10,
-    }
 
 def dag_create(obj):
     gates = [T_Gate(q, 2, 3) for q in range(obj['n_qubits'])]
@@ -342,48 +282,3 @@ if __name__ == "__main__":
     x, y = dag_create(obj)
     wid = Widget.t_cultivator_widget_row_sparse(obj['n_qubits'] * 2, 8)
     z = FlatScheduler(x, wid, True)
-
-last_output = ''
-rep_count = 1
-buf = ''
-def bprint(c='', end='\n'):
-    global buf
-    buf += str(c)
-    buf += end
-def print_board(board):
-    global last_output, buf, rep_count
-    bprint()
-    bprint("-" * len(board[0]))
-    for row in board:
-        for cell in row:
-            if cell.patch_type == PatchType.BELL:
-                bprint("$", end="")
-            elif cell.locked():
-                num = cell.lock.owner.targ
-                if num >= 10:
-                    num = '#'
-                bprint(num, end="")
-            elif cell.patch_type == PatchType.REG:
-                bprint("R", end="")
-            elif cell.patch_type == PatchType.ROUTE:
-                bprint(" ", end="")
-            elif cell.T_available():
-                if cell.orientation == PatchOrientation.Z_TOP:
-                    bprint("T", end="")
-                else:
-                    bprint("t", end="")
-            elif cell.patch_type == PatchType.CULTIVATOR:
-                bprint("@", end="")
-            else:
-                bprint(".", end="")
-        bprint()
-    bprint("-" * len(board[0]), end="")
-    if buf == last_output:
-        rep_count += 1
-        print(f'\rX{rep_count}', end='')
-        buf = ''
-    else:
-        print(buf)
-        last_output = buf
-        buf = ''
-        rep_count = 1

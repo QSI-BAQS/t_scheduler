@@ -10,7 +10,7 @@ class StaticBufferTest(unittest.TestCase):
         ]
         gate_layers = [[gate.T_Gate(t, 2, 3) for t in layer] for layer in gate_layers]
 
-        wid = widget.Widget.default_widget(20, 5)
+        wid = widget.Widget.prefillec_buffer_widget(20, 5)
         sched = vertical_scheduler.VerticalScheduler(
             gate_layers,
             wid,
@@ -24,7 +24,7 @@ class StaticBufferTest(unittest.TestCase):
         ]
         gate_layers = [[gate.T_Gate(t, 2, 3) for t in layer] for layer in gate_layers]
 
-        wid = widget.Widget.default_widget(20, 5)
+        wid = widget.Widget.prefillec_buffer_widget(20, 5)
         sched = vertical_scheduler.VerticalScheduler(
             gate_layers,
             wid,
@@ -43,7 +43,7 @@ class StaticBufferTest(unittest.TestCase):
         ]
         gate_layers = [[gate.T_Gate(t, 2, 3) for t in layer] for layer in gate_layers]
 
-        wid = widget.Widget.default_widget(20, 5)
+        wid = widget.Widget.prefillec_buffer_widget(20, 5)
         sched = vertical_scheduler.VerticalScheduler(
             gate_layers,
             wid,
@@ -58,7 +58,7 @@ class StaticBufferTest(unittest.TestCase):
         ]
         gate_layers = [[gate.T_Gate(t, 2, 3) for t in layer] for layer in gate_layers]
 
-        wid = widget.Widget.default_widget(20, 5)
+        wid = widget.Widget.prefillec_buffer_widget(20, 5)
         sched = vertical_scheduler.VerticalScheduler(
             gate_layers,
             wid
