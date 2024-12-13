@@ -38,7 +38,7 @@ class PrefilledMagicStateRegion(AbstractMagicStateBufferRegion):
                     )
                     for c in range(self.width) 
                 ]
-                for r in range(self.height - 1)
+                for r in range(1, self.height)
             ])
 
     def request_magic_state(self, pos):

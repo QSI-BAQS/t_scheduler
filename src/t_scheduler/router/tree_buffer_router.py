@@ -1,0 +1,228 @@
+from __future__ import annotations
+from collections import deque
+from typing import List
+from t_scheduler.patch import Patch, PatchOrientation, PatchType
+from t_scheduler.router.transaction import Transaction
+from t_scheduler.widget.magic_state_buffer import PrefilledMagicStateRegion
+
+
+class TreeNode:
+    parent: TreeNode | None
+    children: List[TreeNode]
+    path: List[Patch]
+    path_fragment: List[Patch]
+    source_lane: int
+    reparsed: bool
+
+    def __init__(self, parent: TreeNode | None, path: List[Patch], source_lane: int | None = None, debug_source=''):
+        self.parent = parent
+        self.children = []
+        self.path = path
+        self.reparsed = False
+
+        self.debug_source =debug_source
+
+        if parent is not None:
+            self.source_lane = parent.source_lane
+            self.path_fragment = path[len(parent.path):]
+        else:
+            assert source_lane is not None
+            self.source_lane = source_lane
+            self.path_fragment = path
+    
+    def __repr__(self):
+        return f"{{ {self.path} ({self.debug_source}): {{ 'frag': {self.path_fragment}, 'children': {self.children} }} }}"
+
+
+class TreeFilledBufferRouter:
+    '''
+        Note: Works only with passthrough bus router
+        Assumption because output_col is used to detect which columns of T to assign
+        Also only works with chessboard shape PrefilledMagicStateRegion
+    '''
+    buffer: PrefilledMagicStateRegion
+
+    consumption_frontier: List[TreeNode]
+
+    def __init__(self, buffer, depth_offset = 2/3) -> None:
+        self.buffer = buffer
+
+        self.consumption_frontier = [TreeNode(None, [], q)
+                               for q in range(self.buffer.width // 2 + 1)]
+        # TODO adapt for missing bell state columns
+
+        self.dig_depth = int(self.buffer.height * depth_offset)
+
+        self.init_frontier()
+
+    @staticmethod
+    def _make_transaction(path, connect=None):
+        return Transaction(path, [path[0]], connect_col=connect, magic_state_patch=path[0])
+
+    def request_transaction(self, lane: int) -> Transaction | None:
+        '''
+            output_col: which lane to search from
+        '''
+        if not (path := self.tree_search(lane)):
+            return None
+        reduced_path = self.path_reduce(path)
+        # if lane == 1:
+        #     breakpoint()
+        return self._make_transaction(reduced_path, connect=reduced_path[-1].col)
+
+    @staticmethod
+    def adjacent(cell1, cell2):
+        return abs(cell1.row - cell2.row) + abs(cell1.col - cell2.col) == 1 
+
+    @staticmethod
+    def path_reduce(path):
+        prev_len = float('inf')
+        curr_len = len(path)
+        while curr_len < prev_len:
+            prev_len = curr_len
+            new_path = [path[0]]
+
+            i = 1
+            while i < len(path):
+                new_path.append(path[i])
+                if path[i].row == 0:
+                    break
+                if i + 3 < len(path) and TreeFilledBufferRouter.adjacent(path[i], path[i+3]):
+                    i += 3
+                else:
+                    i += 1
+            path = new_path
+            new_path = []
+            curr_len = len(new_path)
+        return path
+
+
+    def init_frontier(self):
+        # TODO add support for no bell state columns
+        for lane in range(self.buffer.width // 2 + 1):
+            root = self.consumption_frontier[lane]
+            if lane != 0:
+                c = 2 * lane - 1  # Left col of lane with shifted offset
+                root.children.append(
+                    TreeNode(root, [self.buffer[0, c]], debug_source='init')
+                )
+            if lane != len(self.consumption_frontier) - 1:
+                c = 2 * lane  # right col of lane with shifted offset
+                root.children.append(
+                    TreeNode(root, [self.buffer[0, c]], debug_source='init')
+                )
+
+            root.children.sort(
+                key=lambda x: abs(x.path[-1].col - self.buffer.width // 2), reverse=False
+            )
+            if lane != 0 and lane != len(self.consumption_frontier) - 1:
+                self.generate_mining(root.children[1])
+
+    def generate_mining(self, root: TreeNode):
+        depth = self.dig_depth
+        curr = root
+        source_lane = root.source_lane
+        for r in range(1, depth):
+            curr.reparsed = True
+            child = TreeNode(curr, curr.path +
+                             [self.buffer[r, curr.path[-1].col]], debug_source='mine')
+            curr.children.append(child)
+
+            curr = child
+            curr.reparsed = True
+            child = TreeNode(
+                curr, curr.path +
+                [self.buffer[r, 2 * source_lane - (curr.path[-1].col == 2 * source_lane)]]
+            , debug_source='mine')
+            curr.children.append(child)
+            curr = child
+
+    def tree_search(self, lane, retry=True):
+        stack = deque([(self.consumption_frontier[lane], 0)])
+        while stack:
+            curr, child_idx = stack.popleft()
+            if child_idx >= len(curr.children):
+                continue
+            stack.append((curr, child_idx + 1))
+            curr_child = curr.children[child_idx]
+            if any(p.locked() for p in curr_child.path_fragment):
+                continue
+
+            if curr_child.path[-1].T_available():
+                return curr_child.path[::-1]
+
+            if not curr_child.reparsed:
+                curr_child.reparsed = True
+                self.reparse_tree(curr_child)
+
+            stack.append((curr_child, 0))
+        if retry:
+            self.reparse_tree(self.consumption_frontier[lane].children[0])
+            self.consumption_frontier[lane].children[0].children.sort(
+                key=lambda x: abs(x.path[-1].row - self.dig_depth)
+                + abs(x.path[-1].col - lane * 2)
+            )
+            return self.tree_search(lane, False)
+
+        return None
+
+    def reparse_tree(self, tree_node):
+        curr_patch = tree_node.path[-1]
+
+        row, col = curr_patch.row, curr_patch.col
+        new_patches = []
+
+
+        for r, c in [(row + 1, col), (row, col - 1), (row, col + 1), (row - 1, col)]:
+            if 0 <= r < self.buffer.height and 0 <= c < self.buffer.width:
+                if (patch := self.buffer[r, c]).patch_type == PatchType.T:
+                    new_patches.append(patch)
+
+        new_children = []
+        if new_patches:
+            for patch in new_patches:
+                matching_rotation = (patch.row == curr_patch.row) ^ (
+                    patch.orientation == PatchOrientation.Z_TOP
+                )
+                if matching_rotation:
+                    new_children.append(
+                        TreeNode(tree_node, tree_node.path + [patch]))
+            tree_node.children = new_children
+
+        if not new_children:
+            bfs_queue = deque([(curr_patch.row, curr_patch.col)])
+            parent = {}
+            seen = {(curr_patch.row, curr_patch.col)}
+            results = []
+            while bfs_queue:
+                row, col = bfs_queue.popleft()
+                if (row, col) in parent:
+                    pass
+
+                for r, c in [
+                    (row + 1, col),
+                    (row, col - 1),
+                    (row, col + 1),
+                    (row - 1, col),
+                ]:
+                    if 0 <= r < self.buffer.height and 0 <= c < self.buffer.width:
+                        patch = self.buffer[r, c]
+                        matching_rotation = (row == r) ^ (
+                            patch.orientation == PatchOrientation.Z_TOP
+                        )
+                        if patch.patch_type == PatchType.T and matching_rotation:
+                            parent[r, c] = (row, col)
+                            results.append((r, c))
+                        elif patch.patch_type == PatchType.ROUTE and (r, c) not in seen:
+                            parent[r, c] = (row, col)
+                            bfs_queue.append((r, c))
+                            seen.add((r, c))
+            for r, c in results:
+                fragment = [self.buffer[r, c]]
+                while (r, c) in parent:
+                    r, c = parent[r, c]
+                    fragment.append(self.buffer[r, c])
+                fragment.pop()
+                new_children.append(
+                    TreeNode(tree_node, tree_node.path + fragment[::-1]))
+            tree_node.children = new_children
