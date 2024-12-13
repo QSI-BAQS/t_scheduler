@@ -5,29 +5,29 @@ from typing import Tuple
 from t_scheduler.gate import Gate, GateType, RotateGate
 from t_scheduler.patch import Patch, PatchOrientation, PatchType
 from t_scheduler.router import vertical_buffer_router
+from t_scheduler.router.cultivator_router import TCultivatorBufferRouter
 from t_scheduler.router.tree_buffer_router import TreeFilledBufferRouter
 from t_scheduler.router.vertical_buffer_router import VerticalFilledBufferRouter
 from t_scheduler.router.bus_router import StandardBusRouter
 from t_scheduler.router.register_router import BaselineRegisterRouter
 from t_scheduler.router.transaction import TransactionList
-from t_scheduler.widget.magic_state_buffer import PrefilledMagicStateRegion
+from t_scheduler.widget.magic_state_buffer import PrefilledMagicStateRegion, TCultivatorBufferRegion
 from t_scheduler.widget.registers import SingleRowRegisterRegion
 from t_scheduler.widget.route_bus import RouteBus
 from t_scheduler.widget.widget import Widget
 import t_scheduler.util as util
 
-
-class TreeRoutingStrategy:
+class FlatNaiveStrategy:
     register_router: BaselineRegisterRouter
     bus_router: StandardBusRouter
-    buffer_router: TreeFilledBufferRouter
+    buffer_router: TCultivatorBufferRouter
 
     @staticmethod
-    def with_prefilled_buffer_widget(width, height) -> Tuple[TreeRoutingStrategy, Widget]:
+    def with_t_cultivator_widget(width, height) -> Tuple[FlatNaiveStrategy, Widget]:
         register_region = SingleRowRegisterRegion(width)
         route_region = RouteBus(width)
-        buffer_region = PrefilledMagicStateRegion(
-            width - 2, height - 2, 'chessboard')
+        buffer_region = TCultivatorBufferRegion(
+            width - 2, height - 2, 'dense')
 
         board = [register_region.patch_grid[0], route_region.patch_grid[0]]
         for r in range(height - 2):
@@ -39,9 +39,10 @@ class TreeRoutingStrategy:
             board.append(row)
         widget = Widget(width, height, board, components=[register_region, route_region, buffer_region]) # Pseudo-widget for output clarity
 
-        strat = TreeRoutingStrategy(BaselineRegisterRouter(register_region),
+        strat = FlatNaiveStrategy(BaselineRegisterRouter(register_region),
                                         StandardBusRouter(route_region),
-                                        TreeFilledBufferRouter(buffer_region))
+                                        TCultivatorBufferRouter(buffer_region),
+                )
         return strat, widget
 
     def __init__(self, register_router, bus_router, buffer_router):
@@ -50,7 +51,7 @@ class TreeRoutingStrategy:
         self.buffer_router = buffer_router
 
     def validate_rotation(self, gate, register_transaction, bus_transaction, buffer_transaction) -> Gate | None:
-
+        # TODO currently NOOP
         if len(buffer_transaction.move_patches) == 1:
             # Assume all patches in row below routing layer are Z_TOP orientation
             matching_rotation = True
@@ -64,19 +65,14 @@ class TreeRoutingStrategy:
             matching_rotation = (T_patch.row == attack_patch.row) ^ (
                 T_patch.orientation == PatchOrientation.Z_TOP
             )
-        
-        if matching_rotation:
-            # All good
+        # TODO add cultivator reset delay + rotation consideration (time incl in cult reset)
 
-            transactions = TransactionList(
-                [buffer_transaction, bus_transaction, register_transaction])
+        transactions = TransactionList(
+            [buffer_transaction, bus_transaction, register_transaction])
 
-            gate.activate(transactions)
-            return gate
-        else:
-            # Major problems -- bug here
-            raise Exception("Invalid rotation for chessboard buffer!")
-
+        gate.activate(transactions)
+        return gate
+    
     def alloc_gate(self, gate) -> Gate | None:
         if gate.gate_type == GateType.T_STATE:
 
@@ -85,7 +81,7 @@ class TreeRoutingStrategy:
 
             reg_col: int = register_transaction.connect_col  # type: ignore
 
-            if not (buffer_transaction := self.buffer_router.request_transaction(reg_col // 2)):
+            if not (buffer_transaction := self.buffer_router.request_transaction(reg_col - 1)):
                 return None
 
             bus_transaction = self.bus_router.request_transaction(

@@ -1,5 +1,6 @@
 from collections import defaultdict, deque
 
+from t_scheduler.strategy.flat_naive_strategy import FlatNaiveStrategy
 from t_scheduler.strategy.tree_strategy import TreeRoutingStrategy
 from t_scheduler.strategy.vertical_strategy import VerticalRoutingStrategy
 from t_scheduler.widget.widget import Widget
@@ -14,7 +15,7 @@ class ScheduleOrchestrator:
         debug: bool = False,
     ):
         self.widget: Widget = widget
-        self.strategy: VerticalRoutingStrategy = strategy
+        self.strategy: TreeRoutingStrategy = strategy
 
         self.processed = set()
 
@@ -67,6 +68,8 @@ class ScheduleOrchestrator:
         for gate in self.active:
             gate.tick()
 
+        self.widget.update()
+
         for gate in self.active:
             gate.cleanup(self)
 
@@ -102,8 +105,17 @@ if __name__ == '__main__':
 
     # orc = ScheduleOrchestrator(dag_roots, wid, strat, True)
 
+    # obj = eval(open('../../json.out').read())
+    # strat, wid = TreeRoutingStrategy.with_prefilled_buffer_widget(10, 10)
+    # gates = util.make_gates(obj, lambda x: x % 5)
+    # dag_layers, all_gates = util.dag_create(obj, gates)
+    # dag_roots = dag_layers[0]
+
+    # orc = ScheduleOrchestrator(dag_roots, wid, strat, True)
+
+    
     obj = eval(open('../../json.out').read())
-    strat, wid = TreeRoutingStrategy.with_prefilled_buffer_widget(10, 10)
+    strat, wid = FlatNaiveStrategy.with_t_cultivator_widget(10, 5)
     gates = util.make_gates(obj, lambda x: x % 5)
     dag_layers, all_gates = util.dag_create(obj, gates)
     dag_roots = dag_layers[0]

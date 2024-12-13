@@ -9,6 +9,9 @@ class WidgetRegion:
         self.width = width
         self.height = height
 
+    def update(self):
+        pass
+
     def to_str_output(self):
         buf = ''
         def bprint(c: str|int ='', end='\n'):

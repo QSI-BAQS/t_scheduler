@@ -2,16 +2,22 @@
 from __future__ import annotations
 from typing import List
 from t_scheduler.patch import Patch, PatchOrientation, PatchType
+from t_scheduler.widget.widget_region import WidgetRegion
 
 class Widget:
-    def __init__(self, width: int, height: int, board: List[List[Patch]]):
+    def __init__(self, width: int, height: int, board: List[List[Patch]], components: List[WidgetRegion] = []):
         self.width: int = width
         self.height: int = height
 
         self.board = board
+        self.components = components
 
         self.rep_count = 1
         self.last_output = ''
+
+    def update(self):
+        for component in self.components:
+            component.update()
 
     def __getitem__(self, index) -> Patch | List[Patch]:
         if isinstance(index, tuple) and len(index) == 2:
@@ -59,7 +65,7 @@ class Widget:
 
         return buf
     
-    
+
     def to_str_output_dedup(self):
         buf = self.to_str_output()
         if buf == self.last_output:
