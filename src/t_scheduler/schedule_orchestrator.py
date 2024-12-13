@@ -1,5 +1,6 @@
-from collections import deque
+from collections import defaultdict, deque
 
+from t_scheduler.strategy.tree_strategy import TreeRoutingStrategy
 from t_scheduler.strategy.vertical_strategy import VerticalRoutingStrategy
 from t_scheduler.widget.widget import Widget
 
@@ -94,9 +95,17 @@ if __name__ == '__main__':
 
     # orc = ScheduleOrchestrator(gate_layers[0], wid, strat, True)
 
-    strat, wid = VerticalRoutingStrategy.with_prefilled_buffer_widget(26, 5)
-    obj = util.toffoli_example_input()
-    dag_layers, all_gates = util.dag_create(obj)
+    # strat, wid = VerticalRoutingStrategy.with_prefilled_buffer_widget(26, 5)
+    # obj = util.toffoli_example_input()
+    # dag_layers, all_gates = util.dag_create(obj)
+    # dag_roots = dag_layers[0]
+
+    # orc = ScheduleOrchestrator(dag_roots, wid, strat, True)
+
+    obj = eval(open('../../json.out').read())
+    strat, wid = TreeRoutingStrategy.with_prefilled_buffer_widget(10, 10)
+    gates = util.make_gates(obj, lambda x: x % 5)
+    dag_layers, all_gates = util.dag_create(obj, gates)
     dag_roots = dag_layers[0]
 
     orc = ScheduleOrchestrator(dag_roots, wid, strat, True)

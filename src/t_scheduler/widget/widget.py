@@ -58,6 +58,8 @@ class Widget:
         bprint("-" * len(board[0]), end="")
 
         return buf
+    
+    
     def to_str_output_dedup(self):
         buf = self.to_str_output()
         if buf == self.last_output:

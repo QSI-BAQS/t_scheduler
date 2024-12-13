@@ -65,9 +65,11 @@ def toffoli_example_input():
     }
 
 
-def dag_create(obj):
-    gates = [T_Gate(q, 2, 3) for q in range(obj['n_qubits'])]
+def make_gates(obj, func = lambda x: x):
+    gates = [T_Gate(func(q), 2, 3, targ_orig=q) for q in range(obj['n_qubits'])]
+    return gates
 
+def dag_create(obj, gates):
     dag_layers = []
     for input_layer in obj['consumptionschedule']:
         layer = []

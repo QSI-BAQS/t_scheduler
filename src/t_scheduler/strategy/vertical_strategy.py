@@ -4,8 +4,8 @@ from typing import Tuple
 
 from t_scheduler.gate import Gate, GateType, RotateGate
 from t_scheduler.patch import Patch, PatchOrientation, PatchType
-from t_scheduler.router import buffer_router
-from t_scheduler.router.buffer_router import VerticalFilledBufferRouter
+from t_scheduler.router import vertical_buffer_router
+from t_scheduler.router.vertical_buffer_router import VerticalFilledBufferRouter
 from t_scheduler.router.bus_router import StandardBusRouter
 from t_scheduler.router.register_router import BaselineRegisterRouter
 from t_scheduler.router.transaction import TransactionList
@@ -88,6 +88,7 @@ class VerticalRoutingStrategy:
 
 
             # TODO: Prune output layers to remove redundant rotation
+
             # T_patch.orientation = T_patch.orientation.inverse()
             # rotate_gate = T_patch.rotation
             # for layer in range(
@@ -160,7 +161,7 @@ class VerticalRoutingStrategy:
             buffer_cols = []
             if reg_col > 0 and self.bus_router.request_transaction(reg_col, reg_col):
                 buffer_cols.append(reg_col - 1)
-            if reg_col < self.bus_router.route_bus.width - 1 and self.bus_router.request_transaction(reg_col, reg_col + 1):
+            if reg_col < self.bus_router.route_bus.width - 2 and self.bus_router.request_transaction(reg_col, reg_col + 1):
                 buffer_cols.append(reg_col)
 
             if not (buffer_transaction := self.buffer_router.request_transaction(buffer_cols)):
@@ -177,18 +178,16 @@ class VerticalRoutingStrategy:
 
             # return self.process_rotation(path, gate)
 
-    #     elif gate.gate_type == GateType.LOCAL_GATE:
-    #         reg = self.widget[0, gate.targ * 2]
-    #         if reg.locked():
-    #             return False
-    #         gate.activate([reg])
-    #         self.active.append(gate)
-    #         return True
-    #     elif gate.gate_type == GateType.ANCILLA:
-    #         reg = self.widget[0, gate.targ * 2]
-    #         anc = self.widget[0, gate.targ * 2 + 1]
-    #         if reg.locked() or anc.locked():
-    #             return False
-    #         gate.activate([reg, anc])
-    #         self.active.append(gate)
-    #         return True
+        elif gate.gate_type == GateType.LOCAL_GATE:
+            if not (register_transaction := self.register_router.request_transaction(gate.targ, request_type='local')):
+                return None
+            
+            gate.activate(register_transaction)
+            return gate
+
+        elif gate.gate_type == GateType.ANCILLA:
+            if not (register_transaction := self.register_router.request_transaction(gate.targ, request_type='ancilla')):
+                return None
+            
+            gate.activate(register_transaction)
+            return gate

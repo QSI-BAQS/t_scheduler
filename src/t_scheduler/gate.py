@@ -63,6 +63,7 @@ class Gate:
 
 class T_Gate:
     targ: int
+    targ_orig: int
     timer: int = 0
     duration: int = 0
 
@@ -71,7 +72,12 @@ class T_Gate:
     weight: float = 1
     schedule_weight: float = 0
 
-    def __init__(self, targ: int, move_duration: int = 4, corr_duration: int = 3):
+    def __init__(self, targ: int, move_duration: int = 4, corr_duration: int = 3, targ_orig = None):
+        if targ_orig is None:
+            self.targ_orig = targ
+        else:
+            self.targ_orig = targ_orig
+        
         self.targ: int = targ
         self.gate_type: GateType = GateType.T_STATE
         self.duration = move_duration
@@ -109,7 +115,7 @@ class T_Gate:
         self.timer += 1
 
     def __repr__(self) -> str:
-        return f"{','.join([str(x.targ) for x in self.pre])}->T{self.targ}->{','.join([str(x.targ) for x in self.post])}"
+        return f"{','.join([str(x.targ_orig) for x in self.pre])}->T{self.targ_orig}({self.targ})->{','.join([str(x.targ_orig) for x in self.post])}"
 
 
 class RotateGate(BaseGate):
