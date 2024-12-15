@@ -48,3 +48,9 @@ class TGenerator(ABC):
             return 0
         self._curr_cycle += 1
         return 0
+
+    def reset(self):
+        '''
+            Triggers a reset on the generator
+        '''
+        self._curr_cycle = 0 

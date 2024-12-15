@@ -58,5 +58,8 @@ class TCultivator(TGenerator):
         return 0
 
     def reset(self):
+        '''
+            Resets the cultivator 
+        '''
         self._curr_cycle = 0
         self.curr_stage = 0
