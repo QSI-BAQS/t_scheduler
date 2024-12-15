@@ -112,7 +112,6 @@ if __name__ == '__main__':
     # dag_roots = dag_layers[0]
 
     # orc = ScheduleOrchestrator(dag_roots, wid, strat, True)
-
     
     obj = eval(open('../../json.out').read())
     strat, wid = FlatNaiveStrategy.with_t_cultivator_widget(10, 5)

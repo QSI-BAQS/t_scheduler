@@ -1,21 +1,81 @@
 from abc import ABC
 from t_scheduler.t_generation.t_generator import TGenerator
 
-class TFactory_Litinski_3x6(TGenerator):
+class TFactory(TGenerator):
+    def __init__(self,
+            *args,
+            positions=((0, 0)),
+            **kwargs):
+
+        self.positions = positions
+
+        super().__init_(
+            *args,
+            **kwargs
+        )
+
+class TFactory_Litinski_5x3_15_to_1(TFactory):
     '''
     https://arxiv.org/pdf/1808.02892
     Fig 17
     '''
-
     def __init__(self,
                  generator=None,  # RNG
                  p_logical=1 - 1e-4
                  ):
         super().__init__(
-            n_cycles=35,
-            height=3,
-            width=6,
+            n_cycles=11,
+            positions=((0, 1)),
             n_emitted=1,
+            height=5,
+            width=3,
+            prob=p_logical,
+            generator=generator
+        )
+
+
+class TFactory_Litinski_6x3_20_to_4(TFactory):
+    '''
+    https://arxiv.org/pdf/1808.02892
+    Fig 17
+    For easier routing we extend patches 5 and 6 to the top boundary
+
+    TODO: Treat the empty regions at the corners as buffers, move patch 4 to the buffer when finished 
+        for an early reset 
+    '''
+    def __init__(self,
+                 generator=None,  # RNG
+                 p_logical=1 - 1e-4
+                 ):
+        super().__init__(
+            n_cycles=17,
+            positions=((0, 1), (0, 0), (0, 2), (2, 2)), 
+            n_emitted=1,
+            height=6,
+            width=3,
+            prob=p_logical,
+            generator=generator
+        )
+
+
+class TFactory_Litinski_6x3_20_to_4_dense(TFactory):
+    '''
+    https://arxiv.org/pdf/1808.02892
+    Fig 17
+    For easier routing we extend patches 5 and 6 to the top boundary
+    This version assumes that all Ts are extracted      from the top edge and constraints the bandwidth accordingly
+    '''
+    def __init__(self,
+                 generator=None,  # RNG
+                 p_logical=1 - 1e-4
+                 ):
+        super().__init__(
+            n_cycles=17,
+            positions=((0, 1), (0, 0), (0, 2), (0, 2)), 
+            n_emitted=1,
+            bandwidth=3,
+            height=6,
+            width=3,
             prob=p_logical,
             generator=generator
         )

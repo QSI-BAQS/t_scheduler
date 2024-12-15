@@ -12,7 +12,8 @@ class TGenerator(ABC):
                  width: int,  # Width of block
                  n_emitted: int = 1,  # Number of T states per emission
                  prob: float = 1,  # Probability of generation
-                 generator=None  # RNG
+                 generator=None,  # RNG
+                 bandwidth = None # Number of simultaneous T states extractable
                  ):
 
         if generator is None:
@@ -24,6 +25,10 @@ class TGenerator(ABC):
         self.n_emitted = n_emitted
         self.prob = prob
         self._generator = generator
+
+        if bandwidth is None:
+            bandwidth = self.n_emitted
+        self.bandwidth = bandwidth
 
         self._curr_cycle = 0  # Current cycle
 
