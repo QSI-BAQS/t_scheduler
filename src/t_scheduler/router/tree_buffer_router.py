@@ -106,8 +106,18 @@ class TreeFilledBufferRouter:
                 root.children.append(
                     TreeNode(root, [self.buffer[0, c]], debug_source='init')
                 )
+            else:
+                c = 2 * lane + 1  # Left col of lane with shifted offset
+                root.children.append(
+                    TreeNode(root, [self.buffer[0, c]], debug_source='init')
+                )
             if lane != len(self.consumption_frontier) - 1:
                 c = 2 * lane  # right col of lane with shifted offset
+                root.children.append(
+                    TreeNode(root, [self.buffer[0, c]], debug_source='init')
+                )
+            else:
+                c = 2 * lane - 2  # Left col of lane with shifted offset
                 root.children.append(
                     TreeNode(root, [self.buffer[0, c]], debug_source='init')
                 )
@@ -184,11 +194,11 @@ class TreeFilledBufferRouter:
                 matching_rotation = (patch.row == curr_patch.row) ^ (
                     patch.orientation == PatchOrientation.Z_TOP
                 )
-                if matching_rotation:
+                if matching_rotation and patch.T_available():
                     new_children.append(
                         TreeNode(tree_node, tree_node.path + [patch]))
             tree_node.children = new_children
-
+        
         if not new_children:
             bfs_queue = deque([(curr_patch.row, curr_patch.col)])
             parent = {}

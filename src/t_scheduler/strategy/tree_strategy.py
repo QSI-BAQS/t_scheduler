@@ -10,6 +10,7 @@ from t_scheduler.router.vertical_buffer_router import VerticalFilledBufferRouter
 from t_scheduler.router.bus_router import StandardBusRouter
 from t_scheduler.router.register_router import BaselineRegisterRouter
 from t_scheduler.router.transaction import TransactionList
+from t_scheduler.strategy.abstract_strategy import AbstractStrategy
 from t_scheduler.widget.magic_state_buffer import PrefilledMagicStateRegion
 from t_scheduler.widget.registers import SingleRowRegisterRegion
 from t_scheduler.widget.route_bus import RouteBus
@@ -17,23 +18,26 @@ from t_scheduler.widget.widget import Widget
 import t_scheduler.util as util
 
 
-class TreeRoutingStrategy:
+class TreeRoutingStrategy(AbstractStrategy):
     register_router: BaselineRegisterRouter
     bus_router: StandardBusRouter
     buffer_router: TreeFilledBufferRouter
 
     @staticmethod
     def with_prefilled_buffer_widget(width, height) -> Tuple[TreeRoutingStrategy, Widget]:
+        if width % 4 != 0:
+            raise ValueError("Only multiples of 4 supported for width")
+
         register_region = SingleRowRegisterRegion(width)
         route_region = RouteBus(width)
         buffer_region = PrefilledMagicStateRegion(
             width - 2, height - 2, 'chessboard')
 
-        board = [register_region.patch_grid[0], route_region.patch_grid[0]]
+        board = [register_region.sc_patches[0], route_region.sc_patches[0]]
         for r in range(height - 2):
             row = [
                 Patch(PatchType.BELL, r, 0),
-                *buffer_region.cells[r],
+                *buffer_region.sc_patches[r],
                 Patch(PatchType.BELL, r, width - 1),
             ]
             board.append(row)

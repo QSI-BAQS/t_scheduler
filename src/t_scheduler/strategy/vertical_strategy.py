@@ -9,6 +9,7 @@ from t_scheduler.router.vertical_buffer_router import VerticalFilledBufferRouter
 from t_scheduler.router.bus_router import StandardBusRouter
 from t_scheduler.router.register_router import BaselineRegisterRouter
 from t_scheduler.router.transaction import TransactionList
+from t_scheduler.strategy.abstract_strategy import AbstractStrategy
 from t_scheduler.widget.magic_state_buffer import PrefilledMagicStateRegion
 from t_scheduler.widget.registers import SingleRowRegisterRegion
 from t_scheduler.widget.route_bus import RouteBus
@@ -23,23 +24,23 @@ class RotationStrategyOption(Enum):
     REJECT = 3
 
 
-class VerticalRoutingStrategy:
+class VerticalRoutingStrategy(AbstractStrategy):
     register_router: BaselineRegisterRouter
     bus_router: StandardBusRouter
     buffer_router: VerticalFilledBufferRouter
 
     @staticmethod
-    def with_prefilled_buffer_widget(width, height) -> Tuple[VerticalRoutingStrategy, Widget]:
+    def with_prefilled_buffer_widget(width, height, rot_strat: RotationStrategyOption) -> Tuple[VerticalRoutingStrategy, Widget]:
         register_region = SingleRowRegisterRegion(width)
         route_region = RouteBus(width)
         buffer_region = PrefilledMagicStateRegion(
             width - 2, height - 2, 'default')
 
-        board = [register_region.patch_grid[0], route_region.patch_grid[0]]
+        board = [register_region.sc_patches[0], route_region.sc_patches[0]]
         for r in range(height - 2):
             row = [
                 Patch(PatchType.BELL, r, 0),
-                *buffer_region.cells[r],
+                *buffer_region.sc_patches[r],
                 Patch(PatchType.BELL, r, width - 1),
             ]
             board.append(row)
@@ -47,8 +48,9 @@ class VerticalRoutingStrategy:
 
         strat = VerticalRoutingStrategy(BaselineRegisterRouter(register_region),
                                         StandardBusRouter(route_region),
-                                        VerticalFilledBufferRouter(buffer_region),
-                                        rot_strat=RotationStrategyOption.INJECT)
+                                        VerticalFilledBufferRouter(
+                                            buffer_region),
+                                        rot_strat=rot_strat)
         return strat, widget
 
     def __init__(self, register_router, bus_router, buffer_router, rot_strat: RotationStrategyOption):
@@ -57,13 +59,15 @@ class VerticalRoutingStrategy:
         self.buffer_router = buffer_router
         self.rot_strat = rot_strat
 
+        if rot_strat == RotationStrategyOption.LOOKBACK: raise NotImplementedError()
+
     def process_rotation(self, gate, register_transaction, bus_transaction, buffer_transaction) -> Gate | None:
 
         if len(buffer_transaction.move_patches) == 1:
             # Assume all patches in row below routing layer are Z_TOP orientation
             matching_rotation = True
         else:
-            # This depends on implementation details of ordering of move_patches in 
+            # This depends on implementation details of ordering of move_patches in
             # VerticalFilledBufferRouter (Currently other routers are not supported
             # for this strategy)
             T_patch = buffer_transaction.move_patches[0]
@@ -72,7 +76,7 @@ class VerticalRoutingStrategy:
             matching_rotation = (T_patch.row == attack_patch.row) ^ (
                 T_patch.orientation == PatchOrientation.Z_TOP
             )
-        
+
         if matching_rotation:
             # We are done here -- no need to rotate
 
@@ -81,11 +85,9 @@ class VerticalRoutingStrategy:
 
             gate.activate(transactions)
             return gate
-        
 
         if T_patch.rotation:
             # We rotated before. Redundant -- so undo rotation
-
 
             # TODO: Prune output layers to remove redundant rotation
 
@@ -104,9 +106,9 @@ class VerticalRoutingStrategy:
 
             gate.activate(transactions)
             return gate
-        
+
         elif self.rot_strat == RotationStrategyOption.BACKPROP_INIT:
-            # We'll pretend the magic state was generated in the right orientation 
+            # We'll pretend the magic state was generated in the right orientation
             # initially. Track this in the patch.
 
             T_patch.orientation = T_patch.orientation.inverse()
@@ -115,14 +117,15 @@ class VerticalRoutingStrategy:
 
             gate.activate(transactions)
             return gate
-        
+
         elif self.rot_strat == RotationStrategyOption.INJECT:
             # Inject a rotation gate
 
-            rot_gate = RotateGate(T_patch, attack_patch, register_transaction.measure_patches[0], gate, util.ROTATE_DELAY)
+            rot_gate = RotateGate(
+                T_patch, attack_patch, register_transaction.measure_patches[0], gate, util.ROTATE_DELAY)
             rot_gate.activate()
-            return rot_gate # type: ignore
-        
+            return rot_gate  # type: ignore
+
         # elif self.rot_strat == RotationStrategyOption.LOOKBACK:
         #     if not attack_patch.release_time or (
         #         lookback_cycles := self.time - attack_patch.release_time - 1 <= 0
@@ -170,7 +173,6 @@ class VerticalRoutingStrategy:
             bus_transaction = self.bus_router.request_transaction(
                 reg_col, buffer_transaction.connect_col + 1)  # type: ignore
 
-           
             ############################
             #  Process rotation logic
             ############################
@@ -181,13 +183,13 @@ class VerticalRoutingStrategy:
         elif gate.gate_type == GateType.LOCAL_GATE:
             if not (register_transaction := self.register_router.request_transaction(gate.targ, request_type='local')):
                 return None
-            
+
             gate.activate(register_transaction)
             return gate
 
         elif gate.gate_type == GateType.ANCILLA:
             if not (register_transaction := self.register_router.request_transaction(gate.targ, request_type='ancilla')):
                 return None
-            
+
             gate.activate(register_transaction)
             return gate

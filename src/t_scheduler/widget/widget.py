@@ -1,8 +1,8 @@
-
 from __future__ import annotations
 from typing import List
-from t_scheduler.patch import Patch, PatchOrientation, PatchType
-from t_scheduler.widget.widget_region import WidgetRegion
+
+from .widget_region import WidgetRegion
+from ..patch import Patch, PatchOrientation, PatchType
 
 class Widget:
     def __init__(self, width: int, height: int, board: List[List[Patch]], components: List[WidgetRegion] = []):
@@ -15,7 +15,10 @@ class Widget:
         self.rep_count = 1
         self.last_output = ''
 
-    def update(self):
+    def update(self) -> None:
+        '''
+            Executes update() on all consituent components
+        '''
         for component in self.components:
             component.update()
 
@@ -27,8 +30,12 @@ class Widget:
         else:
             raise TypeError("Invalid index type for Widget:", type(index))
 
-    def to_str_output(self):
+    def to_str_output(self) -> str:
+        '''
+            Get pretty printed output of board states
+        '''
         buf = ''
+
         def bprint(c='', end='\n'):
             nonlocal buf
             buf += str(c)
@@ -43,7 +50,7 @@ class Widget:
                 if cell.patch_type == PatchType.BELL:
                     bprint("$", end="")
                 elif cell.locked():
-                    num = cell.lock.owner.targ # type: ignore
+                    num = cell.lock.owner.targ  # type: ignore
                     if not isinstance(num, str) and num >= 10:
                         num = '#'
                     bprint(num, end="")
@@ -64,9 +71,14 @@ class Widget:
         bprint("-" * len(board[0]), end="")
 
         return buf
-    
 
-    def to_str_output_dedup(self):
+    def to_str_output_dedup(self) -> str:
+        '''
+            Get pretty printed output of board states. 
+
+            If output is same as last output (in calls to this), print instead how many times
+            the same output has been generated. Also updates an internal print repetition counter 
+        '''
         buf = self.to_str_output()
         if buf == self.last_output:
             self.rep_count += 1
@@ -76,3 +88,22 @@ class Widget:
             self.rep_count = 1
             return buf + '\n'
 
+    def make_coordinate_adapter(self) -> None:
+        '''
+            Generate a coordinate adapter for local patches to global coordinates
+        '''
+        self.adapter = {}
+        for r, cell_row in enumerate(self.board):
+            for c, cell in enumerate(cell_row):
+                self.adapter[cell] = (r, c)
+
+    def get_component_info(self):
+        '''
+            Get info about substituent components (such as regions occupied)
+
+            TODO implement
+        '''
+        raise NotImplementedError()
+        info = {}
+        for component in self.components:
+            pass  # TODO add component info

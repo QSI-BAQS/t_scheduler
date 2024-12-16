@@ -75,6 +75,7 @@ def dag_create(obj, gates):
         layer = []
         for gate in input_layer:
             for targ, pre in gate.items():  # one element unpacking
+                targ = int(targ)
                 layer.append(gates[targ])
                 for q in pre:
                     gates[targ].pre.append(gates[q])

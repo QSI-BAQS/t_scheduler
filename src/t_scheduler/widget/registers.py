@@ -5,21 +5,15 @@ from .widget_region import WidgetRegion
 
 
 class RegisterRegion(WidgetRegion):
-    patch_grid: List[List[Patch]]
 
-    def __init__(self, width, height, patch_grid) -> None:
-        self.patch_grid = patch_grid
-        super().__init__(width, height)
+    def __init__(self, width, height, sc_patches) -> None:
+        super().__init__(width, height, sc_patches)
 
     def get_physical_pos(self, op_targ):
+        '''
+            Gets the physical position of a targ for a gate
+        '''
         raise NotImplementedError()
-
-    def __getitem__(self, key: Tuple[int, int] | int) -> Patch:
-        if isinstance(key, tuple):
-            return self.patch_grid[key[0]][key[1]]
-        else:
-            return self.patch_grid[key]  # type: ignore
-
 
 class SingleRowRegisterRegion(RegisterRegion):
     def __init__(self, width) -> None:

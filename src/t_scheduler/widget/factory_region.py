@@ -1,25 +1,21 @@
-import itertools
-from typing import List, Literal, Set, Tuple
+from typing import List, Tuple
 
 from t_scheduler.t_generation.t_factories import TFactory_Litinski_5x3_15_to_1, TFactory_Litinski_6x3_20_to_4_dense
 
 from .widget_region import WidgetRegion
-from ..patch import Patch, PatchOrientation, PatchType, TCultPatch, TFactoryOutputPatch
-# from ..router import Router
+from ..patch import Patch, PatchType, TFactoryOutputPatch
 
 
 class MagicStateFactoryRegion(WidgetRegion):
-    cells: List[List[Patch]]
 
     def __init__(self, width, height):
-        super().__init__(width, height)
-
-        self.cells = [
+        sc_patches = [
             [
-                Patch(PatchType.ROUTE, r, c) for c in range(self.width)
+                Patch(PatchType.ROUTE, r, c) for c in range(width)
             ]
-            for r in range(self.height)
+            for r in range(height)
         ]
+        super().__init__(width, height, sc_patches)
         self.factories = []
         self.active_factories = set()
         self.available_states = set()
@@ -31,24 +27,24 @@ class MagicStateFactoryRegion(WidgetRegion):
 
         for r in range(row, row + factory.height):
             for c in range(col, col + factory.width):
-                assert self.cells[r][c].patch_type == PatchType.ROUTE
+                assert self.sc_patches[r][c].patch_type == PatchType.ROUTE
 
-                self.cells[r][c].patch_type = PatchType.RESERVED
+                self.sc_patches[r][c].patch_type = PatchType.RESERVED
 
         factory.outputs = []
 
         for r_off, c_off in factory.positions:
             r, c = row + r_off, col + c_off
-            if self.cells[r][c].patch_type == PatchType.RESERVED:
-                self.cells[r][c] = TFactoryOutputPatch(r, c, factory)
-            factory.outputs.append(self.cells[r][c])
+            if self.sc_patches[r][c].patch_type == PatchType.RESERVED:
+                self.sc_patches[r][c] = TFactoryOutputPatch(r, c, factory)
+            factory.outputs.append(self.sc_patches[r][c])
         self.factories.append(factory)
         self.active_factories.add(factory)
 
     def update(self):
         completed = set()
         for factory in self.waiting_factories:
-            if all(o.t_count == 0 and not o.locked() for o in factory.outputs): # type: ignore
+            if all(o.t_count == 0 and not o.locked() for o in factory.outputs):  # type: ignore
                 factory.reset()
                 completed.add(factory)
         self.waiting_factories.difference_update(completed)
@@ -65,17 +61,10 @@ class MagicStateFactoryRegion(WidgetRegion):
                 output.t_count += 1
                 self.available_states.add(output)
 
-
-    def release_cells(self, cells: List[Patch]):
-        for cell in cells:
+    def release_cells(self, sc_patches: List[Patch]):
+        for cell in sc_patches:
             # TODO time etc.
             cell.release(None)
-
-    def __getitem__(self, key: Tuple[int, int] | int) -> Patch:
-        if isinstance(key, tuple):
-            return self.cells[key[0]][key[1]]
-        else:
-            return self.cells[key]  # type: ignore
 
     @staticmethod
     def with_litinski_5x3(width, height):

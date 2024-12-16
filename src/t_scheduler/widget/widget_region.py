@@ -1,25 +1,40 @@
-from t_scheduler.patch import PatchOrientation, PatchType
-
+from typing import List, Tuple
+from ..patch import Patch, PatchOrientation, PatchType
 
 class WidgetRegion:
     width: int
     height: int
+    sc_patches: List[List[Patch]]
 
-    def __init__(self, width, height) -> None:
+    def __init__(self, width: int, height: int, sc_patches: List[List[Patch]]) -> None:
         self.width = width
         self.height = height
+        self.sc_patches = sc_patches
 
-    def update(self):
+    def update(self) -> None:
+        '''
+            Updates internal state of the widget region
+        '''
         pass
 
-    def to_str_output(self):
+    def __getitem__(self, key: Tuple[int, int] | int) -> Patch:
+        if isinstance(key, tuple):
+            return self.sc_patches[key[0]][key[1]]
+        else:
+            return self.sc_patches[key]  # type: ignore
+        
+
+    def to_str_output(self) -> str:
+        '''
+            Prints current state of the region
+        '''
         buf = ''
         def bprint(c: str|int ='', end='\n'):
             nonlocal buf
             buf += str(c)
             buf += end
 
-        board = self.cells # type: ignore
+        board = self.sc_patches # type: ignore
 
         bprint()
         bprint("-" * len(board[0]))

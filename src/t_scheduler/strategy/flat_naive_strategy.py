@@ -12,6 +12,7 @@ from t_scheduler.router.vertical_buffer_router import VerticalFilledBufferRouter
 from t_scheduler.router.bus_router import StandardBusRouter
 from t_scheduler.router.register_router import BaselineRegisterRouter
 from t_scheduler.router.transaction import TransactionList
+from t_scheduler.strategy.abstract_strategy import AbstractStrategy
 from t_scheduler.t_generation.t_factories import TFactory_Litinski_5x3_15_to_1
 from t_scheduler.widget.factory_region import MagicStateFactoryRegion
 from t_scheduler.widget.magic_state_buffer import PrefilledMagicStateRegion, TCultivatorBufferRegion
@@ -20,7 +21,7 @@ from t_scheduler.widget.route_bus import RouteBus
 from t_scheduler.widget.widget import Widget
 import t_scheduler.util as util
 
-class FlatNaiveStrategy:
+class FlatNaiveStrategy(AbstractStrategy):
     register_router: BaselineRegisterRouter
     bus_router: StandardBusRouter
     buffer_router: TCultivatorBufferRouter
@@ -32,11 +33,11 @@ class FlatNaiveStrategy:
         buffer_region = TCultivatorBufferRegion(
             width - 2, height - 2, 'dense')
 
-        board = [register_region.patch_grid[0], route_region.patch_grid[0]]
+        board = [register_region.sc_patches[0], route_region.sc_patches[0]]
         for r in range(height - 2):
             row = [
                 Patch(PatchType.BELL, r, 0),
-                *buffer_region.cells[r],
+                *buffer_region.sc_patches[r],
                 Patch(PatchType.BELL, r, width - 1),
             ]
             board.append(row)
@@ -55,11 +56,11 @@ class FlatNaiveStrategy:
         buffer_region = MagicStateFactoryRegion.with_litinski_5x3(
             width - 2, height - 2)
 
-        board = [register_region.patch_grid[0], route_region.patch_grid[0]]
+        board = [register_region.sc_patches[0], route_region.sc_patches[0]]
         for r in range(height - 2):
             row = [
                 Patch(PatchType.BELL, r, 0),
-                *buffer_region.cells[r],
+                *buffer_region.sc_patches[r],
                 Patch(PatchType.BELL, r, width - 1),
             ]
             board.append(row)
@@ -79,11 +80,11 @@ class FlatNaiveStrategy:
         buffer_region = MagicStateFactoryRegion.with_litinski_6x3_dense(
             width - 2, height - 2)
 
-        board = [register_region.patch_grid[0], route_region.patch_grid[0]]
+        board = [register_region.sc_patches[0], route_region.sc_patches[0]]
         for r in range(height - 2):
             row = [
                 Patch(PatchType.BELL, r, 0),
-                *buffer_region.cells[r],
+                *buffer_region.sc_patches[r],
                 Patch(PatchType.BELL, r, width - 1),
             ]
             board.append(row)

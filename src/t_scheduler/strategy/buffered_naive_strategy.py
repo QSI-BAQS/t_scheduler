@@ -38,25 +38,25 @@ class BufferedNaiveStrategy:
         factory_region = factory_factory(
             width - 2, height - 3 - buffer_height)
 
-        board = [register_region.patch_grid[0], route_region.patch_grid[0]]
+        board = [register_region.sc_patches[0], route_region.sc_patches[0]]
         for r in range(buffer_height):
             row = [
                 Patch(PatchType.BELL, r, 0),
-                *buffer_region.cells[r],
+                *buffer_region.sc_patches[r],
                 Patch(PatchType.BELL, r, width - 1),
             ]
             board.append(row)
 
         board.append([
             Patch(PatchType.BELL, r, 0),
-            *buffer_bus_region.patch_grid[0],
+            *buffer_bus_region.sc_patches[0],
             Patch(PatchType.BELL, r, width - 1),
         ])
 
         for r in range(factory_region.height):
             row = [
                 Patch(PatchType.BELL, r, 0),
-                *factory_region.cells[r],
+                *factory_region.sc_patches[r],
                 Patch(PatchType.BELL, r, width - 1),
             ]
             board.append(row)
