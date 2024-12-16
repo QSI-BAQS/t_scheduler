@@ -15,7 +15,6 @@ from t_scheduler.router.vertical_buffer_router import VerticalFilledBufferRouter
 from t_scheduler.router.bus_router import StandardBusRouter
 from t_scheduler.router.register_router import BaselineRegisterRouter
 from t_scheduler.router.transaction import TransactionList
-from t_scheduler.t_generation.t_factories import TFactory_Litinski_5x3_15_to_1
 from t_scheduler.widget.factory_region import MagicStateFactoryRegion
 from t_scheduler.widget.magic_state_buffer import MagicStateBufferRegion, PrefilledMagicStateRegion, TCultivatorBufferRegion
 from t_scheduler.widget.registers import SingleRowRegisterRegion
@@ -31,7 +30,7 @@ class BufferedNaiveStrategy:
     factory_router: MagicStateFactoryRouter
 
     @staticmethod
-    def with_buffered_widget(width, height, buffer_height, factory_factory : Callable[[int, int], MagicStateFactoryRegion]) -> Tuple[FlatNaiveStrategy, Widget]:
+    def with_buffered_widget(width, height, buffer_height, factory_factory : Callable[[int, int], MagicStateFactoryRegion]) -> Tuple[BufferedNaiveStrategy, Widget]:
         register_region = SingleRowRegisterRegion(width)
         route_region = RouteBus(width)
         buffer_region = MagicStateBufferRegion(width - 2, buffer_height)
@@ -183,5 +182,11 @@ class BufferedNaiveStrategy:
 
             gate.activate(transactions, buffer_transaction.measure_patches[0])
 
+            upkeep_gates.append(gate)
+        
+        for trans in self.buffer_router.all_local_upkeep_transactions():
+            gate = MoveGate(move_duration=1) # Local move TODO use constants
+
+            gate.activate(trans, trans.measure_patches[0])
             upkeep_gates.append(gate)
         return upkeep_gates

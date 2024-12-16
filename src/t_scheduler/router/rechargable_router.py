@@ -48,3 +48,16 @@ class RechargableBufferRouter:
     def upkeep_transaction(self, buffer_slot: Patch):
         path = [self.buffer[x, buffer_slot.col] for x in range(buffer_slot.row, self.buffer.height)]
         return Transaction(path, [path[0]], connect_col=path[-1].col)
+    
+    def all_local_upkeep_transactions(self):
+
+        output_transactions = []
+        for row in range(1, self.buffer.height):
+            for col in range(0, self.buffer.width):
+                if (T:=self.buffer[row,col]).T_available() and (
+                    above:=self.buffer[row-1, col]
+                ).route_available():
+                    output_transactions.append(
+                        Transaction([T, above], [above], magic_state_patch=T)
+                    )
+        return output_transactions
