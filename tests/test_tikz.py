@@ -28,4 +28,10 @@ class TikzTest(unittest.TestCase):
 
 
 if __name__ == '__main__':
-    unittest.main()
+    import sys
+    if len(sys.argv) >= 2 and sys.argv[1] == 'debug': 
+        strat, wid = VerticalRoutingStrategy.with_prefilled_buffer_widget(26, 5, RotationStrategyOption.BACKPROP_INIT)
+        wid.make_coordinate_adapter()
+        out = wid.save_tikz_region_layer()
+    else:
+        unittest.main()
