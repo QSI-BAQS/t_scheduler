@@ -1,5 +1,5 @@
 from __future__ import annotations
-from typing import List
+from typing import Dict, List, Tuple
 
 from .widget_region import WidgetRegion
 from ..patch import Patch, PatchOrientation, PatchType
@@ -97,7 +97,7 @@ class Widget:
             for c, cell in enumerate(cell_row):
                 self.adapter[cell] = (r, c)
 
-    def get_component_info(self):
+    def get_component_info(self) -> Dict[str, Tuple[Tuple[int, int], Tuple[int, int]]]:
         '''
             Get info about substituent components (such as regions occupied)
         '''
@@ -107,3 +107,15 @@ class Widget:
             coords = self.adapter[component.sc_patches[0][0]], self.adapter[component.sc_patches[-1][-1]]
             info[component_typename] = coords
         return info
+    
+    def save_tikz_region_layer(self):
+        from lattice_surgery_draw.tikz_obj import TikzRectangle
+        
+        regions = self.get_component_info()
+
+        output_rects = []
+
+        for component_name, coords in regions.items():
+            output_rects.append(TikzRectangle(*coords[0], *coords[1]))
+
+        return output_rects
