@@ -44,7 +44,7 @@ class VerticalRoutingStrategy(AbstractStrategy):
                 Patch(PatchType.BELL, r, width - 1),
             ]
             board.append(row)
-        widget = Widget(width, height, board)
+        widget = Widget(width, height, board, components=[register_region, route_region, buffer_region])
 
         strat = VerticalRoutingStrategy(BaselineRegisterRouter(register_region),
                                         StandardBusRouter(route_region),
