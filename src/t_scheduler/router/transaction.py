@@ -24,6 +24,8 @@ class Transaction:
         self.on_unlock_callback = on_unlock_callback
         self.on_activate_callback = on_activate_callback
 
+        self.active_cells = []
+
     def activate(self):
         if self.magic_state_patch:
             self.magic_state_patch.use()
@@ -41,12 +43,14 @@ class Transaction:
 
         self.lock = PatchLock(gate, self.move_patches, None)  # type: ignore
         self.lock.lock()
+        self.active_cells = self.move_patches
 
     def lock_measure(self, gate):
         assert self.lock is None
 
         self.lock = PatchLock(gate, self.measure_patches, None)  # type: ignore
         self.lock.lock()
+        self.active_cells = self.measure_patches
 
     def unlock(self):
         assert self.lock is not None
@@ -62,13 +66,25 @@ class Transaction:
 
 
 class TransactionList(list):
+    active_cells: List[Patch]
+    
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.active_cells = []
+
     def lock_move(self: List[Transaction], gate):
+        self.active_cells = [] # type: ignore
         for t in self:
             t.lock_move(gate)
+            self.active_cells.extend(t.active_cells) # type: ignore
+        
 
     def lock_measure(self: List[Transaction], gate):
+        self.active_cells = [] # type: ignore
         for t in self:
             t.lock_measure(gate)
+            self.active_cells.extend(t.active_cells) # type: ignore
+
 
     def unlock(self: List[Transaction]):
         for t in self:

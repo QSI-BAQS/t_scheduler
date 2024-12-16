@@ -92,7 +92,45 @@ class TCultivatorBufferRegion(AbstractMagicStateBufferRegion):
 
 
 class MagicStateBufferRegion(AbstractMagicStateBufferRegion):
+    cells: List[List[Patch]]
+
     def __init__(self, width, height) -> None:
         super().__init__(width, height)
+
+        self.available_states = set()
+        self.cells = []
+        for r in range(height):
+            row = [Patch(PatchType.ROUTE_BUFFER, r, c) for c in range(width)]
+            self.cells.append(row)
     
+    def __getitem__(self, key: Tuple[int, int] | int) -> Patch:
+        if isinstance(key, tuple):
+            return self.cells[key[0]][key[1]]
+        else:
+            return self.cells[key]  # type: ignore
    
+    def get_buffer_slots(self) -> List[None | Patch]:
+        buffer_lanes = []
+        for col in range(self.width):
+            topmost = None
+            for row in range(self.height - 1, -1, -1):
+                if (cell := self.cells[row][col]).route_available():
+                    topmost = cell
+                else:
+                    break
+            buffer_lanes.append(topmost)
+        return buffer_lanes
+    
+    def get_buffer_states(self) -> List[None | Patch]:
+        buffer_lanes = []
+        for col in range(self.width):
+            topmost = None
+            for row in range(self.height):
+                if (cell := self.cells[row][col]).T_available():
+                    topmost = cell
+                    break
+                elif not cell.route_available():
+                    break
+            buffer_lanes.append(topmost)
+        return buffer_lanes
+

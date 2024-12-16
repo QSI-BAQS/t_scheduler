@@ -23,9 +23,9 @@ class WidgetRegion:
 
         bprint()
         bprint("-" * len(board[0]))
-        bprint(' ' + ''.join(map(str,range(len(board[0])))))
+        bprint(' '*len(str(len(board))) + ''.join(map(lambda x: str(x%10),range(len(board[0])))))
         for i, row in enumerate(board):
-            bprint(i, end='')
+            bprint(str(i).zfill(len(str(len(board)))), end='')
             for cell in row:
                 if cell.patch_type == PatchType.BELL:
                     bprint("$", end="")

@@ -1,8 +1,10 @@
 from collections import defaultdict, deque
 
+from t_scheduler.strategy.buffered_naive_strategy import BufferedNaiveStrategy
 from t_scheduler.strategy.flat_naive_strategy import FlatNaiveStrategy
 from t_scheduler.strategy.tree_strategy import TreeRoutingStrategy
 from t_scheduler.strategy.vertical_strategy import VerticalRoutingStrategy
+from t_scheduler.widget.factory_region import MagicStateFactoryRegion
 from t_scheduler.widget.widget import Widget
 
 
@@ -15,7 +17,7 @@ class ScheduleOrchestrator:
         debug: bool = False,
     ):
         self.widget: Widget = widget
-        self.strategy: TreeRoutingStrategy = strategy
+        self.strategy: BufferedNaiveStrategy = strategy
 
         self.processed = set()
 
@@ -59,10 +61,16 @@ class ScheduleOrchestrator:
 
         self.queued = next_queued
 
+        if self.strategy.needs_upkeep:
+            self.active.extend(self.strategy.upkeep())
 
         # Print widget board state
         if self.debug:
             print(self.widget.to_str_output_dedup(),end='')
+        
+        self.output_layers.append([])
+        for gate in self.active:
+            self.output_layers[-1].append(gate.transaction.active_cells)
 
 
         for gate in self.active:
@@ -86,10 +94,22 @@ class ScheduleOrchestrator:
 
         self.time += 1
 
+    def get_space_time_volume(self):
+        volume = 0
+        for layer in self.output_layers:
+            for gate_cells in layer:
+                volume += len(gate_cells)
+        return volume
+    
+    def get_total_cycles(self):
+        return self.time
+
 if __name__ == '__main__':
     import t_scheduler.util as util
     from t_scheduler.gate import T_Gate
     from itertools import chain
+
+    # Test vertical prefilled with reuse
     # strat, wid = VerticalRoutingStrategy.with_prefilled_buffer_widget(20, 5)
     # gate_layers = [
     #         [*chain(*(([x] * 8) for x in [5, 0, 6, 8, 7]))],
@@ -98,6 +118,7 @@ if __name__ == '__main__':
 
     # orc = ScheduleOrchestrator(gate_layers[0], wid, strat, True)
 
+    # Test with toffoli
     # strat, wid = VerticalRoutingStrategy.with_prefilled_buffer_widget(26, 5)
     # obj = util.toffoli_example_input()
     # dag_layers, all_gates = util.dag_create(obj)
@@ -105,6 +126,7 @@ if __name__ == '__main__':
 
     # orc = ScheduleOrchestrator(dag_roots, wid, strat, True)
 
+    # TEst tree with qft
     # obj = eval(open('../../json.out').read())
     # strat, wid = TreeRoutingStrategy.with_prefilled_buffer_widget(10, 10)
     # gates = util.make_gates(obj, lambda x: x % 5)
@@ -113,8 +135,38 @@ if __name__ == '__main__':
 
     # orc = ScheduleOrchestrator(dag_roots, wid, strat, True)
     
+    # Test flat naive with qft
+    # obj = eval(open('../../json.out').read())
+    # strat, wid = FlatNaiveStrategy.with_t_cultivator_widget(10, 5)
+    # gates = util.make_gates(obj, lambda x: x % 5)
+    # dag_layers, all_gates = util.dag_create(obj, gates)
+    # dag_roots = dag_layers[0]
+
+    # orc = ScheduleOrchestrator(dag_roots, wid, strat, True)
+
+    # Test litinski 5x3
+    # obj = eval(open('../../json.out').read())
+    # strat, wid = FlatNaiveStrategy.with_litinski_5x3_unbuffered_widget(10, 7)
+    # gates = util.make_gates(obj, lambda x: x % 5)
+    # dag_layers, all_gates = util.dag_create(obj, gates)
+    # dag_roots = dag_layers[0]
+
+    # orc = ScheduleOrchestrator(dag_roots, wid, strat, True)
+
+
+    # Test litinski 6x3
+    # obj = eval(open('../../json.out').read())
+    # strat, wid = FlatNaiveStrategy.with_litinski_6x3_dense_unbuffered_widget(10, 18)
+    # gates = util.make_gates(obj, lambda x: x % 5)
+    # dag_layers, all_gates = util.dag_create(obj, gates)
+    # dag_roots = dag_layers[0]
+
+    # orc = ScheduleOrchestrator(dag_roots, wid, strat, True)
+
+
+    # Test buffered litinski 6x3
     obj = eval(open('../../json.out').read())
-    strat, wid = FlatNaiveStrategy.with_t_cultivator_widget(10, 5)
+    strat, wid = BufferedNaiveStrategy.with_buffered_widget(10, 18, 2, factory_factory=MagicStateFactoryRegion.with_litinski_6x3_dense)
     gates = util.make_gates(obj, lambda x: x % 5)
     dag_layers, all_gates = util.dag_create(obj, gates)
     dag_roots = dag_layers[0]

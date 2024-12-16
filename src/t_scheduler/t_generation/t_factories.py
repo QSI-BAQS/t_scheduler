@@ -9,7 +9,7 @@ class TFactory(TGenerator):
 
         self.positions = positions
 
-        super().__init_(
+        super().__init__(
             *args,
             **kwargs
         )
@@ -25,7 +25,7 @@ class TFactory_Litinski_5x3_15_to_1(TFactory):
                  ):
         super().__init__(
             n_cycles=11,
-            positions=((0, 1)),
+            positions=((0, 1),),
             n_emitted=1,
             height=5,
             width=3,
@@ -72,7 +72,7 @@ class TFactory_Litinski_6x3_20_to_4_dense(TFactory):
         super().__init__(
             n_cycles=17,
             positions=((0, 1), (0, 0), (0, 2), (0, 2)), 
-            n_emitted=1,
+            n_emitted=4,
             bandwidth=3,
             height=6,
             width=3,

@@ -3,7 +3,7 @@ from enum import Enum, IntEnum
 from typing import List
 
 from t_scheduler.t_generation import t_cultivator
-from t_scheduler.t_generation.t_factories import TFactory_Litinski_3x6
+from t_scheduler.t_generation.t_factories import TFactory
 
 
 class PatchType(Enum):
@@ -77,7 +77,7 @@ class Patch:
         return self.patch_type == PatchType.T and not self.used and not self.locked()
 
     def route_available(self):
-        return self.patch_type == PatchType.ROUTE and not self.locked()
+        return self.patch_type in [PatchType.ROUTE, PatchType.ROUTE_BUFFER] and not self.locked()
 
     def register_rotation(self, gate):
         self.rotation = gate
@@ -110,36 +110,37 @@ class BufferPatch(Patch):
 
 class TFactoryOutputPatch(Patch):
     def __init__(
-        self, row: int, col: int, starting_orientation=PatchOrientation.Z_TOP
+        self, row: int, col: int, 
+        factory: TFactory, starting_orientation=PatchOrientation.Z_TOP,
     ):
         super().__init__(PatchType.CULTIVATOR, row, col,
                          starting_orientation=starting_orientation)
 
-        self.has_T = False
-        self.factory = TFactory_Litinski_3x6()
+        self.t_count = 0
+        self.factory = factory
 
     def T_available(self):
-        return self.has_T and not self.locked()
+        return self.t_count and not self.locked()
 
     def route_available(self):
         return False
 
-    def update(self):
-        if not self.has_T and not self.locked():
-            output = self.factory()
-            if output:
-                self.has_T = True
-                return True
-        return False
+    # def update(self):
+    #     if not self.has_T and not self.locked():
+    #         output = self.factory()
+    #         if output:
+    #             self.has_T = True
+    #             return True
+    #     return False
 
     def use(self):
-        if self.has_T:
-            self.has_T = False
+        if self.t_count > 0:
+            self.t_count -= 1
         else:
             raise Exception("No T available to use!")
 
     def release(self, time):
-        self.factory._curr_cycle = 0
+        pass
 
 
 class TCultPatch(Patch):

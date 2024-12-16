@@ -3,7 +3,7 @@ from abc import ABC
 from enum import Enum
 from typing import Any, List, Set
 
-from t_scheduler.patch import Patch, PatchLock
+from t_scheduler.patch import Patch, PatchLock, PatchType
 from t_scheduler.router.transaction import Transaction, TransactionList
 
 class GateType(Enum):
@@ -117,6 +117,40 @@ class T_Gate:
     def __repr__(self) -> str:
         return f"{','.join([str(x.targ_orig) for x in self.pre])}->T{self.targ_orig}({self.targ})->{','.join([str(x.targ_orig) for x in self.post])}"
 
+
+class MoveGate:
+    targ: str
+    timer: int = 0
+    duration: int = 0
+
+    post: List = []
+
+    def __init__(self, move_duration: int = 2):
+        self.targ = '%'
+        self.gate_type: GateType = GateType.IMPLEMENTATION_DEFINED
+        self.duration = move_duration
+
+    def activate(self, transaction: TransactionList, new_magic_state_patch: Patch):
+        self.transaction = transaction
+        self.transaction.activate()
+        self.transaction.lock_move(self)
+        self.new_magic_state_patch = new_magic_state_patch
+
+    def cleanup(self, scheduler):
+        if self.completed():
+            self.transaction.unlock()
+            self.transaction.release(scheduler.time)
+            self.new_magic_state_patch.patch_type = PatchType.T
+
+
+    def completed(self) -> bool:
+        return self.timer >= self.duration
+
+    def next(self, scheduler):
+        pass
+
+    def tick(self):
+        self.timer += 1
 
 class RotateGate(BaseGate):
 

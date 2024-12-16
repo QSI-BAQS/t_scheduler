@@ -44,7 +44,7 @@ class Widget:
                     bprint("$", end="")
                 elif cell.locked():
                     num = cell.lock.owner.targ # type: ignore
-                    if num >= 10:
+                    if not isinstance(num, str) and num >= 10:
                         num = '#'
                     bprint(num, end="")
                 elif cell.patch_type == PatchType.REG:

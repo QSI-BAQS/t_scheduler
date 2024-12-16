@@ -62,6 +62,8 @@ class TCultivatorBufferRouter:
                     return transaction
         return None
 
+    # TODO: Port flat_sparse router
+
     @staticmethod
     def range_directed(a, b):
         if a <= b:
