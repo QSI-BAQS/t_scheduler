@@ -100,10 +100,10 @@ class Widget:
     def get_component_info(self):
         '''
             Get info about substituent components (such as regions occupied)
-
-            TODO implement
         '''
-        raise NotImplementedError()
         info = {}
         for component in self.components:
-            pass  # TODO add component info
+            component_typename = component.__class__.__name__
+            coords = self.adapter[component.sc_patches[0][0]], self.adapter[component.sc_patches[-1][-1]]
+            info[component_typename] = coords
+        return info
