@@ -7,11 +7,11 @@ from t_scheduler.patch import Patch, PatchOrientation, PatchType
 from t_scheduler.router import vertical_buffer_router
 from t_scheduler.router.vertical_buffer_router import VerticalFilledBufferRouter
 from t_scheduler.router.bus_router import StandardBusRouter
-from t_scheduler.router.register_router import BaselineRegisterRouter
+from t_scheduler.router.register_router import BaselineRegisterRouter, CombRegisterRouter
 from t_scheduler.router.transaction import TransactionList
 from t_scheduler.strategy.abstract_strategy import AbstractStrategy
 from t_scheduler.widget.magic_state_buffer import PrefilledMagicStateRegion
-from t_scheduler.widget.registers import SingleRowRegisterRegion
+from t_scheduler.widget.registers import CombShapedRegisterRegion, SingleRowRegisterRegion
 from t_scheduler.widget.route_bus import RouteBus
 from t_scheduler.widget.widget import Widget
 import t_scheduler.util as util
@@ -47,6 +47,30 @@ class VerticalRoutingStrategy(AbstractStrategy):
         widget = Widget(width, height, board, components=[register_region, route_region, buffer_region])
 
         strat = VerticalRoutingStrategy(BaselineRegisterRouter(register_region),
+                                        StandardBusRouter(route_region),
+                                        VerticalFilledBufferRouter(
+                                            buffer_region),
+                                        rot_strat=rot_strat)
+        return strat, widget
+    
+    @staticmethod
+    def with_prefilled_comb_widget(width, height, rot_strat: RotationStrategyOption, comb_height) -> Tuple[VerticalRoutingStrategy, Widget]:
+        register_region = CombShapedRegisterRegion(width, comb_height)
+        route_region = RouteBus(width)
+        buffer_region = PrefilledMagicStateRegion(
+            width - 2, height - 1 - comb_height, 'default')
+
+        board = [*register_region.sc_patches, route_region.sc_patches[0]]
+        for r in range(height - 1 - comb_height):
+            row = [
+                Patch(PatchType.BELL, r, 0),
+                *buffer_region.sc_patches[r],
+                Patch(PatchType.BELL, r, width - 1),
+            ]
+            board.append(row)
+        widget = Widget(width, height, board, components=[register_region, route_region, buffer_region])
+
+        strat = VerticalRoutingStrategy(CombRegisterRouter(register_region),
                                         StandardBusRouter(route_region),
                                         VerticalFilledBufferRouter(
                                             buffer_region),

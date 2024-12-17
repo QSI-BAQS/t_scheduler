@@ -73,6 +73,20 @@ class StaticBufferTest(unittest.TestCase):
         orc = ScheduleOrchestrator(gate_layers[0], wid, strat, False)
 
         orc.schedule()
+    
+    def test_end_to_end_backprop_vertical_comb(self):
+        gate_layers = [
+            [*chain(*(([x] * 8) for x in [5, 0, 16, 8, 26]))],
+        ]
+        gate_layers = [[gate.T_Gate(t, 2, 3) for t in layer]
+                       for layer in gate_layers]
+
+        strat, wid = VerticalRoutingStrategy.with_prefilled_comb_widget(
+            20, 10, rot_strat=RotationStrategyOption.BACKPROP_INIT, comb_height=5)
+
+        orc = ScheduleOrchestrator(gate_layers[0], wid, strat, True)
+
+        orc.schedule()
 
     def test_end_to_end_2(self):
         gate_layers = [
