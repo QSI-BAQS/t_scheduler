@@ -111,16 +111,16 @@ class BufferedNaiveStrategy:
 
             reg_col: int = register_transaction.connect_col  # type: ignore
 
-            if (buffer_transaction := self.buffer_router.request_transaction(reg_col - 1)):
+            if (buffer_transaction := self.buffer_router.request_transaction(max(0,reg_col - 1))):
 
                 bus_transaction = self.bus_router.request_transaction(
-                    reg_col, buffer_transaction.connect_col + 1)  # type: ignore
+                    buffer_transaction.connect_col + 1, reg_col)  # type: ignore
 
                 if bus_transaction:
                     return self.validate_rotation(gate, buffer_transaction, bus_transaction, register_transaction)
 
             # Need passthrough
-            if not (buffer_transaction := self.buffer_router.request_passthrough(reg_col - 1)):
+            if not (buffer_transaction := self.buffer_router.request_passthrough(max(0,reg_col - 1))):
                 return None
 
             buffer_bus_col = buffer_transaction.connect_col
@@ -132,7 +132,7 @@ class BufferedNaiveStrategy:
                 return None
 
             buffer_bus_transaction = self.buffer_bus_router.request_transaction(
-                buffer_bus_col, factory_transaction.connect_col)
+                factory_transaction.connect_col, buffer_bus_col)
             if not buffer_bus_transaction:
                 return None
 

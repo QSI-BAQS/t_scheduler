@@ -14,10 +14,15 @@ class StandardBusRouter:
     def request_transaction(self, start_col, end_col):
         if not (0 <= start_col < self.route_bus.width) or not (0 <= end_col < self.route_bus.width):
             return None
-        bound_min = min(start_col, end_col)
-        bound_max = max(start_col, end_col) + 1
-        path = [self.route_bus[0, c] for c in range(bound_min, bound_max)]
+        path = [self.route_bus[0, c] for c in self.range_directed(start_col, end_col)]
         if any(p.locked() for p in path):
             return None
 
         return Transaction(path, [])
+    
+    @staticmethod
+    def range_directed(a, b):
+        if a <= b:
+            return range(a, b + 1)
+        else:
+            return range(a, b - 1, -1)

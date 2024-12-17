@@ -23,10 +23,10 @@ class TCultivatorBufferRouter:
         def on_unlock_callback(trans: Transaction):
             self.buffer.release_cells(trans.lock.holds)  # type: ignore
 
-        return Transaction(path, [path[0]], 
-                           magic_state_patch=path[0], 
-                           connect_col=connect, 
-                           on_activate_callback=on_activate_callback, 
+        return Transaction(path, [path[0]],
+                           magic_state_patch=path[0],
+                           connect_col=connect,
+                           on_activate_callback=on_activate_callback,
                            on_unlock_callback=on_unlock_callback)
 
     def request_transaction(self, output_col, strict_output_col: bool = True) -> Transaction | None:
@@ -42,10 +42,11 @@ class TCultivatorBufferRouter:
 
         for i, T_patch in enumerate(queue):
             if strict_output_col:
-                vert = [self.buffer[x, output_col] for x in range(T_patch.row)]
+                vert = [self.buffer[x, output_col]
+                        for x in self.range_directed(T_patch.row, 0)]
             else:
                 vert = [self.buffer[x, T_patch.col]
-                        for x in range(T_patch.row)]
+                        for x in self.range_directed(T_patch.row, 0)]
 
             if all(p.route_available() for p in vert):
                 if strict_output_col:

@@ -42,11 +42,11 @@ class RechargableBufferRouter:
         
         best_col = min((abs(c - output_col), c) for c in cols)[1]
 
-        path = [self.buffer[row, best_col] for row in range(self.buffer.height)]
+        path = [self.buffer[row, best_col] for row in range(self.buffer.height)][::-1]
         return Transaction(path, [], connect_col=path[-1].col)
 
     def upkeep_transaction(self, buffer_slot: Patch):
-        path = [self.buffer[x, buffer_slot.col] for x in range(buffer_slot.row, self.buffer.height)]
+        path = [self.buffer[x, buffer_slot.col] for x in range(buffer_slot.row, self.buffer.height)][::-1]
         return Transaction(path, [path[0]], connect_col=path[-1].col)
     
     def all_local_upkeep_transactions(self):
