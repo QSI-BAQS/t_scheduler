@@ -81,6 +81,11 @@ class ScheduleOrchestrator:
             self.output_layers[-1].append(gate.transaction.active_cells)
 
         if self.tikz_output and self.widget.rep_count == 1:
+            from lattice_surgery_draw.primitives.composers import TexFile
+            with open(f"out/{self.time}.tex", 'w') as f:
+                output = TexFile(self.widget.save_tikz_frame(self.widget.make_tikz_routes(self.output_layers[-1])))
+                print(output, file=f)
+
             # from lattice_surgery_draw.tikz_layer import TikzLayers
             # print('\\begin{tikzpicture}[scale=0.5]', file=file)
             # print(''.join(map(str,

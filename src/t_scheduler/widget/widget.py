@@ -1,7 +1,8 @@
 from __future__ import annotations
 from typing import Dict, List, Tuple
 
-from t_scheduler.widget.registers import RegisterRegion, SingleRowRegisterRegion
+from t_scheduler.widget import route_bus
+
 
 from .widget_region import WidgetRegion
 from ..patch import Patch, PatchOrientation, PatchType
@@ -99,38 +100,98 @@ class Widget:
             for c, cell in enumerate(cell_row):
                 self.adapter[cell] = (r, c)
 
-    def get_component_info(self) -> Dict[str, Tuple[Tuple[int, int], Tuple[int, int]]]:
+    def get_component_info(self):
         '''
             Get info about substituent components (such as regions occupied)
         '''
-        info = {}
+        info = []
         for component in self.components:
             component_typename = component.__class__.__name__
             coords = (self.adapter[component.sc_patches[0][0]],
                       self.adapter[component.sc_patches[-1][-1]])
-            info[component_typename] = coords
+            info.append((component, component_typename, coords))
         return info
 
     @staticmethod
     def _to_tikz_coords(start, end, sep: float = 0):
         return start[1] + sep, -start[0] - sep, end[1] + 1 - sep, -end[0] - 1 + sep
 
+    @staticmethod
+    def _component_to_style(component):
+        from t_scheduler.widget.registers import RegisterRegion
+        from t_scheduler.widget.route_bus import RouteBus
+        from t_scheduler.widget.magic_state_buffer import AbstractMagicStateBufferRegion
+        from t_scheduler.widget.factory_region import MagicStateFactoryRegion
+        from lattice_surgery_draw.primitives.style import TikzStyle
+
+        if isinstance(component, RegisterRegion):
+            return TikzStyle(fill='red!10')
+        elif isinstance(component, RouteBus):
+            return TikzStyle(fill='green!10')
+        elif isinstance(component, AbstractMagicStateBufferRegion):
+            return TikzStyle(fill='blue!10')
+        elif isinstance(component, MagicStateFactoryRegion):
+            return TikzStyle(fill='blue!10')
+
+    @staticmethod
+    def _patch_to_char(cell):
+        if cell.patch_type == PatchType.BELL:
+            return "$"
+        elif cell.locked():
+            num = cell.lock.owner.targ  # type: ignore
+            if not isinstance(num, str) and num >= 10:
+                num = '#'
+            return str(num)
+        elif cell.patch_type == PatchType.REG:
+            return "R"
+        elif cell.route_available():
+            return "="
+        elif cell.patch_type == PatchType.ROUTE:
+            return " "
+        elif cell.T_available():
+            if cell.orientation == PatchOrientation.Z_TOP:
+                return "T"
+            else:
+                return "t"
+        elif cell.patch_type == PatchType.CULTIVATOR:
+            return "@"
+        elif cell.patch_type == PatchType.RESERVED:
+            return ' '
+        elif cell.patch_type == PatchType.FACTORY_OUTPUT:
+            return '@'
+        else:
+            return "."
+
     def save_tikz_region_layer(self):
-        from lattice_surgery_draw.tikz_obj import TikzRectangle
+        from lattice_surgery_draw.region import Region
+        from t_scheduler.widget.factory_region import MagicStateFactoryRegion
+        from lattice_surgery_draw.primitives.style import TikzStyle
 
         regions = self.get_component_info()
 
         output_rects = []
 
-        for component_name, coords in regions.items():
-            output_rects.append(TikzRectangle(*self._to_tikz_coords(*coords)))
+        for component, component_name, coords in regions:
+            output_rects.append(Region(
+                *self._to_tikz_coords(*coords), region_style=self._component_to_style(component)))
+            if isinstance(component, MagicStateFactoryRegion):
+                for factory in component.factories:
+                    top_left = self.adapter[component[factory.layout_position]]
+                    bottom_right = (
+                        top_left[0] + factory.height - 1, top_left[1] + factory.width - 1)
+
+                    output_rects.append(Region(
+                        *self._to_tikz_coords(top_left, bottom_right, sep=0.05), region_style=TikzStyle(fill='blue!30')))
 
         return output_rects
 
     def save_tikz_patches_layer(self):
-        from lattice_surgery_draw.tikz_obj import TikzRectangle, TikzNode
+
+        from lattice_surgery_draw.primitives.tikz_obj import TikzRectangle, TikzNode, TikzCircle
+        from lattice_surgery_draw.primitives.style import TikzStyle
+        from lattice_surgery_draw.img import SurfaceCodePatch, SurfaceCodePatchWide
+        from t_scheduler.widget.registers import SingleRowRegisterRegion
         from itertools import chain
-        regions = self.get_component_info()
 
         output_objs = []
 
@@ -142,8 +203,11 @@ class Widget:
                     output_objs.append(TikzRectangle(
                         *self._to_tikz_coords(coord, (coord[0], coord[1] + 1), sep=0.1)
                     ))
-                    output_objs.append(TikzNode(
-                        coord[1] + 0.5, -coord[0] - 0.5, label=str(cell_idx // 2)))
+                    output_objs.append(SurfaceCodePatchWide(
+                        coord[1] + 1, -coord[0] - 0.5
+                    ))
+                    output_objs.append(TikzCircle(
+                        coord[1] + 1, -coord[0] - 0.5, 0.4, label=str(cell_idx // 2), tikz_style=TikzStyle(fill='red!50')))
             else:
                 for cell in chain(*component.sc_patches):
                     coord = self.adapter[cell]
@@ -151,10 +215,47 @@ class Widget:
                         *self._to_tikz_coords(coord, coord, sep=0.1)
                     ))
                     if cell.T_available():
-                        output_objs.append(TikzNode(coord[1] + 0.5, -coord[0] - 0.5, label = "T"
-                        ))
-                    if cell.route_available():
-                        output_objs.append(TikzNode(coord[1] + 0.5, -coord[0] - 0.5, label = "="
-                        ))
+                        angle = 90 if cell.orientation == PatchOrientation.X_TOP else 0
+                        output_objs.append(SurfaceCodePatch(
+                            coord[1] + 0.5, -coord[0] - 0.5, angle=angle))
+                        output_objs.append(TikzCircle(coord[1] + 0.5, -coord[0] - 0.5, 0.4, label=self._patch_to_char(cell),
+                                                      tikz_style=TikzStyle(fill='blue!50', text='white')))
+                    else:
+                        output_objs.append(TikzNode(coord[1] + 0.5, -coord[0] - 0.5, label=self._patch_to_char(cell)
+                                                    ))
 
         return output_objs
+
+    def make_tikz_routes(self, output_layer):
+        from lattice_surgery_draw.primitives.tikz_obj import TikzRectangle, TikzNode, TikzCircle
+        from lattice_surgery_draw.primitives.style import TikzStyle
+
+        def _manhattan(pos1, pos2):
+            return abs(pos1[0] - pos2[0]) + abs(pos1[1] - pos2[1])
+
+        output_rects = []
+
+        for gate_path in output_layer:
+            gate_path = list(map(self.adapter.get, gate_path))
+            if None in gate_path: raise Exception('Invalid cell in adapter')
+            if len(gate_path) == 2 and _manhattan(gate_path[0], gate_path[1]) > 1:
+                # Measure activation!
+                pass
+            else:
+                for first, second in zip(gate_path[:-1], gate_path[1:]):
+                    if _manhattan(first, second) > 1:
+                        if self[first].lock.owner.__class__.__name__ == 'RotateGate': # type: ignore
+                            continue
+                        # Error! TODO remove after debugging
+                        with open('check.out', 'a') as check:
+                            print(self.to_str_output(), file=check)
+                            print(gate_path, file=check)
+                        return []
+                    else:
+                        output_rects.append(TikzRectangle(*self._to_tikz_coords(*sorted((first, second)), sep=0.2), # type: ignore
+                                            tikz_style=TikzStyle(draw='none', fill='orange', opacity='0.3')))  
+        return output_rects
+
+    def save_tikz_frame(self, additional=tuple()):
+        from lattice_surgery_draw.primitives.composers import TikzFrame
+        return TikzFrame(*self.save_tikz_region_layer(), *self.save_tikz_patches_layer(), *additional)
