@@ -162,7 +162,8 @@ class StaticBufferTest(unittest.TestCase):
         dag_layers, all_gates = util.dag_create(obj, gates)
         dag_roots = dag_layers[0]
 
-        orc = ScheduleOrchestrator(dag_roots, wid, strat, True)
+        orc = ScheduleOrchestrator(dag_roots, wid, strat, False)
+        orc.schedule()
 
 
 if __name__ == '__main__':

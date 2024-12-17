@@ -1,6 +1,8 @@
 from __future__ import annotations
 from typing import Dict, List, Tuple
 
+from t_scheduler.widget.registers import RegisterRegion, SingleRowRegisterRegion
+
 from .widget_region import WidgetRegion
 from ..patch import Patch, PatchOrientation, PatchType
 
@@ -104,18 +106,55 @@ class Widget:
         info = {}
         for component in self.components:
             component_typename = component.__class__.__name__
-            coords = self.adapter[component.sc_patches[0][0]], self.adapter[component.sc_patches[-1][-1]]
+            coords = (self.adapter[component.sc_patches[0][0]],
+                      self.adapter[component.sc_patches[-1][-1]])
             info[component_typename] = coords
         return info
-    
+
+    @staticmethod
+    def _to_tikz_coords(start, end, sep: float = 0):
+        return start[1] + sep, -start[0] - sep, end[1] + 1 - sep, -end[0] - 1 + sep
+
     def save_tikz_region_layer(self):
         from lattice_surgery_draw.tikz_obj import TikzRectangle
-        
+
         regions = self.get_component_info()
 
         output_rects = []
 
         for component_name, coords in regions.items():
-            output_rects.append(TikzRectangle(*coords[0], *coords[1]))
+            output_rects.append(TikzRectangle(*self._to_tikz_coords(*coords)))
 
         return output_rects
+
+    def save_tikz_patches_layer(self):
+        from lattice_surgery_draw.tikz_obj import TikzRectangle, TikzNode
+        from itertools import chain
+        regions = self.get_component_info()
+
+        output_objs = []
+
+        for component in self.components:
+            if isinstance(component, SingleRowRegisterRegion):
+                for cell_idx in range(0, component.width, 2):
+                    cell = component.sc_patches[0][cell_idx]
+                    coord = self.adapter[cell]
+                    output_objs.append(TikzRectangle(
+                        *self._to_tikz_coords(coord, (coord[0], coord[1] + 1), sep=0.1)
+                    ))
+                    output_objs.append(TikzNode(
+                        coord[1] + 0.5, -coord[0] - 0.5, label=str(cell_idx // 2)))
+            else:
+                for cell in chain(*component.sc_patches):
+                    coord = self.adapter[cell]
+                    output_objs.append(TikzRectangle(
+                        *self._to_tikz_coords(coord, coord, sep=0.1)
+                    ))
+                    if cell.T_available():
+                        output_objs.append(TikzNode(coord[1] + 0.5, -coord[0] - 0.5, label = "T"
+                        ))
+                    if cell.route_available():
+                        output_objs.append(TikzNode(coord[1] + 0.5, -coord[0] - 0.5, label = "="
+                        ))
+
+        return output_objs

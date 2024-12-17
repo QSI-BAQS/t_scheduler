@@ -24,7 +24,8 @@ class TikzTest(unittest.TestCase):
 
         wid.make_coordinate_adapter()
         out = wid.save_tikz_region_layer()
-        print(out)
+        out += wid.save_tikz_patches_layer()
+        print(''.join(map(str,out)))
 
 
 if __name__ == '__main__':

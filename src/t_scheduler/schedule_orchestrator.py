@@ -1,4 +1,5 @@
 from collections import defaultdict, deque
+from typing import TextIO
 
 from t_scheduler.strategy.buffered_naive_strategy import BufferedNaiveStrategy
 from t_scheduler.strategy.flat_naive_strategy import FlatNaiveStrategy
@@ -15,6 +16,7 @@ class ScheduleOrchestrator:
         widget,
         strategy,
         debug: bool = False,
+        tikz_output: bool = False
     ):
         self.widget: Widget = widget
         self.strategy: BufferedNaiveStrategy = strategy
@@ -41,6 +43,12 @@ class ScheduleOrchestrator:
         self.T_queue = []
         self.next_T_queue = []
 
+        self.tikz_output = tikz_output
+
+        if self.tikz_output:
+            self.output_objs = []
+            self.widget.make_coordinate_adapter()
+
     def schedule(self):
         self.queued.extend(self.waiting)
 
@@ -66,11 +74,20 @@ class ScheduleOrchestrator:
 
         # Print widget board state
         if self.debug:
-            print(self.widget.to_str_output_dedup(),end='')
-        
+            print(self.widget.to_str_output_dedup(), end='')
+
         self.output_layers.append([])
         for gate in self.active:
             self.output_layers[-1].append(gate.transaction.active_cells)
+
+        if self.tikz_output and self.widget.rep_count == 1:
+            # from lattice_surgery_draw.tikz_layer import TikzLayers
+            # print('\\begin{tikzpicture}[scale=0.5]', file=file)
+            # print(''.join(map(str,
+            #                   self.widget.save_tikz_region_layer() + self.widget.save_tikz_patches_layer())), file=file)
+            # print('\\end{tikzpicture}\n\\newpage', file=file)
+            # file.close()
+            pass
 
 
         for gate in self.active:
@@ -100,9 +117,10 @@ class ScheduleOrchestrator:
             for gate_cells in layer:
                 volume += len(gate_cells)
         return volume
-    
+
     def get_total_cycles(self):
         return self.time
+
 
 if __name__ == '__main__':
     import t_scheduler.util as util
@@ -134,7 +152,7 @@ if __name__ == '__main__':
     # dag_roots = dag_layers[0]
 
     # orc = ScheduleOrchestrator(dag_roots, wid, strat, True)
-    
+
     # Test flat naive with qft
     # obj = eval(open('../../json.out').read())
     # strat, wid = FlatNaiveStrategy.with_t_cultivator_widget(10, 5)
@@ -153,7 +171,6 @@ if __name__ == '__main__':
 
     # orc = ScheduleOrchestrator(dag_roots, wid, strat, True)
 
-
     # Test litinski 6x3
     # obj = eval(open('../../json.out').read())
     # strat, wid = FlatNaiveStrategy.with_litinski_6x3_dense_unbuffered_widget(10, 18)
@@ -163,10 +180,10 @@ if __name__ == '__main__':
 
     # orc = ScheduleOrchestrator(dag_roots, wid, strat, True)
 
-
     # Test buffered litinski 6x3
     obj = eval(open('../../json.out').read())
-    strat, wid = BufferedNaiveStrategy.with_buffered_widget(10, 18, 2, factory_factory=MagicStateFactoryRegion.with_litinski_6x3_dense)
+    strat, wid = BufferedNaiveStrategy.with_buffered_widget(
+        10, 18, 2, factory_factory=MagicStateFactoryRegion.with_litinski_6x3_dense)
     gates = util.make_gates(obj, lambda x: x % 5)
     dag_layers, all_gates = util.dag_create(obj, gates)
     dag_roots = dag_layers[0]
