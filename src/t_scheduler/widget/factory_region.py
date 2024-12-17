@@ -32,6 +32,7 @@ class MagicStateFactoryRegion(WidgetRegion):
                 self.sc_patches[r][c].patch_type = PatchType.RESERVED
 
         factory.outputs = []
+        factory.layout_position = (row, col)
 
         for r_off, c_off in factory.positions:
             r, c = row + r_off, col + c_off

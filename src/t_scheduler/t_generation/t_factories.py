@@ -5,9 +5,11 @@ class TFactory(TGenerator):
     def __init__(self,
             *args,
             positions=((0, 0)),
+            layout_position = ((0, 0)),
             **kwargs):
 
         self.positions = positions
+        self.layout_position = ((0, 0))
 
         super().__init__(
             *args,
@@ -21,7 +23,8 @@ class TFactory_Litinski_5x3_15_to_1(TFactory):
     '''
     def __init__(self,
                  generator=None,  # RNG
-                 p_logical=1 - 1e-4
+                 p_logical=1 - 1e-4,
+                 layout_position = ((0, 0))
                  ):
         super().__init__(
             n_cycles=11,
@@ -30,7 +33,8 @@ class TFactory_Litinski_5x3_15_to_1(TFactory):
             height=5,
             width=3,
             prob=p_logical,
-            generator=generator
+            generator=generator,
+            layout_position=layout_position
         )
 
 
@@ -45,7 +49,8 @@ class TFactory_Litinski_6x3_20_to_4(TFactory):
     '''
     def __init__(self,
                  generator=None,  # RNG
-                 p_logical=1 - 1e-4
+                 p_logical=1 - 1e-4,
+                 layout_position = ((0, 0))
                  ):
         super().__init__(
             n_cycles=17,
@@ -54,7 +59,8 @@ class TFactory_Litinski_6x3_20_to_4(TFactory):
             height=6,
             width=3,
             prob=p_logical,
-            generator=generator
+            generator=generator,
+            layout_position=layout_position
         )
 
 
@@ -67,7 +73,8 @@ class TFactory_Litinski_6x3_20_to_4_dense(TFactory):
     '''
     def __init__(self,
                  generator=None,  # RNG
-                 p_logical=1 - 1e-4
+                 p_logical=1 - 1e-4,
+                 layout_position = ((0, 0))
                  ):
         super().__init__(
             n_cycles=17,
@@ -77,5 +84,6 @@ class TFactory_Litinski_6x3_20_to_4_dense(TFactory):
             height=6,
             width=3,
             prob=p_logical,
-            generator=generator
+            generator=generator,
+            layout_position=layout_position
         )
