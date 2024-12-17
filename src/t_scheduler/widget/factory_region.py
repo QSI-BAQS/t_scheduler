@@ -32,6 +32,7 @@ class MagicStateFactoryRegion(WidgetRegion):
                 self.sc_patches[r][c].patch_type = PatchType.RESERVED
 
         factory.outputs = []
+        factory.layout_position = (row, col)
 
         for r_off, c_off in factory.positions:
             r, c = row + r_off, col + c_off
@@ -76,13 +77,13 @@ class MagicStateFactoryRegion(WidgetRegion):
         for col in range(0, width - 2, 3):
             msf_region.add_factory(
                 height - 5, col, TFactory_Litinski_5x3_15_to_1())
-            print(height - 5, col)
+            # print(height - 5, col)
 
         for row in range(height - 11, -1, -6):
             for col in range(0, width - 2, 4):
                 msf_region.add_factory(
                     row, col, TFactory_Litinski_5x3_15_to_1())
-                print(row, col)
+                # print(row, col)
         return msf_region
 
     @staticmethod
@@ -95,11 +96,11 @@ class MagicStateFactoryRegion(WidgetRegion):
         for col in range(0, width - 2, 3):
             msf_region.add_factory(
                 height - 6, col, TFactory_Litinski_6x3_20_to_4_dense())
-            print(height - 6, col)
+            # print(height - 6, col)
 
         for row in range(height - 13, -1, -7):
             for col in range(0, width - 2, 4):
                 msf_region.add_factory(
                     row, col, TFactory_Litinski_6x3_20_to_4_dense())
-                print(row, col)
+                # print(row, col)
         return msf_region

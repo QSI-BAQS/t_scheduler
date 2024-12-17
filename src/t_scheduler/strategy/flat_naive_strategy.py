@@ -41,14 +41,15 @@ class FlatNaiveStrategy(AbstractStrategy):
                 Patch(PatchType.BELL, r, width - 1),
             ]
             board.append(row)
-        widget = Widget(width, height, board, components=[register_region, route_region, buffer_region]) # Pseudo-widget for output clarity
+        widget = Widget(width, height, board, components=[
+                        register_region, route_region, buffer_region])  # Pseudo-widget for output clarity
 
         strat = FlatNaiveStrategy(BaselineRegisterRouter(register_region),
-                                        StandardBusRouter(route_region),
-                                        TCultivatorBufferRouter(buffer_region),
-                )
+                                  StandardBusRouter(route_region),
+                                  TCultivatorBufferRouter(buffer_region),
+                                  )
         return strat, widget
-    
+
     @staticmethod
     def with_litinski_5x3_unbuffered_widget(width, height) -> Tuple[FlatNaiveStrategy, Widget]:
         register_region = SingleRowRegisterRegion(width)
@@ -64,15 +65,15 @@ class FlatNaiveStrategy(AbstractStrategy):
                 Patch(PatchType.BELL, r, width - 1),
             ]
             board.append(row)
-        widget = Widget(width, height, board, components=[register_region, route_region, buffer_region]) # Pseudo-widget for output clarity
+        widget = Widget(width, height, board, components=[
+                        register_region, route_region, buffer_region])  # Pseudo-widget for output clarity
 
         strat = FlatNaiveStrategy(BaselineRegisterRouter(register_region),
-                                        StandardBusRouter(route_region),
-                                        MagicStateFactoryRouter(buffer_region),
-                )
+                                  StandardBusRouter(route_region),
+                                  MagicStateFactoryRouter(buffer_region),
+                                  )
         return strat, widget
-    
-     
+
     @staticmethod
     def with_litinski_6x3_dense_unbuffered_widget(width, height) -> Tuple[FlatNaiveStrategy, Widget]:
         register_region = SingleRowRegisterRegion(width)
@@ -88,12 +89,13 @@ class FlatNaiveStrategy(AbstractStrategy):
                 Patch(PatchType.BELL, r, width - 1),
             ]
             board.append(row)
-        widget = Widget(width, height, board, components=[register_region, route_region, buffer_region]) # Pseudo-widget for output clarity
+        widget = Widget(width, height, board, components=[
+                        register_region, route_region, buffer_region])  # Pseudo-widget for output clarity
 
         strat = FlatNaiveStrategy(BaselineRegisterRouter(register_region),
-                                        StandardBusRouter(route_region),
-                                        MagicStateFactoryRouter(buffer_region),
-                )
+                                  StandardBusRouter(route_region),
+                                  MagicStateFactoryRouter(buffer_region),
+                                  )
         return strat, widget
 
     def __init__(self, register_router, bus_router, buffer_router):
@@ -107,7 +109,7 @@ class FlatNaiveStrategy(AbstractStrategy):
             # Assume all patches in row below routing layer are Z_TOP orientation
             matching_rotation = True
         else:
-            # This depends on implementation details of ordering of move_patches in 
+            # This depends on implementation details of ordering of move_patches in
             # our router
             T_patch = buffer_transaction.move_patches[0]
             attack_patch = buffer_transaction.move_patches[1]
@@ -123,7 +125,7 @@ class FlatNaiveStrategy(AbstractStrategy):
         gate.activate(transactions)
         # gate.duration += util.RESET_PLUS_DELAY
         return gate
-    
+
     def alloc_gate(self, gate) -> Gate | None:
         if gate.gate_type == GateType.T_STATE:
 
@@ -132,11 +134,11 @@ class FlatNaiveStrategy(AbstractStrategy):
 
             reg_col: int = register_transaction.connect_col  # type: ignore
 
-            if not (buffer_transaction := self.buffer_router.request_transaction(reg_col - 1)):
+            if not (buffer_transaction := self.buffer_router.request_transaction(max(0,reg_col - 1))):
                 return None
 
             bus_transaction = self.bus_router.request_transaction(
-                reg_col, buffer_transaction.connect_col + 1)  # type: ignore
+                buffer_transaction.connect_col + 1, reg_col)  # type: ignore
 
             if not bus_transaction:
                 return None
@@ -145,17 +147,16 @@ class FlatNaiveStrategy(AbstractStrategy):
             ############################
             return self.validate_rotation(gate, register_transaction, bus_transaction, buffer_transaction)
 
-
         elif gate.gate_type == GateType.LOCAL_GATE:
             if not (register_transaction := self.register_router.request_transaction(gate.targ, request_type='local')):
                 return None
-            
+
             gate.activate(register_transaction)
             return gate
 
         elif gate.gate_type == GateType.ANCILLA:
             if not (register_transaction := self.register_router.request_transaction(gate.targ, request_type='ancilla')):
                 return None
-            
+
             gate.activate(register_transaction)
             return gate

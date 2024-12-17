@@ -195,7 +195,7 @@ class VerticalRoutingStrategy(AbstractStrategy):
                 return None
 
             bus_transaction = self.bus_router.request_transaction(
-                reg_col, buffer_transaction.connect_col + 1)  # type: ignore
+                buffer_transaction.connect_col + 1, reg_col)  # type: ignore
 
             ############################
             #  Process rotation logic

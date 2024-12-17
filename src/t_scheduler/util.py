@@ -81,7 +81,7 @@ def dag_create(obj, gates):
                     gates[targ].pre.append(gates[q])
                     gates[q].post.append(gates[targ])
         dag_layers.append(layer)
-    print(dag_layers)
+    # print(dag_layers)
     dag_prune(dag_layers, gates)  # type: ignore
     return dag_layers, gates
 
