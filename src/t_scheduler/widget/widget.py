@@ -1,11 +1,17 @@
 from __future__ import annotations
-from typing import List
+from typing import List, Tuple
 
 from .widget_region import WidgetRegion
 from ..patch import Patch, PatchOrientation, PatchType
 
 class Widget:
     def __init__(self, width: int, height: int, board: List[List[Patch]], components: List[WidgetRegion] = []):
+        '''
+            width: width of widget
+            height: height of widget
+            board: backing cells of widget
+            component: component regions of widget
+        '''
         self.width: int = width
         self.height: int = height
 
@@ -22,7 +28,7 @@ class Widget:
         for component in self.components:
             component.update()
 
-    def __getitem__(self, index) -> Patch | List[Patch]:
+    def __getitem__(self, index: Tuple[int, int] | int) -> Patch | List[Patch]:
         if isinstance(index, tuple) and len(index) == 2:
             return self.board[index[0]][index[1]]
         elif isinstance(index, int):
