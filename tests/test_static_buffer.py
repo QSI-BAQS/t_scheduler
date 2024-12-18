@@ -193,6 +193,17 @@ class StaticBufferTest(unittest.TestCase):
 
         orc.schedule()
 
+    def test_comb_vertical_qft(self, tikz=False):
+        with open('tests/qft_8_test_obj.json') as f:
+            obj = json.load(f)
+        strat, wid = VerticalRoutingStrategy.with_prefilled_comb_widget(
+            20, 10, rot_strat=RotationStrategyOption.BACKPROP_INIT, comb_height=3)
+        gates = util.make_gates(obj, lambda x: int(x) * 13 % 11 + 12)
+        dag_layers, all_gates = util.dag_create(obj, gates)
+        dag_roots = dag_layers[0]
+
+        orc = ScheduleOrchestrator(dag_roots, wid, strat, False, tikz)
+        orc.schedule()
 
 if __name__ == '__main__':
     unittest.main()

@@ -22,7 +22,7 @@ class VerticalFilledBufferRouter:
         '''
             output_col: which column to output to in routing bus above
         '''
-
+        if not output_cols: return None
         for output_col in output_cols:
             if (T := self.search_owning(output_col)) and self.validate_T_path(
                 path := self.find_path_owning(output_col, T)
@@ -88,7 +88,7 @@ class VerticalFilledBufferRouter:
         #  -- must be row below due to bottom up search
 
         if start_row > 0:
-            for c in range(start_col, -1, -1):
+            for c in range(start_col-1, -1, -1):
                 if (patch := buffer[start_row, c]).route_available():
                     left_path.append(patch)
                 elif patch.T_available():
@@ -127,7 +127,7 @@ class VerticalFilledBufferRouter:
         right_path = []
 
         if start_row > 1:
-            for c in range(start_col, widget.width):
+            for c in range(start_col + 1, widget.width):
                 if (patch := widget[start_row, c]).route_available():
                     right_path.append(patch)
                 elif patch.T_available():
@@ -143,7 +143,7 @@ class VerticalFilledBufferRouter:
                 elif patch.T_available() and right_path and patch.col <= right_path[-1].col:
                     return (
                         [patch]
-                        + right_path[: c - start_col + 1][::-1]
+                        + right_path[: c - start_col][::-1]
                         + prefix[: r + 2][::-1]
                     )
                 elif patch.T_available():

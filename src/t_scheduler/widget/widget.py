@@ -269,11 +269,11 @@ class Widget:
                     if _manhattan(first, second) > 1:
                         if self[first].lock.owner.__class__.__name__ == 'RotateGate': # type: ignore
                             continue
-                        raise Exception('debug')
                         # Error! TODO remove after debugging
                         with open('check.out', 'a') as check:
                             print(self.to_str_output(), file=check)
                             print(gate_path, file=check)
+                        # raise Exception('debug')
                         return []
                     else:
                         output_rects.append(TikzRectangle(*self._to_tikz_coords(*sorted((first, second)), sep=0.2), # type: ignore
