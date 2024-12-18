@@ -1,5 +1,5 @@
 from typing import List, Tuple
-from ..patch import Patch, PatchOrientation, PatchType
+from ..base.patch import Patch, PatchOrientation, PatchType
 
 class WidgetRegion:
     width: int

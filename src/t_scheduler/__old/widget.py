@@ -1,6 +1,6 @@
 from __future__ import annotations
 from typing import List
-from t_scheduler.patch import BufferPatch, Patch, PatchOrientation, PatchType, TCultPatch, TFactoryOutputPatch
+from t_scheduler.base.patch import BufferPatch, Patch, PatchOrientation, PatchType, TCultPatch, TFactoryOutputPatch
 
 
 class TreeNode:

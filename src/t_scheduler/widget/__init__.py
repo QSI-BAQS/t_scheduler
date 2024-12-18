@@ -1,2 +1,2 @@
-from .widget import *
+from .widget import Widget
 

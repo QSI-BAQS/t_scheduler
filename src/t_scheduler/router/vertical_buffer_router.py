@@ -1,5 +1,5 @@
 from typing import List
-from t_scheduler.patch import Patch
+from t_scheduler.base.patch import Patch
 from t_scheduler.router.transaction import Transaction
 from t_scheduler.widget.magic_state_buffer import PrefilledMagicStateRegion
 

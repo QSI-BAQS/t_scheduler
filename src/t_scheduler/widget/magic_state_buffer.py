@@ -2,7 +2,7 @@ import itertools
 from typing import List, Literal, Set, Tuple
 
 from .widget_region import WidgetRegion
-from ..patch import Patch, PatchOrientation, PatchType, TCultPatch
+from ..base.patch import Patch, PatchOrientation, PatchType, TCultPatch
 # from ..router import Router
 
 

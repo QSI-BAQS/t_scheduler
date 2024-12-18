@@ -1,8 +1,8 @@
 from collections import deque
 from typing import List
-from t_scheduler import gate
-from t_scheduler.gate import BaseGate, GateType, T_Gate
-from t_scheduler.patch import Patch, PatchOrientation, PatchType, TCultPatch
+from t_scheduler.base import gate
+from t_scheduler.base.gate import BaseGate, GateType, T_Gate
+from t_scheduler.base.patch import Patch, PatchOrientation, PatchType, TCultPatch
 from t_scheduler.scheduler import RotationStrategy
 from t_scheduler.widget import Widget
 

@@ -1,5 +1,5 @@
 from typing import List, Tuple
-from ..patch import Patch, PatchType
+from ..base.patch import Patch, PatchType
 from .widget_region import WidgetRegion
 
 class RouteBus(WidgetRegion):

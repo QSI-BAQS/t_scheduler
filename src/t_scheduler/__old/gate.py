@@ -3,7 +3,7 @@ from abc import ABC
 from enum import Enum
 from typing import Any, List, Set
 
-from t_scheduler.patch import Patch, PatchLock
+from t_scheduler.base.patch import Patch, PatchLock
 
 
 class GateType(Enum):

@@ -1,6 +1,6 @@
 
 from typing import List
-from t_scheduler.gate import BaseGate, T_Gate
+from .gate import T_Gate
 
 
 def toffoli_example_input():

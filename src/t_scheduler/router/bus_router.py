@@ -1,7 +1,3 @@
-
-
-from typing import List
-from t_scheduler.patch import Patch, PatchLock
 from t_scheduler.router.transaction import Transaction
 from t_scheduler.widget.route_bus import RouteBus
 

@@ -1,7 +1,8 @@
 import json
 import unittest
 from itertools import chain
-from t_scheduler import gate, util
+from t_scheduler.base import util
+from t_scheduler.base import gate
 from t_scheduler.schedule_orchestrator import ScheduleOrchestrator
 from t_scheduler.strategy.buffered_naive_strategy import BufferedNaiveStrategy
 from t_scheduler.strategy.flat_naive_strategy import FlatNaiveStrategy

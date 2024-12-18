@@ -1,8 +1,5 @@
-import stat
-from typing import List
-from t_scheduler.patch import Patch
 from t_scheduler.router.transaction import Transaction
-from t_scheduler.widget.magic_state_buffer import MagicStateBufferRegion, TCultivatorBufferRegion
+from t_scheduler.widget.magic_state_buffer import MagicStateBufferRegion
 
 
 class RechargableBufferRouter:
@@ -45,7 +42,7 @@ class RechargableBufferRouter:
         path = [self.buffer[row, best_col] for row in range(self.buffer.height)][::-1]
         return Transaction(path, [], connect_col=path[-1].col)
 
-    def upkeep_transaction(self, buffer_slot: Patch):
+    def upkeep_transaction(self, buffer_slot):
         path = [self.buffer[x, buffer_slot.col] for x in range(buffer_slot.row, self.buffer.height)][::-1]
         return Transaction(path, [path[0]], connect_col=path[-1].col)
     

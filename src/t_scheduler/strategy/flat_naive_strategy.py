@@ -1,25 +1,19 @@
 from __future__ import annotations
-from enum import Enum
 from typing import Tuple
 
-from t_scheduler.gate import Gate, GateType, RotateGate
-from t_scheduler.patch import Patch, PatchOrientation, PatchType
-from t_scheduler.router import vertical_buffer_router
+from t_scheduler.base.gate import Gate, GateType
+from t_scheduler.base.patch import Patch, PatchOrientation, PatchType
 from t_scheduler.router.cultivator_router import TCultivatorBufferRouter
 from t_scheduler.router.factory_router import MagicStateFactoryRouter
-from t_scheduler.router.tree_buffer_router import TreeFilledBufferRouter
-from t_scheduler.router.vertical_buffer_router import VerticalFilledBufferRouter
 from t_scheduler.router.bus_router import StandardBusRouter
 from t_scheduler.router.register_router import BaselineRegisterRouter
 from t_scheduler.router.transaction import TransactionList
 from t_scheduler.strategy.abstract_strategy import AbstractStrategy
-from t_scheduler.t_generation.t_factories import TFactory_Litinski_5x3_15_to_1
 from t_scheduler.widget.factory_region import MagicStateFactoryRegion
-from t_scheduler.widget.magic_state_buffer import PrefilledMagicStateRegion, TCultivatorBufferRegion
+from t_scheduler.widget.magic_state_buffer import  TCultivatorBufferRegion
 from t_scheduler.widget.registers import SingleRowRegisterRegion
 from t_scheduler.widget.route_bus import RouteBus
 from t_scheduler.widget.widget import Widget
-import t_scheduler.util as util
 
 class FlatNaiveStrategy(AbstractStrategy):
     register_router: BaselineRegisterRouter

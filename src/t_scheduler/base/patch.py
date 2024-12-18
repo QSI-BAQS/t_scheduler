@@ -2,8 +2,8 @@ from __future__ import annotations
 from enum import Enum, IntEnum
 from typing import List
 
-from t_scheduler.t_generation import t_cultivator
-from t_scheduler.t_generation.t_factories import TFactory
+from ..t_generation import TCultivator
+from ..t_generation import TFactory
 
 
 class PatchType(Enum):
@@ -151,7 +151,7 @@ class TCultPatch(Patch):
                          starting_orientation=starting_orientation)
 
         self.has_T = False
-        self.cultivator = t_cultivator.TCultivator()
+        self.cultivator = TCultivator()
 
     def T_available(self):
         return self.has_T and not self.locked()

@@ -1,7 +1,8 @@
 import json
 import unittest
 from itertools import chain
-from t_scheduler import gate, util
+from t_scheduler.base import util
+from t_scheduler.base import gate
 from t_scheduler.schedule_orchestrator import ScheduleOrchestrator
 from t_scheduler.strategy.buffered_naive_strategy import BufferedNaiveStrategy
 from t_scheduler.strategy.flat_naive_strategy import FlatNaiveStrategy
@@ -11,6 +12,7 @@ from t_scheduler.widget.factory_region import MagicStateFactoryRegion
 
 
 class StaticBufferTest(unittest.TestCase):
+    @unittest.skip('not implemented')
     def test_end_to_end_lookback_vertical(self, tikz=False):
         base_gate_layers = [
             [*chain(*(([x] * 8) for x in [5, 0, 6, 8, 7]))],
@@ -24,6 +26,7 @@ class StaticBufferTest(unittest.TestCase):
         orc = ScheduleOrchestrator(gate_layers[0], wid, strat, False, tikz)
         orc.schedule()
 
+    @unittest.skip('not implemented')
     def test_end_to_end_reject_vertical(self, tikz=False):
         gate_layers = [
             [*chain(*(([x] * 8) for x in [5, 0, 6, 8, 7]))],

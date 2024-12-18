@@ -1,9 +1,9 @@
 from typing import List, Tuple
 
-from t_scheduler.t_generation.t_factories import TFactory_Litinski_5x3_15_to_1, TFactory_Litinski_6x3_20_to_4_dense
+from ..t_generation.t_factories import TFactory_Litinski_5x3_15_to_1, TFactory_Litinski_6x3_20_to_4_dense
 
 from .widget_region import WidgetRegion
-from ..patch import Patch, PatchType, TFactoryOutputPatch
+from ..base.patch import Patch, PatchType, TFactoryOutputPatch
 
 
 class MagicStateFactoryRegion(WidgetRegion):

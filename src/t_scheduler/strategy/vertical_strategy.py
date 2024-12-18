@@ -2,9 +2,8 @@ from __future__ import annotations
 from enum import Enum
 from typing import Tuple
 
-from t_scheduler.gate import Gate, GateType, RotateGate
-from t_scheduler.patch import Patch, PatchOrientation, PatchType
-from t_scheduler.router import vertical_buffer_router
+from t_scheduler.base.gate import Gate, GateType, RotateGate
+from t_scheduler.base.patch import Patch, PatchOrientation, PatchType
 from t_scheduler.router.vertical_buffer_router import VerticalFilledBufferRouter
 from t_scheduler.router.bus_router import StandardBusRouter
 from t_scheduler.router.register_router import BaselineRegisterRouter, CombRegisterRouter
@@ -14,7 +13,7 @@ from t_scheduler.widget.magic_state_buffer import PrefilledMagicStateRegion
 from t_scheduler.widget.registers import CombShapedRegisterRegion, SingleRowRegisterRegion
 from t_scheduler.widget.route_bus import RouteBus
 from t_scheduler.widget.widget import Widget
-import t_scheduler.util as util
+import t_scheduler.base.util as util
 
 
 class RotationStrategyOption(Enum):
@@ -44,7 +43,8 @@ class VerticalRoutingStrategy(AbstractStrategy):
                 Patch(PatchType.BELL, r, width - 1),
             ]
             board.append(row)
-        widget = Widget(width, height, board, components=[register_region, route_region, buffer_region])
+        widget = Widget(width, height, board, components=[
+                        register_region, route_region, buffer_region])
 
         strat = VerticalRoutingStrategy(BaselineRegisterRouter(register_region),
                                         StandardBusRouter(route_region),
@@ -52,7 +52,7 @@ class VerticalRoutingStrategy(AbstractStrategy):
                                             buffer_region),
                                         rot_strat=rot_strat)
         return strat, widget
-    
+
     @staticmethod
     def with_prefilled_comb_widget(width, height, rot_strat: RotationStrategyOption, comb_height) -> Tuple[VerticalRoutingStrategy, Widget]:
         register_region = CombShapedRegisterRegion(width, comb_height)
@@ -68,7 +68,8 @@ class VerticalRoutingStrategy(AbstractStrategy):
                 Patch(PatchType.BELL, r, width - 1),
             ]
             board.append(row)
-        widget = Widget(width, height, board, components=[register_region, route_region, buffer_region])
+        widget = Widget(width, height, board, components=[
+                        register_region, route_region, buffer_region])
 
         strat = VerticalRoutingStrategy(CombRegisterRouter(register_region),
                                         StandardBusRouter(route_region),
@@ -83,7 +84,8 @@ class VerticalRoutingStrategy(AbstractStrategy):
         self.buffer_router = buffer_router
         self.rot_strat = rot_strat
 
-        if rot_strat == RotationStrategyOption.LOOKBACK: raise NotImplementedError()
+        if rot_strat == RotationStrategyOption.LOOKBACK:
+            raise NotImplementedError()
 
     def process_rotation(self, gate, register_transaction, bus_transaction, buffer_transaction) -> Gate | None:
 

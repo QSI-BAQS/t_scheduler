@@ -5,7 +5,7 @@ from t_scheduler.widget import route_bus
 
 
 from .widget_region import WidgetRegion
-from ..patch import Patch, PatchOrientation, PatchType
+from ..base.patch import Patch, PatchOrientation, PatchType
 
 class Widget:
     def __init__(self, width: int, height: int, board: List[List[Patch]], components: List[WidgetRegion] = []):

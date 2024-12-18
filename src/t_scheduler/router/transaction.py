@@ -1,8 +1,7 @@
 from __future__ import annotations
-from re import S
 from typing import Callable, List
-from t_scheduler.patch import Patch, PatchLock
 
+from ..base import Patch, PatchLock
 
 class Transaction:
     move_patches: List[Patch]

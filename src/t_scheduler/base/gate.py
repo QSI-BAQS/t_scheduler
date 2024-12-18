@@ -3,7 +3,7 @@ from abc import ABC
 from enum import Enum
 from typing import Any, List, Set
 
-from t_scheduler.patch import Patch, PatchLock, PatchType
+from .patch import Patch, PatchLock, PatchType
 from t_scheduler.router.transaction import Transaction, TransactionList
 
 class GateType(Enum):

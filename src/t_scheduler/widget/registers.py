@@ -1,6 +1,6 @@
 from typing import List, Literal, Tuple
 
-from ..patch import Patch, PatchType
+from ..base.patch import Patch, PatchType
 from .widget_region import WidgetRegion
 
 
