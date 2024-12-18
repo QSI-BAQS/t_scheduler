@@ -1,9 +1,10 @@
 from collections import deque
 from ..base import Transaction
-from ..widget.factory_region import MagicStateFactoryRegion
+from ..widget import MagicStateFactoryRegion
 
+from .abstract_router import AbstractRouter
 
-class MagicStateFactoryRouter:
+class MagicStateFactoryRouter(AbstractRouter):
     """
     Note: Works only with passthrough bus router
     Assumption because output_col is used to detect which columns of T to assign
@@ -37,6 +38,9 @@ class MagicStateFactoryRouter:
     ) -> Transaction | None:
         """
         output_col: which column to output to in routing bus above
+
+        strict_output_col: whether we can just output to any column in 
+        the routing bus
         """
         queue = sorted(
             self.region.available_states, key=lambda p: (abs(p.col - output_col), p.row)
@@ -54,6 +58,9 @@ class MagicStateFactoryRouter:
         return None
 
     def bfs(self, curr_patch, strict_col=None):
+        '''
+        BFS from a T state along routing net to top row
+        '''
         bfs_queue = deque([(curr_patch.row, curr_patch.col)])
         parent = {}
         seen = {(curr_patch.row, curr_patch.col)}

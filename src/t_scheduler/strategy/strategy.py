@@ -3,10 +3,9 @@ from typing import Any, List
 from t_scheduler.base.transaction import TransactionList
 
 from ..base.gate import GateType
-from ..router.register_router import BaselineRegisterRouter
-from ..router.bus_router import StandardBusRouter
-
 from ..base import Gate
+from ..router import BaselineRegisterRouter, StandardBusRouter
+
 
 
 class Strategy:
@@ -18,11 +17,16 @@ class Strategy:
         self.register_router = register_router
 
     def alloc_nonlocal(self, gate: Gate) -> Gate | None:
+        '''
+        Alloc a non-local gate
+        '''
         raise NotImplementedError("Override this method in a subclass!")
 
     def alloc_gate(self, gate: Gate) -> Gate | None:
         '''
-        Alloc a gate for local and ancilla gates.
+        Alloc a gate.
+        
+        Logic for local and ancilla gates is handled internally.
 
         If nonlocal, then we dispatch to alloc_nonlocal.
         '''

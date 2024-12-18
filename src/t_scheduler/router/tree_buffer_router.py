@@ -3,8 +3,8 @@ from typing import List
 
 from collections import deque
 from ..base import Patch, PatchOrientation, PatchType, Transaction
-from ..widget.magic_state_buffer import PrefilledMagicStateRegion
-
+from ..widget import PrefilledMagicStateRegion
+from .abstract_router import AbstractRouter
 
 class TreeNode:
     parent: TreeNode | None
@@ -40,7 +40,7 @@ class TreeNode:
         return f"{{ {self.path} ({self.debug_source}): {{ 'frag': {self.path_fragment}, 'children': {self.children} }} }}"
 
 
-class TreeFilledBufferRouter:
+class TreeFilledBufferRouter(AbstractRouter):
     """
     Note: Works only with passthrough bus router
     Assumption because output_col is used to detect which columns of T to assign
@@ -71,7 +71,7 @@ class TreeFilledBufferRouter:
 
     def request_transaction(self, lane: int) -> Transaction | None:
         """
-        output_col: which lane to search from
+        lane: which lane to search from
         """
         if not (path := self.tree_search(lane)):
             return None

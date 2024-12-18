@@ -1,9 +1,9 @@
 from typing import List
 from ..base import Patch, Transaction
-from ..widget.magic_state_buffer import PrefilledMagicStateRegion
+from ..widget import PrefilledMagicStateRegion
+from .abstract_router import AbstractRouter
 
-
-class VerticalFilledBufferRouter:
+class VerticalFilledBufferRouter(AbstractRouter):
     """
     Note: Works only with passthrough bus router
     Assumption because output_col is used to detect which

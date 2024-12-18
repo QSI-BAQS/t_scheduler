@@ -1,5 +1,6 @@
+from typing import List
 from ..base import Transaction
-from ..widget.magic_state_buffer import MagicStateBufferRegion
+from ..widget import MagicStateBufferRegion
 
 
 class RechargableBufferRouter:
@@ -36,6 +37,9 @@ class RechargableBufferRouter:
         return None
 
     def request_passthrough(self, output_col) -> Transaction | None:
+        '''
+        Request a passthrough column in the buffer for factories below
+        '''
         buffer_slots = self.buffer.get_buffer_slots()
         cols = [cell.col for cell in buffer_slots if cell and cell.row == 0]
 
@@ -44,15 +48,21 @@ class RechargableBufferRouter:
         path = [self.buffer[row, best_col] for row in range(self.buffer.height)][::-1]
         return Transaction(path, [], connect_col=path[-1].col)
 
-    def upkeep_transaction(self, buffer_slot):
+    def upkeep_transaction(self, buffer_slot) -> Transaction:
+        '''
+        Generate a transaction for moving a T_state from routing bus below
+        to buffer_slot.
+        '''
         path = [
             self.buffer[x, buffer_slot.col]
             for x in range(buffer_slot.row, self.buffer.height)
         ][::-1]
         return Transaction(path, [path[0]], connect_col=path[-1].col)
 
-    def all_local_upkeep_transactions(self):
-
+    def all_local_upkeep_transactions(self) -> List[Transaction]:
+        '''
+        Generate all local moves to shuffle T_state along column queues
+        '''
         output_transactions = []
         for row in range(1, self.buffer.height):
             for col in range(0, self.buffer.width):

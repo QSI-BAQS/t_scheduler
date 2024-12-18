@@ -10,6 +10,8 @@ from t_scheduler.strategy.tree_strategy import TreeRoutingStrategy
 from t_scheduler.strategy.vertical_strategy import RotationStrategyOption, VerticalRoutingStrategy
 from t_scheduler.widget.factory_region import MagicStateFactoryRegion
 
+from t_scheduler.templates import *
+
 
 class StaticBufferTest(unittest.TestCase):
     @unittest.skip('not implemented')
@@ -20,7 +22,7 @@ class StaticBufferTest(unittest.TestCase):
         gate_layers = [[gate.T_Gate(t, 2, 3) for t in layer]
                        for layer in base_gate_layers]
 
-        strat, wid = VerticalRoutingStrategy.with_prefilled_buffer_widget(
+        strat, wid = vertical_strategy_with_prefilled_buffer_widget(
             20, 5, rot_strat=RotationStrategyOption.LOOKBACK)
 
         orc = ScheduleOrchestrator(gate_layers[0], wid, strat, False, tikz)
@@ -34,7 +36,7 @@ class StaticBufferTest(unittest.TestCase):
         gate_layers = [[gate.T_Gate(t, 2, 3) for t in layer]
                        for layer in gate_layers]
 
-        strat, wid = VerticalRoutingStrategy.with_prefilled_buffer_widget(
+        strat, wid = vertical_strategy_with_prefilled_buffer_widget(
             20, 5, rot_strat=RotationStrategyOption.REJECT)
 
         orc = ScheduleOrchestrator(gate_layers[0], wid, strat, False, tikz)
@@ -56,7 +58,7 @@ class StaticBufferTest(unittest.TestCase):
         gate_layers = [[gate.T_Gate(t, 2, 3) for t in layer]
                        for layer in gate_layers]
 
-        strat, wid = VerticalRoutingStrategy.with_prefilled_buffer_widget(
+        strat, wid = vertical_strategy_with_prefilled_buffer_widget(
             20, 5, rot_strat=RotationStrategyOption.INJECT)
 
         orc = ScheduleOrchestrator(gate_layers[0], wid, strat, False, tikz)
@@ -70,7 +72,7 @@ class StaticBufferTest(unittest.TestCase):
         gate_layers = [[gate.T_Gate(t, 2, 3) for t in layer]
                        for layer in gate_layers]
 
-        strat, wid = VerticalRoutingStrategy.with_prefilled_buffer_widget(
+        strat, wid = vertical_strategy_with_prefilled_buffer_widget(
             20, 5, rot_strat=RotationStrategyOption.BACKPROP_INIT)
 
         orc = ScheduleOrchestrator(gate_layers[0], wid, strat, False, tikz)
@@ -84,7 +86,7 @@ class StaticBufferTest(unittest.TestCase):
         gate_layers = [[gate.T_Gate(t, 2, 3) for t in layer]
                        for layer in gate_layers]
 
-        strat, wid = VerticalRoutingStrategy.with_prefilled_comb_widget(
+        strat, wid = vertical_strategy_with_prefilled_comb_widget(
             20, 10, rot_strat=RotationStrategyOption.BACKPROP_INIT, comb_height=5)
 
         orc = ScheduleOrchestrator(gate_layers[0], wid, strat, True)
@@ -98,7 +100,7 @@ class StaticBufferTest(unittest.TestCase):
         gate_layers = [[gate.T_Gate(t, 1, 1) for t in layer]
                        for layer in gate_layers]
 
-        strat, wid = TreeRoutingStrategy.with_prefilled_buffer_widget(20, 5)
+        strat, wid = tree_strategy_with_prefilled_buffer_widget(20, 5)
         
         orc = ScheduleOrchestrator(gate_layers[0], wid, strat, False, tikz)
 
@@ -112,14 +114,14 @@ class StaticBufferTest(unittest.TestCase):
         gate_layers = [[gate.T_Gate(t, 1, 1) for t in layer]
                        for layer in gate_layers]
 
-        strat, wid = TreeRoutingStrategy.with_prefilled_buffer_widget(40, 20)
+        strat, wid = tree_strategy_with_prefilled_buffer_widget(40, 20)
         
         orc = ScheduleOrchestrator(gate_layers[0], wid, strat, False, tikz)
 
         orc.schedule()
 
     def test_vertical_toffoli(self, tikz=False):
-        strat, wid = VerticalRoutingStrategy.with_prefilled_buffer_widget(26, 5, RotationStrategyOption.BACKPROP_INIT)
+        strat, wid = vertical_strategy_with_prefilled_buffer_widget(26, 5, RotationStrategyOption.BACKPROP_INIT)
         obj = util.toffoli_example_input()
         gates = util.make_gates(obj)
         dag_layers, all_gates = util.dag_create(obj, gates)
@@ -131,7 +133,7 @@ class StaticBufferTest(unittest.TestCase):
     def test_tree_qft(self, tikz=False):
         with open('tests/qft_test_obj.json') as f:
             obj = json.load(f)
-        strat, wid = TreeRoutingStrategy.with_prefilled_buffer_widget(12, 10)
+        strat, wid = tree_strategy_with_prefilled_buffer_widget(12, 10)
         gates = util.make_gates(obj, lambda x: int(x) % 5)
         dag_layers, all_gates = util.dag_create(obj, gates)
         dag_roots = dag_layers[0]
@@ -142,7 +144,7 @@ class StaticBufferTest(unittest.TestCase):
     def test_flat_naive_qft(self, tikz=False):
         with open('tests/qft_test_obj.json') as f:
             obj = json.load(f)
-        strat, wid = FlatNaiveStrategy.with_t_cultivator_widget(10, 5)
+        strat, wid = flat_naive_strategy_with_t_cultivator_widget(10, 5)
         gates = util.make_gates(obj, lambda x: int(x) % 5)
         dag_layers, all_gates = util.dag_create(obj, gates)
         dag_roots = dag_layers[0]
@@ -153,7 +155,7 @@ class StaticBufferTest(unittest.TestCase):
     def test_litinski_5x3_qft(self, tikz=False):
         with open('tests/qft_test_obj.json') as f:
             obj = json.load(f)
-        strat, wid = FlatNaiveStrategy.with_litinski_5x3_unbuffered_widget(10, 7)
+        strat, wid = flat_naive_strategy_with_litinski_5x3_unbuffered_widget(10, 7)
         gates = util.make_gates(obj, lambda x: int(x) % 5)
         dag_layers, all_gates = util.dag_create(obj, gates)
         dag_roots = dag_layers[0]
@@ -164,7 +166,7 @@ class StaticBufferTest(unittest.TestCase):
     def test_litinski_6x3_qft(self, tikz=False):
         with open('tests/qft_test_obj.json') as f:
             obj = json.load(f)
-        strat, wid = FlatNaiveStrategy.with_litinski_6x3_dense_unbuffered_widget(10, 8)
+        strat, wid = flat_naive_strategy_with_litinski_6x3_dense_unbuffered_widget(10, 8)
         gates = util.make_gates(obj, lambda x: int(x) % 5)
         dag_layers, all_gates = util.dag_create(obj, gates)
         dag_roots = dag_layers[0]
@@ -175,7 +177,7 @@ class StaticBufferTest(unittest.TestCase):
     def test_litinski_6x3_buffered_qft(self, tikz=False):
         with open('tests/qft_test_obj.json') as f:
             obj = json.load(f)
-        strat, wid = BufferedNaiveStrategy.with_buffered_widget(10, 18, 2, factory_factory=MagicStateFactoryRegion.with_litinski_6x3_dense)
+        strat, wid = buffered_naive_strategy_with_buffered_widget(10, 18, 2, factory_factory=MagicStateFactoryRegion.with_litinski_6x3_dense)
         gates = util.make_gates(obj, lambda x: int(x) % 5)
         dag_layers, all_gates = util.dag_create(obj, gates)
         dag_roots = dag_layers[0]
@@ -190,7 +192,7 @@ class StaticBufferTest(unittest.TestCase):
         gate_layers = [[gate.T_Gate(t, 2, 3) for t in layer]
                        for layer in gate_layers]
 
-        strat, wid = VerticalRoutingStrategy.with_prefilled_comb_widget(
+        strat, wid = vertical_strategy_with_prefilled_comb_widget(
             20, 10, rot_strat=RotationStrategyOption.BACKPROP_INIT, comb_height=5)
 
         orc = ScheduleOrchestrator(gate_layers[0], wid, strat, False, tikz)
@@ -200,7 +202,7 @@ class StaticBufferTest(unittest.TestCase):
     def test_comb_vertical_qft(self, tikz=False):
         with open('tests/qft_8_test_obj.json') as f:
             obj = json.load(f)
-        strat, wid = VerticalRoutingStrategy.with_prefilled_comb_widget(
+        strat, wid = vertical_strategy_with_prefilled_comb_widget(
             20, 10, rot_strat=RotationStrategyOption.BACKPROP_INIT, comb_height=3)
         gates = util.make_gates(obj, lambda x: int(x) * 13 % 11 + 12)
         dag_layers, all_gates = util.dag_create(obj, gates)

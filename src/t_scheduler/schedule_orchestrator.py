@@ -1,7 +1,7 @@
 from collections import deque
 
-from t_scheduler.strategy.strategy import Strategy
-from t_scheduler.widget.widget import Widget
+from .strategy import Strategy
+from .widget import Widget
 
 
 class ScheduleOrchestrator:

@@ -4,15 +4,8 @@ from typing import Callable, List, Tuple
 from ..base import Gate, Patch, PatchOrientation, PatchType, TransactionList
 from ..base.gate import GateType, MoveGate
 
-from ..router.factory_router import MagicStateFactoryRouter
-from ..router.rechargable_router import RechargableBufferRouter
-from ..router.bus_router import StandardBusRouter
-from ..router.register_router import BaselineRegisterRouter
-from ..widget.factory_region import MagicStateFactoryRegion
-from ..widget.magic_state_buffer import MagicStateBufferRegion
-from ..widget.register_region import SingleRowRegisterRegion
-from ..widget.route_bus import RouteBus
-from ..widget.widget import Widget
+from ..router import MagicStateFactoryRouter, RechargableBufferRouter, StandardBusRouter, BaselineRegisterRouter
+from ..widget import *
 
 from .strategy import Strategy
 
@@ -22,65 +15,6 @@ class BufferedNaiveStrategy(Strategy):
     buffer_router: RechargableBufferRouter
     buffer_bus_router: StandardBusRouter
     factory_router: MagicStateFactoryRouter
-
-    @staticmethod
-    def with_buffered_widget(
-        width,
-        height,
-        buffer_height,
-        factory_factory: Callable[[int, int], MagicStateFactoryRegion],
-    ) -> Tuple[BufferedNaiveStrategy, Widget]:
-        register_region = SingleRowRegisterRegion(width)
-        route_region = RouteBus(width)
-        buffer_region = MagicStateBufferRegion(width - 2, buffer_height)
-        buffer_bus_region = RouteBus(width - 2)
-        factory_region = factory_factory(width - 2, height - 3 - buffer_height)
-
-        board = [register_region.sc_patches[0], route_region.sc_patches[0]]
-        for r in range(buffer_height):
-            row = [
-                Patch(PatchType.BELL, r, 0),
-                *buffer_region.sc_patches[r],
-                Patch(PatchType.BELL, r, width - 1),
-            ]
-            board.append(row)
-
-        board.append(
-            [
-                Patch(PatchType.BELL, r, 0),
-                *buffer_bus_region.sc_patches[0],
-                Patch(PatchType.BELL, r, width - 1),
-            ]
-        )
-
-        for r in range(factory_region.height):
-            row = [
-                Patch(PatchType.BELL, r, 0),
-                *factory_region.sc_patches[r],
-                Patch(PatchType.BELL, r, width - 1),
-            ]
-            board.append(row)
-        widget = Widget(
-            width,
-            height,
-            board,
-            components=[
-                register_region,
-                route_region,
-                buffer_region,
-                buffer_bus_region,
-                factory_region,
-            ],
-        )  # Pseudo-widget for output clarity
-
-        strat = BufferedNaiveStrategy(
-            BaselineRegisterRouter(register_region),
-            StandardBusRouter(route_region),
-            RechargableBufferRouter(buffer_region),
-            StandardBusRouter(buffer_bus_region),
-            MagicStateFactoryRouter(factory_region),
-        )
-        return strat, widget
 
     def __init__(
         self,
@@ -100,6 +34,10 @@ class BufferedNaiveStrategy(Strategy):
     def validate_rotation(
         self, gate, buffer_transaction, bus_transaction, *other_transactions
     ) -> Gate | None:
+        '''
+            Check if the rotation matches what we need.
+        '''
+
         # TODO currently NOOP
         if len(buffer_transaction.move_patches) == 1:
             # Assume all patches in row below routing layer are Z_TOP orientation
@@ -138,7 +76,7 @@ class BufferedNaiveStrategy(Strategy):
         ):
 
             bus_transaction = self.bus_router.request_transaction(
-                buffer_transaction.connect_col + 1, reg_col
+                buffer_transaction.connect_col + 1, reg_col # type: ignore
             )  # type: ignore
 
             if bus_transaction:
@@ -167,7 +105,7 @@ class BufferedNaiveStrategy(Strategy):
             return None
 
         buffer_bus_transaction = self.buffer_bus_router.request_transaction(
-            factory_transaction.connect_col, buffer_bus_col
+            factory_transaction.connect_col, buffer_bus_col # type: ignore
         )
         if not buffer_bus_transaction:
             return None
@@ -209,7 +147,7 @@ class BufferedNaiveStrategy(Strategy):
 
             if not (
                 bus_transaction := self.buffer_bus_router.request_transaction(
-                    factory_transaction.connect_col, buffer_transaction.connect_col
+                    factory_transaction.connect_col, buffer_transaction.connect_col # type: ignore
                 )
             ):  # type: ignore
                 continue
@@ -220,13 +158,13 @@ class BufferedNaiveStrategy(Strategy):
                 [factory_transaction, bus_transaction, buffer_transaction]
             )
 
-            gate.activate(transactions, buffer_transaction.measure_patches[0])
+            gate.activate(transactions, buffer_transaction.measure_patches[0]) # type: ignore
 
             upkeep_gates.append(gate)
 
         for trans in self.buffer_router.all_local_upkeep_transactions():
             gate = MoveGate(move_duration=1)  # Local move TODO use constants
 
-            gate.activate(trans, trans.measure_patches[0])
+            gate.activate(trans, trans.measure_patches[0]) # type: ignore
             upkeep_gates.append(gate)
         return upkeep_gates

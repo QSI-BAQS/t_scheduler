@@ -1,10 +1,10 @@
 from typing import Literal
 from collections import deque
 from ..base import Transaction
-from ..widget.register_region import CombShapedRegisterRegion, SingleRowRegisterRegion
+from ..widget import CombShapedRegisterRegion, SingleRowRegisterRegion
+from .abstract_router import AbstractRouter
 
-
-class BaselineRegisterRouter:
+class BaselineRegisterRouter(AbstractRouter):
     region: SingleRowRegisterRegion
 
     def __init__(self, region) -> None:
@@ -15,6 +15,10 @@ class BaselineRegisterRouter:
         gate_targ,
         request_type: Literal["local", "nonlocal", "ancilla"] = "nonlocal",
     ) -> Transaction | None:
+        '''
+            Request a register transaction to gate_targ of type
+            request_type. 
+        '''
         # TODO add logic if 1x1 register cell and ancilla required
 
         physical_position = self.region.get_physical_pos(gate_targ)
@@ -43,7 +47,10 @@ class CombRegisterRouter:
     def __init__(self, region) -> None:
         self.region = region
 
-    def bfs(self, curr_patch, strict_col=None):
+    def bfs(self, curr_patch):
+        '''
+        Search for path along routing net to routing bus below
+        '''
         bfs_queue = deque([(curr_patch.row, curr_patch.col)])
         parent = {}
         seen = {(curr_patch.row, curr_patch.col)}
@@ -78,6 +85,10 @@ class CombRegisterRouter:
         gate_targ,
         request_type: Literal["local", "nonlocal", "ancilla"] = "nonlocal",
     ) -> Transaction | None:
+        '''
+            Request a register transaction to gate_targ of type
+            request_type. 
+        '''
         # TODO add logic if 1x1 register cell and ancilla required
 
         physical_position = self.region.get_physical_pos(gate_targ)

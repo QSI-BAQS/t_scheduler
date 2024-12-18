@@ -1,14 +1,18 @@
 from ..base import Transaction
-from ..widget.route_bus import RouteBus
+from ..widget import RouteBus
+from .abstract_router import AbstractRouter
 
-
-class StandardBusRouter:
+class StandardBusRouter(AbstractRouter):
     route_bus: RouteBus
 
     def __init__(self, route_bus) -> None:
         self.route_bus = route_bus
 
     def request_transaction(self, start_col: int, end_col: int):
+        '''
+        Request the route bus between start_col and end_col
+        (both inclusive)
+        '''
         if not (0 <= start_col < self.route_bus.width) or not (
             0 <= end_col < self.route_bus.width
         ):
@@ -20,10 +24,3 @@ class StandardBusRouter:
             return None
 
         return Transaction(path, [])
-
-    @staticmethod
-    def range_directed(a, b):
-        if a <= b:
-            return range(a, b + 1)
-        else:
-            return range(a, b - 1, -1)

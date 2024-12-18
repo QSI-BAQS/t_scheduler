@@ -4,17 +4,12 @@ from typing import Tuple
 
 from ..base import constants
 from ..base import Gate, Patch, PatchOrientation, PatchType, TransactionList
-from ..base.gate import GateType, RotateGate
+from ..base.gate import RotateGate
 
-from ..router.vertical_buffer_router import VerticalFilledBufferRouter
-from ..router.bus_router import StandardBusRouter
-from ..router.register_router import BaselineRegisterRouter, CombRegisterRouter
+from ..router import VerticalFilledBufferRouter, StandardBusRouter, BaselineRegisterRouter, CombRegisterRouter
+from ..widget import *
+
 from .strategy import Strategy
-from ..widget.magic_state_buffer import PrefilledMagicStateRegion
-from ..widget.register_region import CombShapedRegisterRegion, SingleRowRegisterRegion
-from ..widget.route_bus import RouteBus
-from ..widget.widget import Widget
-
 
 class RotationStrategyOption(Enum):
     BACKPROP_INIT = 0
@@ -27,70 +22,6 @@ class VerticalRoutingStrategy(Strategy):
     register_router: BaselineRegisterRouter
     bus_router: StandardBusRouter
     buffer_router: VerticalFilledBufferRouter
-
-    @staticmethod
-    def with_prefilled_buffer_widget(
-        width, height, rot_strat: RotationStrategyOption
-    ) -> Tuple[VerticalRoutingStrategy, Widget]:
-        register_region = SingleRowRegisterRegion(width)
-        route_region = RouteBus(width)
-        buffer_region = PrefilledMagicStateRegion(width - 2, height - 2, "default")
-
-        board = [register_region.sc_patches[0], route_region.sc_patches[0]]
-        for r in range(height - 2):
-            row = [
-                Patch(PatchType.BELL, r, 0),
-                *buffer_region.sc_patches[r],
-                Patch(PatchType.BELL, r, width - 1),
-            ]
-            board.append(row)
-        widget = Widget(
-            width,
-            height,
-            board,
-            components=[register_region, route_region, buffer_region],
-        )
-
-        strat = VerticalRoutingStrategy(
-            BaselineRegisterRouter(register_region),
-            StandardBusRouter(route_region),
-            VerticalFilledBufferRouter(buffer_region),
-            rot_strat=rot_strat,
-        )
-        return strat, widget
-
-    @staticmethod
-    def with_prefilled_comb_widget(
-        width, height, rot_strat: RotationStrategyOption, comb_height
-    ) -> Tuple[VerticalRoutingStrategy, Widget]:
-        register_region = CombShapedRegisterRegion(width, comb_height)
-        route_region = RouteBus(width)
-        buffer_region = PrefilledMagicStateRegion(
-            width - 2, height - 1 - comb_height, "default"
-        )
-
-        board = [*register_region.sc_patches, route_region.sc_patches[0]]
-        for r in range(height - 1 - comb_height):
-            row = [
-                Patch(PatchType.BELL, r, 0),
-                *buffer_region.sc_patches[r],
-                Patch(PatchType.BELL, r, width - 1),
-            ]
-            board.append(row)
-        widget = Widget(
-            width,
-            height,
-            board,
-            components=[register_region, route_region, buffer_region],
-        )
-
-        strat = VerticalRoutingStrategy(
-            CombRegisterRouter(register_region),
-            StandardBusRouter(route_region),
-            VerticalFilledBufferRouter(buffer_region),
-            rot_strat=rot_strat,
-        )
-        return strat, widget
 
     def __init__(
         self,

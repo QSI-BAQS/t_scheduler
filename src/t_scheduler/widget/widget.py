@@ -131,8 +131,8 @@ class Widget:
     @staticmethod
     def _component_to_style(component):
         from t_scheduler.widget.register_region import RegisterRegion
-        from t_scheduler.widget.route_bus import RouteBus
-        from t_scheduler.widget.magic_state_buffer import AbstractMagicStateBufferRegion
+        from t_scheduler.widget.route_region import RouteBus
+        from t_scheduler.widget.buffer_region import AbstractMagicStateBufferRegion
         from t_scheduler.widget.factory_region import MagicStateFactoryRegion
         from lattice_surgery_draw.primitives.style import TikzStyle
 
