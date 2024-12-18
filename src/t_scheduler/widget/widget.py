@@ -196,7 +196,7 @@ class Widget:
         from lattice_surgery_draw.primitives.tikz_obj import TikzRectangle, TikzNode, TikzCircle
         from lattice_surgery_draw.primitives.style import TikzStyle
         from lattice_surgery_draw.img import SurfaceCodePatch, SurfaceCodePatchWide
-        from t_scheduler.widget.registers import SingleRowRegisterRegion
+        from t_scheduler.widget.registers import SingleRowRegisterRegion, CombShapedRegisterRegion
         from itertools import chain
 
         output_objs = []
@@ -214,6 +214,23 @@ class Widget:
                     ))
                     output_objs.append(TikzCircle(
                         coord[1] + 1, -coord[0] - 0.5, 0.4, label=str(cell_idx // 2), tikz_style=TikzStyle(fill='red!50')))
+            elif isinstance(component, CombShapedRegisterRegion):
+                for r, row in enumerate(component.sc_patches):
+                    for c, cell in enumerate(row):
+                        if cell.patch_type == PatchType.REG:
+                            coord = self.adapter[cell]
+                            output_objs.append(TikzRectangle(
+                                *self._to_tikz_coords(coord, (coord[0], coord[1]), sep=0.1)
+                            ))
+                            output_objs.append(SurfaceCodePatch(
+                                coord[1] + 0.5, -coord[0] - 0.5
+                            ))
+                            # output_objs.append(TikzCircle(
+                            #     coord[1] + 0.5, -coord[0] - 0.5, 0.4, label=str(cell_idx // 2), tikz_style=TikzStyle(fill='red!50')))
+                        else:
+                            coord = self.adapter[cell]
+                            output_objs.append(TikzNode(coord[1] + 0.5, -coord[0] - 0.5, label=self._patch_to_char(cell)
+                                                        ))
             else:
                 for cell in chain(*component.sc_patches):
                     coord = self.adapter[cell]
@@ -221,7 +238,7 @@ class Widget:
                         *self._to_tikz_coords(coord, coord, sep=0.1)
                     ))
                     if cell.T_available():
-                        angle = 90 if cell.orientation == PatchOrientation.X_TOP else 0
+                        angle = 90 if cell.orientation == PatchOrientation.Z_TOP else 0
                         output_objs.append(SurfaceCodePatch(
                             coord[1] + 0.5, -coord[0] - 0.5, angle=angle))
                         output_objs.append(TikzCircle(coord[1] + 0.5, -coord[0] - 0.5, 0.4, label=self._patch_to_char(cell),
@@ -252,6 +269,7 @@ class Widget:
                     if _manhattan(first, second) > 1:
                         if self[first].lock.owner.__class__.__name__ == 'RotateGate': # type: ignore
                             continue
+                        raise Exception('debug')
                         # Error! TODO remove after debugging
                         with open('check.out', 'a') as check:
                             print(self.to_str_output(), file=check)
