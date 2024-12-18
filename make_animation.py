@@ -8,7 +8,7 @@ combine_template = r"""
 \setlength{\parskip}{1em}
 \def\offset{0.1}
 \begin{document}
-\foreach \i in {1, 2, ..., 97} {
+\foreach \i in {1, 2, ..., %s} {
 \begin{page}
     \includegraphics{\i}
 \end{page}
@@ -41,6 +41,7 @@ funcs = [
     # StaticBufferTest.test_litinski_5x3_qft,
     # StaticBufferTest.test_litinski_6x3_qft,
     StaticBufferTest.test_litinski_6x3_buffered_qft,
+    # StaticBufferTest.test_comb_vertical,
 ]
 
 
@@ -116,4 +117,4 @@ if __name__ == '__main__':
         
         shutil.move('animate.pdf', f"../tikz_output/{func.__name__}.pdf")
         os.chdir('..')
-        shutil.rmtree('out')
+        # shutil.rmtree('out')

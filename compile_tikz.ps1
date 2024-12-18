@@ -25,7 +25,7 @@ $jobs = foreach ($texFile in $texFiles) {
 
         # Output success message
         Write-Output "Successfully compiled $filePath"
-    } -ArgumentList $texFile.FullName, $currentDirectory.Path -ThrottleLimit 10
+    } -ArgumentList $texFile.FullName, $currentDirectory.Path -ThrottleLimit 16
 }
 
 # Wait for all thread jobs to complete
