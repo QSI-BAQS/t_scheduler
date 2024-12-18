@@ -43,7 +43,12 @@ class BaseTransaction(ABC):
         raise NotImplementedError()
 
 
-class Transaction:
+class Transaction(BaseTransaction):
+    '''
+    Holds a set of patches for a gate to operate on.
+
+    Some convenience methods here.
+    '''
     move_patches: List[Patch]
     measure_patches: List[Patch]
     magic_state_patch: Patch | None
@@ -88,14 +93,14 @@ class Transaction:
     def lock_move(self, gate):
         assert self.lock is None
 
-        self.lock = PatchLock(gate, self.move_patches, None)  # type: ignore
+        self.lock = PatchLock(gate, self.move_patches)  # type: ignore
         self.lock.lock()
         self.active_cells = self.move_patches
 
     def lock_measure(self, gate):
         assert self.lock is None
 
-        self.lock = PatchLock(gate, self.measure_patches, None)  # type: ignore
+        self.lock = PatchLock(gate, self.measure_patches)  # type: ignore
         self.lock.lock()
         self.active_cells = self.measure_patches
 
@@ -112,7 +117,12 @@ class Transaction:
         return all(not p.locked() for p in self.measure_patches)
 
 
-class TransactionList(list):
+class TransactionList(list, BaseTransaction):
+    '''
+    List of Transactions, with dispatches to children
+
+    This composes.
+    '''
     active_cells: List[Patch]
 
     def __init__(self, *args, **kwargs):

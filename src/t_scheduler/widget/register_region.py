@@ -1,6 +1,6 @@
 from typing import List, Literal, Tuple
 
-from ..base.patch import Patch, PatchType
+from ..base.patch import Patch, PatchOrientation, PatchType
 from .widget_region import WidgetRegion
 
 
@@ -70,11 +70,13 @@ class CombShapedRegisterRegion(RegisterRegion):
             row = []
             for c in range(width):
                 if (c - 1) % (2 + route_width) < route_width or (
-                    (c - 1) % (2 + route_width) == route_width + 1 and c == width - 1
+                    (c - 1) % (2 + route_width) == route_width +
+                    1 and c == width - 1
                 ):
                     row.append(Patch(PatchType.ROUTE, r, c))
                 else:
-                    new_reg = Patch(PatchType.REG, r, c)
+                    new_reg = Patch(PatchType.REG, r, c,
+                                    starting_orientation=PatchOrientation.X_TOP)
                     row.append(new_reg)
                     targ_map[targ_count] = new_reg
                     targ_count += 1

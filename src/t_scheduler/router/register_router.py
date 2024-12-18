@@ -1,7 +1,7 @@
 from typing import Literal
 from collections import deque
 from ..base import Transaction
-from ..widget.registers import CombShapedRegisterRegion, SingleRowRegisterRegion
+from ..widget.register_region import CombShapedRegisterRegion, SingleRowRegisterRegion
 
 
 class BaselineRegisterRouter:
@@ -89,11 +89,23 @@ class CombRegisterRouter:
 
         # Below relies on 1x2 reg patches
         if request_type == "ancilla":
-            raise NotImplementedError()
-            anc = self.region[0, physical_position + 1]
-            if anc.locked():  # This should never happen
+            row, col = reg_patch.row, reg_patch.col
+            for r, c in [
+                (row + 1, col),
+                (row, col - 1),
+                (row, col + 1),
+                (row - 1, col),
+            ]:
+                if 0 <= r < self.region.height and 0 <= c < self.region.width:
+                    patch = self.region[r, c]
+                    if patch.route_available():
+                        anc_patch = patch
+                        break
+            else:
                 return None
-            lock = [anc, reg_patch]
+            if anc_patch.locked():  # This should never happen
+                return None
+            lock = [anc_patch, reg_patch]
             return Transaction(lock, [])
         elif request_type == "local":
             return Transaction([reg_patch], [reg_patch])

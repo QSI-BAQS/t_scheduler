@@ -10,12 +10,13 @@ from ..router.bus_router import StandardBusRouter
 from ..router.register_router import BaselineRegisterRouter
 from ..widget.factory_region import MagicStateFactoryRegion
 from ..widget.magic_state_buffer import MagicStateBufferRegion
-from ..widget.registers import SingleRowRegisterRegion
+from ..widget.register_region import SingleRowRegisterRegion
 from ..widget.route_bus import RouteBus
 from ..widget.widget import Widget
 
+from .strategy import Strategy
 
-class BufferedNaiveStrategy:
+class BufferedNaiveStrategy(Strategy):
     register_router: BaselineRegisterRouter
     bus_router: StandardBusRouter
     buffer_router: RechargableBufferRouter
@@ -122,87 +123,63 @@ class BufferedNaiveStrategy:
         # gate.duration += util.RESET_PLUS_DELAY
         return gate
 
-    def alloc_gate(self, gate) -> Gate | None:
-        if gate.gate_type == GateType.T_STATE:
+    def alloc_nonlocal(self, gate) -> Gate | None:
+        if not (
+            register_transaction := self.register_router.request_transaction(
+                gate.targ
+            )
+        ):
+            return None
 
-            if not (
-                register_transaction := self.register_router.request_transaction(
-                    gate.targ
+        reg_col: int = register_transaction.connect_col  # type: ignore
+
+        if buffer_transaction := self.buffer_router.request_transaction(
+            max(0, reg_col - 1)
+        ):
+
+            bus_transaction = self.bus_router.request_transaction(
+                buffer_transaction.connect_col + 1, reg_col
+            )  # type: ignore
+
+            if bus_transaction:
+                return self.validate_rotation(
+                    gate, buffer_transaction, bus_transaction, register_transaction
                 )
-            ):
-                return None
 
-            reg_col: int = register_transaction.connect_col  # type: ignore
-
-            if buffer_transaction := self.buffer_router.request_transaction(
+        # Need passthrough
+        if not (
+            buffer_transaction := self.buffer_router.request_passthrough(
                 max(0, reg_col - 1)
-            ):
-
-                bus_transaction = self.bus_router.request_transaction(
-                    buffer_transaction.connect_col + 1, reg_col
-                )  # type: ignore
-
-                if bus_transaction:
-                    return self.validate_rotation(
-                        gate, buffer_transaction, bus_transaction, register_transaction
-                    )
-
-            # Need passthrough
-            if not (
-                buffer_transaction := self.buffer_router.request_passthrough(
-                    max(0, reg_col - 1)
-                )
-            ):
-                return None
-
-            buffer_bus_col = buffer_transaction.connect_col
-
-            if not (bus_transaction := self.bus_router.request_transaction(buffer_bus_col + 1, reg_col)):  # type: ignore
-                return None
-
-            if not (
-                factory_transaction := self.factory_router.request_transaction(
-                    buffer_bus_col
-                )
-            ):
-                return None
-
-            buffer_bus_transaction = self.buffer_bus_router.request_transaction(
-                factory_transaction.connect_col, buffer_bus_col
             )
-            if not buffer_bus_transaction:
-                return None
+        ):
+            return None
 
-            return self.validate_rotation(
-                gate,
-                factory_transaction,
-                buffer_bus_transaction,
-                buffer_transaction,
-                bus_transaction,
-                register_transaction,
+        buffer_bus_col = buffer_transaction.connect_col
+
+        if not (bus_transaction := self.bus_router.request_transaction(buffer_bus_col + 1, reg_col)):  # type: ignore
+            return None
+
+        if not (
+            factory_transaction := self.factory_router.request_transaction(
+                buffer_bus_col
             )
+        ):
+            return None
 
-        elif gate.gate_type == GateType.LOCAL_GATE:
-            if not (
-                register_transaction := self.register_router.request_transaction(
-                    gate.targ, request_type="local"
-                )
-            ):
-                return None
+        buffer_bus_transaction = self.buffer_bus_router.request_transaction(
+            factory_transaction.connect_col, buffer_bus_col
+        )
+        if not buffer_bus_transaction:
+            return None
 
-            gate.activate(register_transaction)
-            return gate
-
-        elif gate.gate_type == GateType.ANCILLA:
-            if not (
-                register_transaction := self.register_router.request_transaction(
-                    gate.targ, request_type="ancilla"
-                )
-            ):
-                return None
-
-            gate.activate(register_transaction)
-            return gate
+        return self.validate_rotation(
+            gate,
+            factory_transaction,
+            buffer_bus_transaction,
+            buffer_transaction,
+            bus_transaction,
+            register_transaction,
+        )
 
     def upkeep(self) -> List[Gate]:
         if not any(

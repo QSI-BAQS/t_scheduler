@@ -144,9 +144,3 @@ def parse_weights(gate_layers):
         else:
             gate.schedule_weight = sum(g.schedule_weight + g.weight for g in gate.post)
 
-
-MOVE_T_ADJ_DELAY = 1
-MOVE_T_NONLOCAL_DELAY = 4
-MEASURE_AND_CORR_DELAY = 2
-ROTATE_DELAY = 3
-RESET_PLUS_DELAY = 1

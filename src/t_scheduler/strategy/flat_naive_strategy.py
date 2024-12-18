@@ -8,15 +8,15 @@ from ..router.cultivator_router import TCultivatorBufferRouter
 from ..router.factory_router import MagicStateFactoryRouter
 from ..router.bus_router import StandardBusRouter
 from ..router.register_router import BaselineRegisterRouter
-from ..strategy.abstract_strategy import AbstractStrategy
+from .strategy import Strategy
 from ..widget.factory_region import MagicStateFactoryRegion
 from ..widget.magic_state_buffer import TCultivatorBufferRegion
-from ..widget.registers import SingleRowRegisterRegion
+from ..widget.register_region import SingleRowRegisterRegion
 from ..widget.route_bus import RouteBus
 from ..widget.widget import Widget
 
 
-class FlatNaiveStrategy(AbstractStrategy):
+class FlatNaiveStrategy(Strategy):
     register_router: BaselineRegisterRouter
     bus_router: StandardBusRouter
     buffer_router: TCultivatorBufferRouter
@@ -142,56 +142,33 @@ class FlatNaiveStrategy(AbstractStrategy):
         # gate.duration += util.RESET_PLUS_DELAY
         return gate
 
-    def alloc_gate(self, gate) -> Gate | None:
-        if gate.gate_type == GateType.T_STATE:
-
-            if not (
-                register_transaction := self.register_router.request_transaction(
-                    gate.targ
-                )
-            ):
-                return None
-
-            reg_col: int = register_transaction.connect_col  # type: ignore
-
-            if not (
-                buffer_transaction := self.buffer_router.request_transaction(
-                    max(0, reg_col - 1)
-                )
-            ):
-                return None
-
-            bus_transaction = self.bus_router.request_transaction(
-                buffer_transaction.connect_col + 1, reg_col
-            )  # type: ignore
-
-            if not bus_transaction:
-                return None
-            ############################
-            #  Process rotation logic
-            ############################
-            return self.validate_rotation(
-                gate, register_transaction, bus_transaction, buffer_transaction
+    def alloc_nonlocal(self, gate) -> Gate | None:
+        if not (
+            register_transaction := self.register_router.request_transaction(
+                gate.targ
             )
+        ):
+            return None
 
-        elif gate.gate_type == GateType.LOCAL_GATE:
-            if not (
-                register_transaction := self.register_router.request_transaction(
-                    gate.targ, request_type="local"
-                )
-            ):
-                return None
+        reg_col: int = register_transaction.connect_col  # type: ignore
 
-            gate.activate(register_transaction)
-            return gate
+        if not (
+            buffer_transaction := self.buffer_router.request_transaction(
+                max(0, reg_col - 1)
+            )
+        ):
+            return None
 
-        elif gate.gate_type == GateType.ANCILLA:
-            if not (
-                register_transaction := self.register_router.request_transaction(
-                    gate.targ, request_type="ancilla"
-                )
-            ):
-                return None
+        bus_transaction = self.bus_router.request_transaction(
+            buffer_transaction.connect_col + 1, reg_col
+        )  # type: ignore
 
-            gate.activate(register_transaction)
-            return gate
+        if not bus_transaction:
+            return None
+        ############################
+        #  Process rotation logic
+        ############################
+        return self.validate_rotation(
+            gate, register_transaction, bus_transaction, buffer_transaction
+        )
+

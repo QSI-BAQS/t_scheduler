@@ -1,6 +1,6 @@
 from collections import deque
 
-from t_scheduler.strategy.abstract_strategy import AbstractStrategy
+from t_scheduler.strategy.strategy import Strategy
 from t_scheduler.widget.widget import Widget
 
 
@@ -14,7 +14,7 @@ class ScheduleOrchestrator:
         tikz_output: bool = False,
     ):
         self.widget: Widget = widget
-        self.strategy: AbstractStrategy = strategy
+        self.strategy: Strategy = strategy
 
         self.processed = set()
 

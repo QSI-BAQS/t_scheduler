@@ -2,16 +2,16 @@ from __future__ import annotations
 from enum import Enum
 from typing import Tuple
 
-from ..base import util
+from ..base import constants
 from ..base import Gate, Patch, PatchOrientation, PatchType, TransactionList
 from ..base.gate import GateType, RotateGate
 
 from ..router.vertical_buffer_router import VerticalFilledBufferRouter
 from ..router.bus_router import StandardBusRouter
 from ..router.register_router import BaselineRegisterRouter, CombRegisterRouter
-from ..strategy.abstract_strategy import AbstractStrategy
+from .strategy import Strategy
 from ..widget.magic_state_buffer import PrefilledMagicStateRegion
-from ..widget.registers import CombShapedRegisterRegion, SingleRowRegisterRegion
+from ..widget.register_region import CombShapedRegisterRegion, SingleRowRegisterRegion
 from ..widget.route_bus import RouteBus
 from ..widget.widget import Widget
 
@@ -23,7 +23,7 @@ class RotationStrategyOption(Enum):
     REJECT = 3
 
 
-class VerticalRoutingStrategy(AbstractStrategy):
+class VerticalRoutingStrategy(Strategy):
     register_router: BaselineRegisterRouter
     bus_router: StandardBusRouter
     buffer_router: VerticalFilledBufferRouter
@@ -177,7 +177,7 @@ class VerticalRoutingStrategy(AbstractStrategy):
                 attack_patch,
                 register_transaction.measure_patches[0],
                 gate,
-                util.ROTATE_DELAY,
+                constants.ROTATE_DELAY,
             )
             rot_gate.activate()
             return rot_gate  # type: ignore
@@ -208,66 +208,42 @@ class VerticalRoutingStrategy(AbstractStrategy):
         else:
             raise NotImplementedError()
 
-    def alloc_gate(self, gate) -> Gate | None:
-        if gate.gate_type == GateType.T_STATE:
-
-            if not (
-                register_transaction := self.register_router.request_transaction(
-                    gate.targ
-                )
-            ):
-                return None
-
-            reg_col: int = register_transaction.connect_col  # type: ignore
-
-            # TODO remove assumption of 2-wide registers and add enum
-            buffer_cols = []
-            if reg_col > 0 and self.bus_router.request_transaction(reg_col, reg_col):
-                buffer_cols.append(reg_col - 1)
-            if (
-                reg_col < self.bus_router.route_bus.width - 2
-                and self.bus_router.request_transaction(reg_col, reg_col + 1)
-            ):
-                buffer_cols.append(reg_col)
-
-            if not (
-                buffer_transaction := self.buffer_router.request_transaction(
-                    buffer_cols
-                )
-            ):
-                return None
-
-            bus_transaction = self.bus_router.request_transaction(
-                buffer_transaction.connect_col + 1, reg_col
-            )  # type: ignore
-
-            ############################
-            #  Process rotation logic
-            ############################
-            return self.process_rotation(
-                gate, register_transaction, bus_transaction, buffer_transaction
+    def alloc_nonlocal(self, gate) -> Gate | None:
+        if not (
+            register_transaction := self.register_router.request_transaction(
+                gate.targ
             )
+        ):
+            return None
 
-            # return self.process_rotation(path, gate)
+        reg_col: int = register_transaction.connect_col  # type: ignore
 
-        elif gate.gate_type == GateType.LOCAL_GATE:
-            if not (
-                register_transaction := self.register_router.request_transaction(
-                    gate.targ, request_type="local"
-                )
-            ):
-                return None
+        # TODO remove assumption of 2-wide registers and add enum
+        buffer_cols = []
+        if reg_col > 0 and self.bus_router.request_transaction(reg_col, reg_col):
+            buffer_cols.append(reg_col - 1)
+        if (
+            reg_col < self.bus_router.route_bus.width - 2
+            and self.bus_router.request_transaction(reg_col, reg_col + 1)
+        ):
+            buffer_cols.append(reg_col)
 
-            gate.activate(register_transaction)
-            return gate
+        if not (
+            buffer_transaction := self.buffer_router.request_transaction(
+                buffer_cols
+            )
+        ):
+            return None
 
-        elif gate.gate_type == GateType.ANCILLA:
-            if not (
-                register_transaction := self.register_router.request_transaction(
-                    gate.targ, request_type="ancilla"
-                )
-            ):
-                return None
+        bus_transaction = self.bus_router.request_transaction(
+            buffer_transaction.connect_col + 1, reg_col
+        )  # type: ignore
 
-            gate.activate(register_transaction)
-            return gate
+        ############################
+        #  Process rotation logic
+        ############################
+        return self.process_rotation(
+            gate, register_transaction, bus_transaction, buffer_transaction
+        )
+
+        # return self.process_rotation(path, gate)

@@ -130,7 +130,7 @@ class Widget:
 
     @staticmethod
     def _component_to_style(component):
-        from t_scheduler.widget.registers import RegisterRegion
+        from t_scheduler.widget.register_region import RegisterRegion
         from t_scheduler.widget.route_bus import RouteBus
         from t_scheduler.widget.magic_state_buffer import AbstractMagicStateBufferRegion
         from t_scheduler.widget.factory_region import MagicStateFactoryRegion
@@ -216,7 +216,7 @@ class Widget:
         )
         from lattice_surgery_draw.primitives.style import TikzStyle
         from lattice_surgery_draw.img import SurfaceCodePatch, SurfaceCodePatchWide
-        from t_scheduler.widget.registers import (
+        from t_scheduler.widget.register_region import (
             SingleRowRegisterRegion,
             CombShapedRegisterRegion,
         )

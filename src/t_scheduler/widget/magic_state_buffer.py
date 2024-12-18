@@ -3,7 +3,7 @@ from typing import List, Literal, Set, Tuple
 
 from .widget_region import WidgetRegion
 from ..base import Patch, PatchOrientation, PatchType
-from ..base.patch import TCultPatch
+from ..base.patch import BufferPatch, TCultPatch
 
 
 class AbstractMagicStateBufferRegion(WidgetRegion):
@@ -89,7 +89,7 @@ class MagicStateBufferRegion(AbstractMagicStateBufferRegion):
         self.available_states = set()
         sc_patches = []
         for r in range(height):
-            row = [Patch(PatchType.ROUTE_BUFFER, r, c) for c in range(width)]
+            row = [BufferPatch(r, c) for c in range(width)]
             sc_patches.append(row)
 
         super().__init__(width, height, sc_patches)
