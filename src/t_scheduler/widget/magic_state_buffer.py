@@ -2,36 +2,41 @@ import itertools
 from typing import List, Literal, Set, Tuple
 
 from .widget_region import WidgetRegion
-from ..base.patch import Patch, PatchOrientation, PatchType, TCultPatch
-# from ..router import Router
+from ..base import Patch, PatchOrientation, PatchType
+from ..base.patch import TCultPatch
 
 
 class AbstractMagicStateBufferRegion(WidgetRegion):
     def __init__(self, width, height, sc_patches) -> None:
         super().__init__(width, height, sc_patches)
 
+
 class PrefilledMagicStateRegion(AbstractMagicStateBufferRegion):
-    def __init__(self, width, height, rotation: Literal['default', 'chessboard']) -> None:
-        if rotation == 'default':
+    def __init__(
+        self, width, height, rotation: Literal["default", "chessboard"]
+    ) -> None:
+        if rotation == "default":
             sc_patches = [
-                [
-                    Patch(PatchType.T, r, c)
-                    for c in range(width)
-                ]
-                for r in range(height)
+                [Patch(PatchType.T, r, c) for c in range(width)] for r in range(height)
             ]
-        elif rotation == 'chessboard':
+        elif rotation == "chessboard":
             sc_patches = [[Patch(PatchType.T, 0, c) for c in range(width)]]
-            sc_patches.extend([
+            sc_patches.extend(
                 [
-                    Patch(PatchType.T, r, c,
-                          starting_orientation=PatchOrientation(
-                              ((r ^ c) & 1) ^ (c < width // 2))
-                          )
-                    for c in range(width)
+                    [
+                        Patch(
+                            PatchType.T,
+                            r,
+                            c,
+                            starting_orientation=PatchOrientation(
+                                ((r ^ c) & 1) ^ (c < width // 2)
+                            ),
+                        )
+                        for c in range(width)
+                    ]
+                    for r in range(1, height)
                 ]
-                for r in range(1, height)
-            ])
+            )
         super().__init__(width, height, sc_patches)
 
 
@@ -39,20 +44,15 @@ class TCultivatorBufferRegion(AbstractMagicStateBufferRegion):
     available_states: Set[TCultPatch]
     update_cells: List[TCultPatch]
 
-    def __init__(self, width, height, buffer_type: Literal['dense', 'sparse']) -> None:
+    def __init__(self, width, height, buffer_type: Literal["dense", "sparse"]) -> None:
         self.available_states = set()
 
-        if buffer_type == 'dense':
+        if buffer_type == "dense":
             sc_patches = [
-                [
-                    TCultPatch(r, c)
-                    for c in range(width)
-                ]
-                for r in range(height)
+                [TCultPatch(r, c) for c in range(width)] for r in range(height)
             ]
-            self.update_cells = list(
-                itertools.chain(*sc_patches))  # type: ignore
-        elif buffer_type == 'sparse':
+            self.update_cells = list(itertools.chain(*sc_patches))  # type: ignore
+        elif buffer_type == "sparse":
             sc_patches = []
             self.update_cells = []
             for r in range(height):

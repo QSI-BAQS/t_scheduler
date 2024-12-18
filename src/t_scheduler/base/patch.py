@@ -56,7 +56,11 @@ class Patch:
     orientation: PatchOrientation
 
     def __init__(
-        self, patch_type: PatchType, row: int, col: int, starting_orientation=PatchOrientation.Z_TOP
+        self,
+        patch_type: PatchType,
+        row: int,
+        col: int,
+        starting_orientation=PatchOrientation.Z_TOP,
     ):
         self.patch_type = patch_type
         self.row = row
@@ -77,7 +81,10 @@ class Patch:
         return self.patch_type == PatchType.T and not self.used and not self.locked()
 
     def route_available(self):
-        return self.patch_type in [PatchType.ROUTE, PatchType.ROUTE_BUFFER] and not self.locked()
+        return (
+            self.patch_type in [PatchType.ROUTE, PatchType.ROUTE_BUFFER]
+            and not self.locked()
+        )
 
     def register_rotation(self, gate):
         self.rotation = gate
@@ -97,11 +104,10 @@ class Patch:
         self.release_time = time
         self.patch_type = PatchType.ROUTE
 
+
 class BufferPatch(Patch):
-    def __init__(
-        self, row: int, col: int, starting_orientation=PatchOrientation.Z_TOP
-    ):
-        super().__init__(PatchType.ROUTE, row, col)
+    def __init__(self, row: int, col: int, starting_orientation=PatchOrientation.Z_TOP):
+        super().__init__(PatchType.ROUTE, row, col, starting_orientation)
 
     def store(self):
         if not self.locked():
@@ -110,17 +116,21 @@ class BufferPatch(Patch):
 
 class TFactoryOutputPatch(Patch):
     def __init__(
-        self, row: int, col: int, 
-        factory: TFactory, starting_orientation=PatchOrientation.Z_TOP,
+        self,
+        row: int,
+        col: int,
+        factory: TFactory,
+        starting_orientation=PatchOrientation.Z_TOP,
     ):
-        super().__init__(PatchType.CULTIVATOR, row, col,
-                         starting_orientation=starting_orientation)
+        super().__init__(
+            PatchType.CULTIVATOR, row, col, starting_orientation=starting_orientation
+        )
 
         self.t_count = 0
         self.factory = factory
 
     def T_available(self):
-        return self.t_count and not self.locked()
+        return (self.t_count > 0) and not self.locked()
 
     def route_available(self):
         return False
@@ -144,11 +154,10 @@ class TFactoryOutputPatch(Patch):
 
 
 class TCultPatch(Patch):
-    def __init__(
-        self, row: int, col: int, starting_orientation=PatchOrientation.Z_TOP
-    ):
-        super().__init__(PatchType.CULTIVATOR, row, col,
-                         starting_orientation=starting_orientation)
+    def __init__(self, row: int, col: int, starting_orientation=PatchOrientation.Z_TOP):
+        super().__init__(
+            PatchType.CULTIVATOR, row, col, starting_orientation=starting_orientation
+        )
 
         self.has_T = False
         self.cultivator = TCultivator()

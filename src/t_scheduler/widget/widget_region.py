@@ -1,5 +1,6 @@
 from typing import List, Tuple
-from ..base.patch import Patch, PatchOrientation, PatchType
+from ..base import Patch, PatchOrientation, PatchType
+
 
 class WidgetRegion:
     width: int
@@ -12,9 +13,9 @@ class WidgetRegion:
         self.sc_patches = sc_patches
 
     def update(self) -> None:
-        '''
-            Updates internal state of the widget region
-        '''
+        """
+        Updates internal state of the widget region
+        """
         pass
 
     def __getitem__(self, key: Tuple[int, int] | int) -> Patch:
@@ -22,32 +23,35 @@ class WidgetRegion:
             return self.sc_patches[key[0]][key[1]]
         else:
             return self.sc_patches[key]  # type: ignore
-        
 
     def to_str_output(self) -> str:
-        '''
-            Prints current state of the region
-        '''
-        buf = ''
-        def bprint(c: str|int ='', end='\n'):
+        """
+        Prints current state of the region
+        """
+        buf = ""
+
+        def bprint(c: str | int = "", end="\n"):
             nonlocal buf
             buf += str(c)
             buf += end
 
-        board = self.sc_patches # type: ignore
+        board = self.sc_patches  # type: ignore
 
         bprint()
         bprint("-" * len(board[0]))
-        bprint(' '*len(str(len(board))) + ''.join(map(lambda x: str(x%10),range(len(board[0])))))
+        bprint(
+            " " * len(str(len(board)))
+            + "".join(map(lambda x: str(x % 10), range(len(board[0]))))
+        )
         for i, row in enumerate(board):
-            bprint(str(i).zfill(len(str(len(board)))), end='')
+            bprint(str(i).zfill(len(str(len(board)))), end="")
             for cell in row:
                 if cell.patch_type == PatchType.BELL:
                     bprint("$", end="")
                 elif cell.locked():
-                    num = cell.lock.owner.targ # type: ignore
+                    num = cell.lock.owner.targ  # type: ignore
                     if num >= 10:
-                        num = '#'
+                        num = "#"
                     bprint(num, end="")
                 elif cell.patch_type == PatchType.REG:
                     bprint("R", end="")

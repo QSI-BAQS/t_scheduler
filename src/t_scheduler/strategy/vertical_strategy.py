@@ -2,18 +2,18 @@ from __future__ import annotations
 from enum import Enum
 from typing import Tuple
 
-from t_scheduler.base.gate import Gate, GateType, RotateGate
-from t_scheduler.base.patch import Patch, PatchOrientation, PatchType
-from t_scheduler.router.vertical_buffer_router import VerticalFilledBufferRouter
-from t_scheduler.router.bus_router import StandardBusRouter
-from t_scheduler.router.register_router import BaselineRegisterRouter, CombRegisterRouter
-from t_scheduler.router.transaction import TransactionList
-from t_scheduler.strategy.abstract_strategy import AbstractStrategy
-from t_scheduler.widget.magic_state_buffer import PrefilledMagicStateRegion
-from t_scheduler.widget.registers import CombShapedRegisterRegion, SingleRowRegisterRegion
-from t_scheduler.widget.route_bus import RouteBus
-from t_scheduler.widget.widget import Widget
-import t_scheduler.base.util as util
+from ..base import util
+from ..base import Gate, Patch, PatchOrientation, PatchType, TransactionList
+from ..base.gate import GateType, RotateGate
+
+from ..router.vertical_buffer_router import VerticalFilledBufferRouter
+from ..router.bus_router import StandardBusRouter
+from ..router.register_router import BaselineRegisterRouter, CombRegisterRouter
+from ..strategy.abstract_strategy import AbstractStrategy
+from ..widget.magic_state_buffer import PrefilledMagicStateRegion
+from ..widget.registers import CombShapedRegisterRegion, SingleRowRegisterRegion
+from ..widget.route_bus import RouteBus
+from ..widget.widget import Widget
 
 
 class RotationStrategyOption(Enum):
@@ -29,11 +29,12 @@ class VerticalRoutingStrategy(AbstractStrategy):
     buffer_router: VerticalFilledBufferRouter
 
     @staticmethod
-    def with_prefilled_buffer_widget(width, height, rot_strat: RotationStrategyOption) -> Tuple[VerticalRoutingStrategy, Widget]:
+    def with_prefilled_buffer_widget(
+        width, height, rot_strat: RotationStrategyOption
+    ) -> Tuple[VerticalRoutingStrategy, Widget]:
         register_region = SingleRowRegisterRegion(width)
         route_region = RouteBus(width)
-        buffer_region = PrefilledMagicStateRegion(
-            width - 2, height - 2, 'default')
+        buffer_region = PrefilledMagicStateRegion(width - 2, height - 2, "default")
 
         board = [register_region.sc_patches[0], route_region.sc_patches[0]]
         for r in range(height - 2):
@@ -43,22 +44,30 @@ class VerticalRoutingStrategy(AbstractStrategy):
                 Patch(PatchType.BELL, r, width - 1),
             ]
             board.append(row)
-        widget = Widget(width, height, board, components=[
-                        register_region, route_region, buffer_region])
+        widget = Widget(
+            width,
+            height,
+            board,
+            components=[register_region, route_region, buffer_region],
+        )
 
-        strat = VerticalRoutingStrategy(BaselineRegisterRouter(register_region),
-                                        StandardBusRouter(route_region),
-                                        VerticalFilledBufferRouter(
-                                            buffer_region),
-                                        rot_strat=rot_strat)
+        strat = VerticalRoutingStrategy(
+            BaselineRegisterRouter(register_region),
+            StandardBusRouter(route_region),
+            VerticalFilledBufferRouter(buffer_region),
+            rot_strat=rot_strat,
+        )
         return strat, widget
 
     @staticmethod
-    def with_prefilled_comb_widget(width, height, rot_strat: RotationStrategyOption, comb_height) -> Tuple[VerticalRoutingStrategy, Widget]:
+    def with_prefilled_comb_widget(
+        width, height, rot_strat: RotationStrategyOption, comb_height
+    ) -> Tuple[VerticalRoutingStrategy, Widget]:
         register_region = CombShapedRegisterRegion(width, comb_height)
         route_region = RouteBus(width)
         buffer_region = PrefilledMagicStateRegion(
-            width - 2, height - 1 - comb_height, 'default')
+            width - 2, height - 1 - comb_height, "default"
+        )
 
         board = [*register_region.sc_patches, route_region.sc_patches[0]]
         for r in range(height - 1 - comb_height):
@@ -68,17 +77,28 @@ class VerticalRoutingStrategy(AbstractStrategy):
                 Patch(PatchType.BELL, r, width - 1),
             ]
             board.append(row)
-        widget = Widget(width, height, board, components=[
-                        register_region, route_region, buffer_region])
+        widget = Widget(
+            width,
+            height,
+            board,
+            components=[register_region, route_region, buffer_region],
+        )
 
-        strat = VerticalRoutingStrategy(CombRegisterRouter(register_region),
-                                        StandardBusRouter(route_region),
-                                        VerticalFilledBufferRouter(
-                                            buffer_region),
-                                        rot_strat=rot_strat)
+        strat = VerticalRoutingStrategy(
+            CombRegisterRouter(register_region),
+            StandardBusRouter(route_region),
+            VerticalFilledBufferRouter(buffer_region),
+            rot_strat=rot_strat,
+        )
         return strat, widget
 
-    def __init__(self, register_router, bus_router, buffer_router, rot_strat: RotationStrategyOption):
+    def __init__(
+        self,
+        register_router,
+        bus_router,
+        buffer_router,
+        rot_strat: RotationStrategyOption,
+    ):
         self.register_router = register_router
         self.bus_router = bus_router
         self.buffer_router = buffer_router
@@ -87,7 +107,9 @@ class VerticalRoutingStrategy(AbstractStrategy):
         if rot_strat == RotationStrategyOption.LOOKBACK:
             raise NotImplementedError()
 
-    def process_rotation(self, gate, register_transaction, bus_transaction, buffer_transaction) -> Gate | None:
+    def process_rotation(
+        self, gate, register_transaction, bus_transaction, buffer_transaction
+    ) -> Gate | None:
 
         if len(buffer_transaction.move_patches) == 1:
             # Assume all patches in row below routing layer are Z_TOP orientation
@@ -107,7 +129,8 @@ class VerticalRoutingStrategy(AbstractStrategy):
             # We are done here -- no need to rotate
 
             transactions = TransactionList(
-                [buffer_transaction, bus_transaction, register_transaction])
+                [buffer_transaction, bus_transaction, register_transaction]
+            )
 
             gate.activate(transactions)
             return gate
@@ -128,7 +151,8 @@ class VerticalRoutingStrategy(AbstractStrategy):
 
             T_patch.rotation = None
             transactions = TransactionList(
-                [buffer_transaction, bus_transaction, register_transaction])
+                [buffer_transaction, bus_transaction, register_transaction]
+            )
 
             gate.activate(transactions)
             return gate
@@ -139,7 +163,8 @@ class VerticalRoutingStrategy(AbstractStrategy):
 
             T_patch.orientation = T_patch.orientation.inverse()
             transactions = TransactionList(
-                [buffer_transaction, bus_transaction, register_transaction])
+                [buffer_transaction, bus_transaction, register_transaction]
+            )
 
             gate.activate(transactions)
             return gate
@@ -148,7 +173,12 @@ class VerticalRoutingStrategy(AbstractStrategy):
             # Inject a rotation gate
 
             rot_gate = RotateGate(
-                T_patch, attack_patch, register_transaction.measure_patches[0], gate, util.ROTATE_DELAY)
+                T_patch,
+                attack_patch,
+                register_transaction.measure_patches[0],
+                gate,
+                util.ROTATE_DELAY,
+            )
             rot_gate.activate()
             return rot_gate  # type: ignore
 
@@ -181,7 +211,11 @@ class VerticalRoutingStrategy(AbstractStrategy):
     def alloc_gate(self, gate) -> Gate | None:
         if gate.gate_type == GateType.T_STATE:
 
-            if not (register_transaction := self.register_router.request_transaction(gate.targ)):
+            if not (
+                register_transaction := self.register_router.request_transaction(
+                    gate.targ
+                )
+            ):
                 return None
 
             reg_col: int = register_transaction.connect_col  # type: ignore
@@ -190,31 +224,49 @@ class VerticalRoutingStrategy(AbstractStrategy):
             buffer_cols = []
             if reg_col > 0 and self.bus_router.request_transaction(reg_col, reg_col):
                 buffer_cols.append(reg_col - 1)
-            if reg_col < self.bus_router.route_bus.width - 2 and self.bus_router.request_transaction(reg_col, reg_col + 1):
+            if (
+                reg_col < self.bus_router.route_bus.width - 2
+                and self.bus_router.request_transaction(reg_col, reg_col + 1)
+            ):
                 buffer_cols.append(reg_col)
 
-            if not (buffer_transaction := self.buffer_router.request_transaction(buffer_cols)):
+            if not (
+                buffer_transaction := self.buffer_router.request_transaction(
+                    buffer_cols
+                )
+            ):
                 return None
 
             bus_transaction = self.bus_router.request_transaction(
-                buffer_transaction.connect_col + 1, reg_col)  # type: ignore
+                buffer_transaction.connect_col + 1, reg_col
+            )  # type: ignore
 
             ############################
             #  Process rotation logic
             ############################
-            return self.process_rotation(gate, register_transaction, bus_transaction, buffer_transaction)
+            return self.process_rotation(
+                gate, register_transaction, bus_transaction, buffer_transaction
+            )
 
             # return self.process_rotation(path, gate)
 
         elif gate.gate_type == GateType.LOCAL_GATE:
-            if not (register_transaction := self.register_router.request_transaction(gate.targ, request_type='local')):
+            if not (
+                register_transaction := self.register_router.request_transaction(
+                    gate.targ, request_type="local"
+                )
+            ):
                 return None
 
             gate.activate(register_transaction)
             return gate
 
         elif gate.gate_type == GateType.ANCILLA:
-            if not (register_transaction := self.register_router.request_transaction(gate.targ, request_type='ancilla')):
+            if not (
+                register_transaction := self.register_router.request_transaction(
+                    gate.targ, request_type="ancilla"
+                )
+            ):
                 return None
 
             gate.activate(register_transaction)

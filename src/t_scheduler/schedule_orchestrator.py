@@ -11,7 +11,7 @@ class ScheduleOrchestrator:
         widget,
         strategy,
         debug: bool = False,
-        tikz_output: bool = False
+        tikz_output: bool = False,
     ):
         self.widget: Widget = widget
         self.strategy: AbstractStrategy = strategy
@@ -70,7 +70,7 @@ class ScheduleOrchestrator:
 
         # Print widget board state
         if self.debug:
-            print(self.widget.to_str_output_dedup(), end='')
+            print(self.widget.to_str_output_dedup(), end="")
 
         self.output_layers.append([])
         for gate in self.active:
@@ -78,8 +78,13 @@ class ScheduleOrchestrator:
 
         if self.tikz_output and self.widget.rep_count == 1:
             from lattice_surgery_draw.primitives.composers import TexFile
-            with open(f"out/{self.time}.tex", 'w') as f:
-                output = TexFile(self.widget.save_tikz_frame(self.widget.make_tikz_routes(self.output_layers[-1])))
+
+            with open(f"out/{self.time}.tex", "w") as f:
+                output = TexFile(
+                    self.widget.save_tikz_frame(
+                        self.widget.make_tikz_routes(self.output_layers[-1])
+                    )
+                )
                 print(output, file=f)
 
             # from lattice_surgery_draw.tikz_layer import TikzLayers
@@ -89,7 +94,6 @@ class ScheduleOrchestrator:
             # print('\\end{tikzpicture}\n\\newpage', file=file)
             # file.close()
             pass
-
 
         for gate in self.active:
             gate.tick()

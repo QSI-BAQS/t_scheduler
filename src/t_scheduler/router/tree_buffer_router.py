@@ -1,9 +1,9 @@
 from __future__ import annotations
-from collections import deque
 from typing import List
-from t_scheduler.base.patch import Patch, PatchOrientation, PatchType
-from t_scheduler.router.transaction import Transaction
-from t_scheduler.widget.magic_state_buffer import PrefilledMagicStateRegion
+
+from collections import deque
+from ..base import Patch, PatchOrientation, PatchType, Transaction
+from ..widget.magic_state_buffer import PrefilledMagicStateRegion
 
 
 class TreeNode:
@@ -14,41 +14,49 @@ class TreeNode:
     source_lane: int
     reparsed: bool
 
-    def __init__(self, parent: TreeNode | None, path: List[Patch], source_lane: int | None = None, debug_source=''):
+    def __init__(
+        self,
+        parent: TreeNode | None,
+        path: List[Patch],
+        source_lane: int | None = None,
+        debug_source="",
+    ):
         self.parent = parent
         self.children = []
         self.path = path
         self.reparsed = False
 
-        self.debug_source =debug_source
+        self.debug_source = debug_source
 
         if parent is not None:
             self.source_lane = parent.source_lane
-            self.path_fragment = path[len(parent.path):]
+            self.path_fragment = path[len(parent.path) :]
         else:
             assert source_lane is not None
             self.source_lane = source_lane
             self.path_fragment = path
-    
+
     def __repr__(self):
         return f"{{ {self.path} ({self.debug_source}): {{ 'frag': {self.path_fragment}, 'children': {self.children} }} }}"
 
 
 class TreeFilledBufferRouter:
-    '''
-        Note: Works only with passthrough bus router
-        Assumption because output_col is used to detect which columns of T to assign
-        Also only works with chessboard shape PrefilledMagicStateRegion
-    '''
+    """
+    Note: Works only with passthrough bus router
+    Assumption because output_col is used to detect which columns of T to assign
+    Also only works with chessboard shape PrefilledMagicStateRegion
+    """
+
     buffer: PrefilledMagicStateRegion
 
     consumption_frontier: List[TreeNode]
 
-    def __init__(self, buffer, depth_offset = 2/3) -> None:
+    def __init__(self, buffer, depth_offset=2 / 3) -> None:
         self.buffer = buffer
 
-        self.consumption_frontier = [TreeNode(None, [], q)
-                               for q in range(self.buffer.width // 2 + 1)]
+        self.consumption_frontier = [
+            TreeNode(None, [], q) for q in range(self.buffer.width // 2 + 1)
+        ]
         # TODO adapt for missing bell state columns
 
         self.dig_depth = int(self.buffer.height * depth_offset)
@@ -57,12 +65,14 @@ class TreeFilledBufferRouter:
 
     @staticmethod
     def _make_transaction(path, connect=None):
-        return Transaction(path, [path[0]], connect_col=connect, magic_state_patch=path[0])
+        return Transaction(
+            path, [path[0]], connect_col=connect, magic_state_patch=path[0]
+        )
 
     def request_transaction(self, lane: int) -> Transaction | None:
-        '''
-            output_col: which lane to search from
-        '''
+        """
+        output_col: which lane to search from
+        """
         if not (path := self.tree_search(lane)):
             return None
         reduced_path = self.path_reduce(path)
@@ -72,11 +82,11 @@ class TreeFilledBufferRouter:
 
     @staticmethod
     def adjacent(cell1, cell2):
-        return abs(cell1.row - cell2.row) + abs(cell1.col - cell2.col) == 1 
+        return abs(cell1.row - cell2.row) + abs(cell1.col - cell2.col) == 1
 
     @staticmethod
     def path_reduce(path):
-        prev_len = float('inf')
+        prev_len = float("inf")
         curr_len = len(path)
         while curr_len < prev_len:
             prev_len = curr_len
@@ -87,7 +97,9 @@ class TreeFilledBufferRouter:
                 new_path.append(path[i])
                 if path[i].row == 0:
                     break
-                if i + 3 < len(path) and TreeFilledBufferRouter.adjacent(path[i], path[i+3]):
+                if i + 3 < len(path) and TreeFilledBufferRouter.adjacent(
+                    path[i], path[i + 3]
+                ):
                     i += 3
                 else:
                     i += 1
@@ -96,7 +108,6 @@ class TreeFilledBufferRouter:
             curr_len = len(new_path)
         return path
 
-
     def init_frontier(self):
         # TODO add support for no bell state columns
         for lane in range(self.buffer.width // 2 + 1):
@@ -104,26 +115,27 @@ class TreeFilledBufferRouter:
             if lane != 0:
                 c = 2 * lane - 1  # Left col of lane with shifted offset
                 root.children.append(
-                    TreeNode(root, [self.buffer[0, c]], debug_source='init')
+                    TreeNode(root, [self.buffer[0, c]], debug_source="init")
                 )
             else:
                 c = 2 * lane + 1  # Left col of lane with shifted offset
                 root.children.append(
-                    TreeNode(root, [self.buffer[0, c]], debug_source='init')
+                    TreeNode(root, [self.buffer[0, c]], debug_source="init")
                 )
             if lane != len(self.consumption_frontier) - 1:
                 c = 2 * lane  # right col of lane with shifted offset
                 root.children.append(
-                    TreeNode(root, [self.buffer[0, c]], debug_source='init')
+                    TreeNode(root, [self.buffer[0, c]], debug_source="init")
                 )
             else:
                 c = 2 * lane - 2  # Left col of lane with shifted offset
                 root.children.append(
-                    TreeNode(root, [self.buffer[0, c]], debug_source='init')
+                    TreeNode(root, [self.buffer[0, c]], debug_source="init")
                 )
 
             root.children.sort(
-                key=lambda x: abs(x.path[-1].col - self.buffer.width // 2), reverse=False
+                key=lambda x: abs(x.path[-1].col - self.buffer.width // 2),
+                reverse=False,
             )
             if lane != 0 and lane != len(self.consumption_frontier) - 1:
                 self.generate_mining(root.children[1])
@@ -134,16 +146,25 @@ class TreeFilledBufferRouter:
         source_lane = root.source_lane
         for r in range(1, depth):
             curr.reparsed = True
-            child = TreeNode(curr, curr.path +
-                             [self.buffer[r, curr.path[-1].col]], debug_source='mine')
+            child = TreeNode(
+                curr,
+                curr.path + [self.buffer[r, curr.path[-1].col]],
+                debug_source="mine",
+            )
             curr.children.append(child)
 
             curr = child
             curr.reparsed = True
             child = TreeNode(
-                curr, curr.path +
-                [self.buffer[r, 2 * source_lane - (curr.path[-1].col == 2 * source_lane)]]
-            , debug_source='mine')
+                curr,
+                curr.path
+                + [
+                    self.buffer[
+                        r, 2 * source_lane - (curr.path[-1].col == 2 * source_lane)
+                    ]
+                ],
+                debug_source="mine",
+            )
             curr.children.append(child)
             curr = child
 
@@ -182,7 +203,6 @@ class TreeFilledBufferRouter:
         row, col = curr_patch.row, curr_patch.col
         new_patches = []
 
-
         for r, c in [(row + 1, col), (row, col - 1), (row, col + 1), (row - 1, col)]:
             if 0 <= r < self.buffer.height and 0 <= c < self.buffer.width:
                 if (patch := self.buffer[r, c]).patch_type == PatchType.T:
@@ -195,10 +215,9 @@ class TreeFilledBufferRouter:
                     patch.orientation == PatchOrientation.Z_TOP
                 )
                 if matching_rotation and patch.T_available():
-                    new_children.append(
-                        TreeNode(tree_node, tree_node.path + [patch]))
+                    new_children.append(TreeNode(tree_node, tree_node.path + [patch]))
             tree_node.children = new_children
-        
+
         if not new_children:
             bfs_queue = deque([(curr_patch.row, curr_patch.col)])
             parent = {}
@@ -234,5 +253,6 @@ class TreeFilledBufferRouter:
                     fragment.append(self.buffer[r, c])
                 fragment.pop()
                 new_children.append(
-                    TreeNode(tree_node, tree_node.path + fragment[::-1]))
+                    TreeNode(tree_node, tree_node.path + fragment[::-1])
+                )
             tree_node.children = new_children

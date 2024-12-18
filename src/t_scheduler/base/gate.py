@@ -1,10 +1,11 @@
 from __future__ import annotations
 from abc import ABC
 from enum import Enum
-from typing import Any, List, Set
+from typing import Any, List
 
-from .patch import Patch, PatchLock, PatchType
-from t_scheduler.router.transaction import Transaction, TransactionList
+from .patch import Patch, PatchType
+from .transaction import Transaction, TransactionList
+
 
 class GateType(Enum):
     LOCAL_GATE = 1
@@ -12,15 +13,16 @@ class GateType(Enum):
     T_STATE = 3
     IMPLEMENTATION_DEFINED = 4
 
+
 class BaseGate(ABC):
     targ: int
+    targ_orig: int
     timer: int = 0
     duration: int = 0
-    # path: List[Patch]
-    lock: None | PatchLock
+    transaction: None | Transaction
 
-    pre: List[BaseGate] | Set[BaseGate]
-    post: List[BaseGate] | Set[BaseGate]
+    pre: List[BaseGate]
+    post: List[BaseGate]
     weight: float = 1
     schedule_weight: float = 0
     flag: Any = None
@@ -30,154 +32,177 @@ class BaseGate(ABC):
         self.post = []
 
     def available(self):
-        # TODO: implement for when converting to dependency graph
-        return True
+        raise NotImplementedError()
 
     def tick(self):
+        """
+        Default impl: single stage gate.
+        """
         self.timer += 1
 
     def completed(self) -> bool:
+        """
+        Returns if gate has completed, and is ready to be retired.
+        """
         return self.timer >= self.duration
 
-    def activate(self):
+    def activate(self, *args, **kwargs):
         """
-            Start the gate
+        Start the gate. Generic impl.
         """
-        self.lock = PatchLock(self, self.path, self.duration)
-        self.lock.lock()
+        raise NotImplementedError()
 
     def cleanup(self, scheduler):
         """
-            Release held resources
+        Release held resources. No-op if not overridden.
         """
         pass
 
     def next(self, scheduler):
         """
-            Schedule dependent gates
+        Schedule dependent gates. No-op if not overridden.
         """
         pass
 
-class Gate:
-    pass
 
-class T_Gate:
+class Gate(BaseGate):
+    def available(self):
+        """
+        Basic gate is always available
+        """
+        return True
+
+    def activate(self, *args, **kwargs):
+        # TODO impl ancilla/single qubit gates
+        return super().activate(*args, **kwargs)
+
+
+class T_Gate(BaseGate):
     targ: int
     targ_orig: int
     timer: int = 0
     duration: int = 0
 
-    pre: List[T_Gate]
-    post: List[T_Gate]
+    pre: List[BaseGate]
+    post: List[BaseGate]
     weight: float = 1
     schedule_weight: float = 0
 
-    def __init__(self, targ: int, move_duration: int = 4, corr_duration: int = 3, targ_orig = None):
+    def __init__(
+        self, targ: int, move_duration: int = 4, corr_duration: int = 3, targ_orig=None
+    ):
         if targ_orig is None:
             self.targ_orig = targ
         else:
             self.targ_orig = targ_orig
-        
+
         self.targ: int = targ
         self.gate_type: GateType = GateType.T_STATE
         self.duration = move_duration
         self.correction_duration = corr_duration
         self.state = "JOINT"
-        self.pre = []
-        self.post = []
 
-    def activate(self, transaction: TransactionList):
-        self.transaction = transaction
-        self.transaction.activate()
-        self.transaction.lock_move(self)
-
-    def cleanup(self, scheduler):
-        if self.completed():
-            self.transaction.unlock()
-            if self.state == "JOINT":
-                self.timer = 0
-                self.state = "CORRECTION"
-                self.duration = self.correction_duration
-                self.transaction.lock_measure(self)
-            else:
-                self.transaction.release(scheduler.time)
+        super().__init__()
 
     def available(self):
         return all(g.completed() for g in self.pre)
 
-    def completed(self) -> bool:
-        return self.timer >= self.duration
+    def activate(self, transaction: TransactionList):
+        transaction.activate()
+        transaction.lock_move(self)
+        self.transaction = transaction  # type: ignore
+
+    def cleanup(self, scheduler):
+        if self.completed():
+            self.transaction.unlock()  # type: ignore
+            if self.state == "JOINT":
+                self.timer = 0
+                self.state = "CORRECTION"
+                self.duration = self.correction_duration
+                self.transaction.lock_measure(self)  # type: ignore
+            else:
+                self.transaction.release(scheduler.time)  # type: ignore
 
     def next(self, scheduler):
         return
 
-    def tick(self):
-        self.timer += 1
-
     def __repr__(self) -> str:
-        return f"{','.join([str(x.targ_orig) for x in self.pre])}->T{self.targ_orig}({self.targ})->{','.join([str(x.targ_orig) for x in self.post])}"
+        str_pre = ",".join([str(x.targ_orig) for x in self.pre])
+        str_post = ",".join([str(x.targ_orig) for x in self.post])
+        return f"{str_pre}->T{self.targ_orig}({self.targ})->{str_post}"
 
 
-class MoveGate:
+class MoveGate(BaseGate):
     targ: str
     timer: int = 0
-    duration: int = 0
+    duration: int
 
-    post: List = []
+    move_target: None | Patch
 
     def __init__(self, move_duration: int = 2):
-        self.targ = '%'
+        self.targ = "%"  # type: ignore
         self.gate_type: GateType = GateType.IMPLEMENTATION_DEFINED
         self.duration = move_duration
+        self.move_target = None
+        super().__init__()
 
-    def activate(self, transaction: TransactionList, new_magic_state_patch: Patch):
-        self.transaction = transaction
-        self.transaction.activate()
-        self.transaction.lock_move(self)
-        self.new_magic_state_patch = new_magic_state_patch
+    def available(self):
+        return True
+
+    def activate(self, transaction: TransactionList, move_target: Patch):
+        transaction.activate()
+        transaction.lock_move(self)
+        self.transaction = transaction  # type: ignore
+        self.move_target = move_target
 
     def cleanup(self, scheduler):
         if self.completed():
-            self.transaction.unlock()
-            self.transaction.release(scheduler.time)
-            self.new_magic_state_patch.patch_type = PatchType.T
-
-
-    def completed(self) -> bool:
-        return self.timer >= self.duration
+            self.transaction.unlock()  # type: ignore
+            self.transaction.release(scheduler.time)  # type: ignore
+            self.move_target.patch_type = PatchType.T  # type: ignore
 
     def next(self, scheduler):
         pass
 
-    def tick(self):
-        self.timer += 1
 
 class RotateGate(BaseGate):
-
     targ: int
     timer: int = 0
     duration: int = 0
 
-    pre: List[T_Gate]
-    post: List[T_Gate]
+    pre: List[BaseGate]
+    post: List[BaseGate]
     weight: float = 1
     schedule_weight: float = 0
 
-    def __init__(self, t_patch, rotate_ancilla, reg_patch, rotate_for, duration: int):
-        self.pre = []
-        self.post = []
+    transaction: Transaction
+
+    def __init__(
+        self,
+        t_patch: Patch,
+        rotate_ancilla: Patch,
+        reg_patch: Patch,
+        rotate_for: T_Gate,
+        duration: int,
+    ):
+        super().__init__()
 
         self.t_patch = t_patch
         self.t_patch.register_rotation(self)
 
-        self.post = [rotate_for]
+        self.post.append(rotate_for)
         self.targ = rotate_for.targ
         self.duration = duration
+
+        self.weight = rotate_for.weight
+        self.schedule_weight = rotate_for.schedule_weight
 
         self.lock = None
         self.completed_at = None
 
-        self.transaction = Transaction([t_patch, rotate_ancilla, reg_patch], [])
+        self.transaction = Transaction(  # type: ignore
+            [t_patch, rotate_ancilla, reg_patch], []
+        )
 
     def activate(self):
         self.transaction.activate()
@@ -192,6 +217,3 @@ class RotateGate(BaseGate):
     def next(self, scheduler):
         if self.completed():
             self.t_patch.orientation = self.t_patch.orientation.inverse()
-            # scheduler.deferred.append(self.dependent_gate)
-            # TODO add method for deferring a gate
-        pass

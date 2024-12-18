@@ -3,6 +3,7 @@ from typing import List
 
 from ..base import Gate
 
+
 class AbstractStrategy(ABC):
     needs_upkeep: bool = False
 

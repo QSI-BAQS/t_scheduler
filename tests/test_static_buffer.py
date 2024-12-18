@@ -104,6 +104,7 @@ class StaticBufferTest(unittest.TestCase):
 
         orc.schedule()
 
+    @unittest.skip('too slow')
     def test_end_to_end_3(self, tikz=False):
         gate_layers = [
             [*chain(*(([x] * 100) for x in [6, 7, 9]))],

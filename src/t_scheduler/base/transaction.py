@@ -1,7 +1,47 @@
 from __future__ import annotations
+from abc import ABC
 from typing import Callable, List
 
-from ..base import Patch, PatchLock
+from .patch import Patch, PatchLock
+
+
+class BaseTransaction(ABC):
+    def lock_move(self, gate) -> None:
+        """
+        Lock a transaction based on move_patches.
+        """
+        raise NotImplementedError()
+
+    def lock_measure(self, gate) -> None:
+        """
+        Lock a transaction based on measure_patches
+        """
+        raise NotImplementedError()
+
+    def unlock(self) -> None:
+        """
+        Unlock locked patches
+        """
+        raise NotImplementedError()
+
+    def release(self, time: int) -> None:
+        """
+        Call release on magic_state_patch (rotation tracking)
+        """
+        raise NotImplementedError()
+
+    def activate(self) -> None:
+        """
+        Activate transaction (i.e. commit) and execute on_activate_callback
+        """
+        raise NotImplementedError()
+
+    def check_unlocked(self) -> bool:
+        """
+        Check if we are locked.
+        """
+        raise NotImplementedError()
+
 
 class Transaction:
     move_patches: List[Patch]
@@ -13,7 +53,15 @@ class Transaction:
     on_unlock_callback: None | Callable[[Transaction]]
     on_activate_callback: None | Callable[[Transaction]]
 
-    def __init__(self, move_patches, measure_patches, connect_col=None, magic_state_patch=None, on_unlock_callback=None, on_activate_callback=None):
+    def __init__(
+        self,
+        move_patches,
+        measure_patches,
+        connect_col=None,
+        magic_state_patch=None,
+        on_unlock_callback=None,
+        on_activate_callback=None,
+    ):
         self.move_patches = move_patches
         self.measure_patches = measure_patches
         self.lock = None
@@ -28,7 +76,7 @@ class Transaction:
     def activate(self):
         if self.magic_state_patch:
             self.magic_state_patch.use()
-        
+
         if self.on_activate_callback:
             self.on_activate_callback(self)
             del self.on_activate_callback
@@ -66,24 +114,22 @@ class Transaction:
 
 class TransactionList(list):
     active_cells: List[Patch]
-    
+
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.active_cells = []
 
     def lock_move(self: List[Transaction], gate):
-        self.active_cells = [] # type: ignore
+        self.active_cells = []  # type: ignore
         for t in self:
             t.lock_move(gate)
-            self.active_cells.extend(t.active_cells) # type: ignore
-        
+            self.active_cells.extend(t.active_cells)  # type: ignore
 
     def lock_measure(self: List[Transaction], gate):
-        self.active_cells = [] # type: ignore
+        self.active_cells = []  # type: ignore
         for t in self:
             t.lock_measure(gate)
-            self.active_cells.extend(t.active_cells) # type: ignore
-
+            self.active_cells.extend(t.active_cells)  # type: ignore
 
     def unlock(self: List[Transaction]):
         for t in self:

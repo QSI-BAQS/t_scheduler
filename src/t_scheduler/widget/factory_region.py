@@ -1,6 +1,9 @@
-from typing import List, Tuple
+from typing import List
 
-from ..t_generation.t_factories import TFactory_Litinski_5x3_15_to_1, TFactory_Litinski_6x3_20_to_4_dense
+from ..t_generation.t_factories import (
+    TFactory_Litinski_5x3_15_to_1,
+    TFactory_Litinski_6x3_20_to_4_dense,
+)
 
 from .widget_region import WidgetRegion
 from ..base.patch import Patch, PatchType, TFactoryOutputPatch
@@ -10,10 +13,7 @@ class MagicStateFactoryRegion(WidgetRegion):
 
     def __init__(self, width, height):
         sc_patches = [
-            [
-                Patch(PatchType.ROUTE, r, c) for c in range(width)
-            ]
-            for r in range(height)
+            [Patch(PatchType.ROUTE, r, c) for c in range(width)] for r in range(height)
         ]
         super().__init__(width, height, sc_patches)
         self.factories = []
@@ -22,7 +22,12 @@ class MagicStateFactoryRegion(WidgetRegion):
         self.waiting_factories = set()
 
     def add_factory(self, row, col, factory):
-        if not (0 <= row and row + factory.height <= self.height and 0 <= col and col + factory.width <= self.width):
+        if not (
+            0 <= row
+            and row + factory.height <= self.height
+            and 0 <= col
+            and col + factory.width <= self.width
+        ):
             raise ValueError("Factory out of bounds!")
 
         for r in range(row, row + factory.height):
@@ -75,14 +80,12 @@ class MagicStateFactoryRegion(WidgetRegion):
         msf_region = MagicStateFactoryRegion(width, height)
 
         for col in range(0, width - 2, 3):
-            msf_region.add_factory(
-                height - 5, col, TFactory_Litinski_5x3_15_to_1())
+            msf_region.add_factory(height - 5, col, TFactory_Litinski_5x3_15_to_1())
             # print(height - 5, col)
 
         for row in range(height - 11, -1, -6):
             for col in range(0, width - 2, 4):
-                msf_region.add_factory(
-                    row, col, TFactory_Litinski_5x3_15_to_1())
+                msf_region.add_factory(row, col, TFactory_Litinski_5x3_15_to_1())
                 # print(row, col)
         return msf_region
 
@@ -95,12 +98,12 @@ class MagicStateFactoryRegion(WidgetRegion):
 
         for col in range(0, width - 2, 3):
             msf_region.add_factory(
-                height - 6, col, TFactory_Litinski_6x3_20_to_4_dense())
+                height - 6, col, TFactory_Litinski_6x3_20_to_4_dense()
+            )
             # print(height - 6, col)
 
         for row in range(height - 13, -1, -7):
             for col in range(0, width - 2, 4):
-                msf_region.add_factory(
-                    row, col, TFactory_Litinski_6x3_20_to_4_dense())
+                msf_region.add_factory(row, col, TFactory_Litinski_6x3_20_to_4_dense())
                 # print(row, col)
         return msf_region

@@ -1,4 +1,3 @@
-
 from typing import List
 from .gate import T_Gate
 
@@ -65,13 +64,14 @@ def toffoli_example_input():
     }
 
 
-def make_gates(obj, func = lambda x: x):
-    gates = [T_Gate(func(q), 2, 3, targ_orig=q) for q in range(obj['n_qubits'])]
+def make_gates(obj, func=lambda x: x):
+    gates = [T_Gate(func(q), 2, 3, targ_orig=q) for q in range(obj["n_qubits"])]
     return gates
+
 
 def dag_create(obj, gates):
     dag_layers = []
-    for input_layer in obj['consumptionschedule']:
+    for input_layer in obj["consumptionschedule"]:
         layer = []
         for gate in input_layer:
             for targ, pre in gate.items():  # one element unpacking
@@ -85,9 +85,10 @@ def dag_create(obj, gates):
     dag_prune(dag_layers, gates)  # type: ignore
     return dag_layers, gates
 
+
 def dag_prune(dag_layers: List[List[T_Gate]], gates: List[T_Gate]):
     for g in gates:
-        g.post_discard = set() # type: ignore
+        g.post_discard = set()  # type: ignore
     base_layer = dag_layers[0]
     seen = set()
     stack = [(g, 0) for g in base_layer]
@@ -104,13 +105,14 @@ def dag_prune(dag_layers: List[List[T_Gate]], gates: List[T_Gate]):
         redundant = set(gate.pre) & seen
         redundant.discard(curr)
         for extra in redundant:
-            extra.post_discard.add(gate) # type: ignore
+            extra.post_discard.add(gate)  # type: ignore
             gate.pre.remove(extra)
-        stack.append((gate, 0))
+        stack.append((gate, 0))  # type: ignore
 
     for g in gates:
-        g.post = [x for x in g.post if x not in g.post_discard] # type: ignore
-        del g.post_discard # type: ignore
+        g.post = [x for x in g.post if x not in g.post_discard]  # type: ignore
+        del g.post_discard  # type: ignore
+
 
 def topological_sort(dag_roots):
     seen = set()
@@ -140,9 +142,7 @@ def parse_weights(gate_layers):
         if len(gate.post) == 0:
             gate.schedule_weight = 0
         else:
-            gate.schedule_weight = sum(
-                g.schedule_weight + g.weight for g in gate.post)
-
+            gate.schedule_weight = sum(g.schedule_weight + g.weight for g in gate.post)
 
 
 MOVE_T_ADJ_DELAY = 1
@@ -150,4 +150,3 @@ MOVE_T_NONLOCAL_DELAY = 4
 MEASURE_AND_CORR_DELAY = 2
 ROTATE_DELAY = 3
 RESET_PLUS_DELAY = 1
-

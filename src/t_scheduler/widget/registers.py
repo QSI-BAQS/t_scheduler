@@ -5,23 +5,25 @@ from .widget_region import WidgetRegion
 
 
 class RegisterRegion(WidgetRegion):
-    '''
-        Abstract register region
-    '''
+    """
+    Abstract register region
+    """
 
     def __init__(self, width: int, height: int, sc_patches: List[List[Patch]]) -> None:
         super().__init__(width, height, sc_patches)
 
     def get_physical_pos(self, op_targ: int) -> Tuple[int, int]:
-        '''
-            Gets the physical position of a targ for a gate
-        '''
+        """
+        Gets the physical position of a targ for a gate
+        """
         raise NotImplementedError()
 
+
 class SingleRowRegisterRegion(RegisterRegion):
-    '''
-        Single row register region
-    '''
+    """
+    Single row register region
+    """
+
     def __init__(self, width: int) -> None:
         patches = [[Patch(PatchType.REG, 0, c) for c in range(width)]]
         super().__init__(width, 1, patches)
@@ -30,22 +32,24 @@ class SingleRowRegisterRegion(RegisterRegion):
         pos = op_targ * 2
         if pos < 0 or pos >= self.width:
             raise ValueError(
-                f"Requested op targ out of bounds: Targ {op_targ} ({pos}) not in [0, {self.width})!")
+                f"Requested op targ out of bounds: Targ {op_targ} ({pos}) not in [0, {self.width})!"
+            )
         return (0, pos)
 
 
 class CombShapedRegisterRegion(RegisterRegion):
     """
-        Comb shaped register region.
+    Comb shaped register region.
 
-        .RR..RR..RR
-        R  RR  RR  
-        R  RR  RR  
-        R  RR  RR  
-        R  RR  RR  
-         ^^
-         route_width
+    .RR..RR..RR
+    R  RR  RR
+    R  RR  RR
+    R  RR  RR
+    R  RR  RR
+     ^^
+     route_width
     """
+
     def __init__(self, width: int, height: int, route_width: Literal[1, 2] = 2) -> None:
 
         targ_map = {}
@@ -65,8 +69,9 @@ class CombShapedRegisterRegion(RegisterRegion):
         for r in range(1, height):
             row = []
             for c in range(width):
-                if (c - 1) % (2 + route_width) < route_width \
-                        or ((c - 1) % (2 + route_width) == route_width + 1 and c == width - 1):
+                if (c - 1) % (2 + route_width) < route_width or (
+                    (c - 1) % (2 + route_width) == route_width + 1 and c == width - 1
+                ):
                     row.append(Patch(PatchType.ROUTE, r, c))
                 else:
                     new_reg = Patch(PatchType.REG, r, c)
