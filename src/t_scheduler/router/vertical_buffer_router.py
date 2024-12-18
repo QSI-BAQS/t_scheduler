@@ -106,7 +106,7 @@ class VerticalFilledBufferRouter:
                 elif patch.T_available() and left_path and patch.col >= left_path[-1].col:
                     return (
                         [patch]
-                        + left_path[:start_col - c + 1][::-1]
+                        + left_path[:start_col - c][::-1]
                         + prefix[:r + 2][::-1]
                     )
                 elif patch.T_available():

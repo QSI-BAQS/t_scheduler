@@ -66,7 +66,7 @@ class CombRegisterRouter:
         while (row, col) in parent:
             row, col = parent[row, col]
             fragment.append(self.region[row, col])
-        fragment.reverse()
+        # fragment.reverse()
         return fragment
 
     def request_transaction(self, gate_targ, request_type: Literal['local', 'nonlocal', 'ancilla'] = 'nonlocal') -> Transaction | None:
