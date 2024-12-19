@@ -42,7 +42,9 @@ funcs = [
     # StaticBufferTest.test_litinski_6x3_qft,
     # StaticBufferTest.test_litinski_6x3_buffered_qft,
     # StaticBufferTest.test_comb_vertical,
-    StaticBufferTest.test_comb_vertical_qft,
+    # StaticBufferTest.test_comb_vertical_qft,
+    # StaticBufferTest.test_comb_vertical_qft_route_one,
+    StaticBufferTest.test_litinski_6x3_buffered_qft_with_prewarm
 ]
 
 

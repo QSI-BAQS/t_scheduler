@@ -44,26 +44,44 @@ class ScheduleOrchestrator:
             self.output_objs = []
             self.widget.make_coordinate_adapter()
 
+    def save_tikz_frame(self):
+        from lattice_surgery_draw.primitives.composers import TexFile
+        with open(f"out/{self.time}.tex", "w") as f:
+            output = TexFile(
+                self.widget.save_tikz_frame(
+                    self.widget.make_tikz_routes(self.output_layers[-1])
+                )
+            )
+            print(output, file=f)
+
+
+    def prewarm(self, num_cycles):
+        for _ in range(num_cycles):
+            self.schedule_pass(prewarm=True)
+
     def schedule(self):
         self.queued.extend(self.waiting)
 
         while self.queued or self.active:
             self.schedule_pass()
 
-    def schedule_pass(self):
-        # self.queued.sort(key=lambda gate: gate.schedule_weight)
+    def schedule_pass(self, prewarm=False):
+        if not prewarm:
+            # Process our gate queue
 
-        next_queued = []
-        for gate in self.queued:
-            if gate in self.processed:
-                continue
-            elif gate.available() and (active_gate := self.strategy.alloc_gate(gate)):
-                self.active.append(active_gate)
-                self.processed.add(active_gate)
-            else:
-                next_queued.append(gate)
+            # self.queued.sort(key=lambda gate: gate.schedule_weight)
 
-        self.queued = next_queued
+            next_queued = []
+            for gate in self.queued:
+                if gate in self.processed:
+                    continue
+                elif gate.available() and (active_gate := self.strategy.alloc_gate(gate)):
+                    self.active.append(active_gate)
+                    self.processed.add(active_gate)
+                else:
+                    next_queued.append(gate)
+
+            self.queued = next_queued
 
         if self.strategy.needs_upkeep:
             self.active.extend(self.strategy.upkeep())
@@ -76,7 +94,7 @@ class ScheduleOrchestrator:
         for gate in self.active:
             self.output_layers[-1].append(gate.transaction.active_cells)
 
-        if self.tikz_output and self.widget.rep_count == 1:
+        if self.tikz_output:
             from lattice_surgery_draw.primitives.composers import TexFile
 
             with open(f"out/{self.time}.tex", "w") as f:
