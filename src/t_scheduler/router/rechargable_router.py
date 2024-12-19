@@ -27,7 +27,7 @@ class RechargableBufferRouter:
             if not (T_patch := buffer_states[col]):
                 continue
 
-            vert = [self.buffer[x, T_patch.col] for x in range(T_patch.row)]
+            vert = [self.buffer[x, T_patch.col] for x in range(T_patch.row)][::-1]
 
             path = [T_patch] + vert
 
@@ -42,7 +42,9 @@ class RechargableBufferRouter:
         '''
         buffer_slots = self.buffer.get_buffer_slots()
         cols = [cell.col for cell in buffer_slots if cell and cell.row == 0]
-
+        
+        if not cols: return None
+        
         best_col = min((abs(c - output_col), c) for c in cols)[1]
 
         path = [self.buffer[row, best_col] for row in range(self.buffer.height)][::-1]
@@ -57,7 +59,7 @@ class RechargableBufferRouter:
             self.buffer[x, buffer_slot.col]
             for x in range(buffer_slot.row, self.buffer.height)
         ][::-1]
-        return Transaction(path, [path[0]], connect_col=path[-1].col)
+        return Transaction(path, [buffer_slot], connect_col=buffer_slot.col)
 
     def all_local_upkeep_transactions(self) -> List[Transaction]:
         '''

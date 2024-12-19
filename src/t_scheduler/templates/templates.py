@@ -1,4 +1,4 @@
-from typing import Callable, Tuple
+from typing import Callable, Literal, Tuple
 
 from ..base import *
 from ..router import *
@@ -153,9 +153,9 @@ def vertical_strategy_with_prefilled_buffer_widget(
     return strat, widget
 
 def vertical_strategy_with_prefilled_comb_widget(
-    width, height, rot_strat, comb_height
+    width, height, rot_strat, comb_height, route_width: Literal[1,2]=2
 ) -> Tuple[VerticalRoutingStrategy, Widget]:
-    register_region = CombShapedRegisterRegion(width, comb_height)
+    register_region = CombShapedRegisterRegion(width, comb_height, route_width=route_width)
     route_region = RouteBus(width)
     buffer_region = PrefilledMagicStateRegion(
         width - 2, height - 1 - comb_height, "default"
@@ -175,6 +175,7 @@ def vertical_strategy_with_prefilled_comb_widget(
         StandardBusRouter(route_region),
         VerticalFilledBufferRouter(buffer_region),
         rot_strat=rot_strat,
+        register_width=1
     )
     return strat, widget
 

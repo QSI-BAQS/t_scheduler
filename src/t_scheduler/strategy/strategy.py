@@ -71,3 +71,7 @@ class Strategy:
 
     def upkeep(self) -> List[Gate]:
         raise NotImplementedError()
+    
+    @staticmethod
+    def clamp(val, low, high):
+        return max(low, min(val, high))

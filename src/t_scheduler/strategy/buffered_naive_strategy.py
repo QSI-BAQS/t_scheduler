@@ -119,52 +119,67 @@ class BufferedNaiveStrategy(Strategy):
             register_transaction,
         )
 
+    @staticmethod
+    def _get_closest(slots, col):
+        if slots[col]: return slots[col]
+
+        for offset in range(1, len(slots)):
+            if 0 <= col + offset < len(slots) and slots[col + offset]:
+                return slots[col + offset]
+            if 0 <= col - offset < len(slots) and slots[col - offset]:
+                return slots[col - offset]
+        
+        return None
+
     def upkeep(self) -> List[Gate]:
-        if not any(
-            t.T_available() for t in self.factory_router.region.available_states
-        ):
-            return []
-
-        slots = self.buffer_router.buffer.get_buffer_slots()
-
         upkeep_gates = []
 
-        for state in list(self.factory_router.region.available_states):
-            if not state.T_available():
-                continue
 
-            if not (
-                factory_transaction := self.factory_router.request_transaction(
-                    state.col
+        if any(
+            t.T_available() for t in self.factory_router.region.available_states
+        ):
+            
+            slots = self.buffer_router.buffer.get_buffer_slots()
+
+            for state in list(self.factory_router.region.available_states):
+                if not state.T_available():
+                    continue
+
+                if not (
+                    factory_transaction := self.factory_router.request_transaction(
+                        state.col
+                    )
+                ) or not (free_slot := self._get_closest(slots, factory_transaction.connect_col)):
+                    continue
+
+                if not (
+                    buffer_transaction := self.buffer_router.upkeep_transaction(free_slot)
+                ):
+                    continue
+
+                if not (
+                    bus_transaction := self.buffer_bus_router.request_transaction(
+                        factory_transaction.connect_col, buffer_transaction.connect_col # type: ignore
+                    )
+                ):  # type: ignore
+                    continue
+
+                gate = MoveGate()
+
+                transactions = TransactionList(
+                    [factory_transaction, bus_transaction, buffer_transaction]
                 )
-            ) or not (free_slot := slots[state.col]):
-                continue
 
-            if not (
-                buffer_transaction := self.buffer_router.upkeep_transaction(free_slot)
-            ):
-                continue
+                gate.activate(transactions, buffer_transaction.measure_patches[0]) # type: ignore
 
-            if not (
-                bus_transaction := self.buffer_bus_router.request_transaction(
-                    factory_transaction.connect_col, buffer_transaction.connect_col # type: ignore
-                )
-            ):  # type: ignore
-                continue
+                upkeep_gates.append(gate)
 
-            gate = MoveGate()
-
-            transactions = TransactionList(
-                [factory_transaction, bus_transaction, buffer_transaction]
-            )
-
-            gate.activate(transactions, buffer_transaction.measure_patches[0]) # type: ignore
-
-            upkeep_gates.append(gate)
+                slots[buffer_transaction.connect_col] = None # type: ignore
 
         for trans in self.buffer_router.all_local_upkeep_transactions():
             gate = MoveGate(move_duration=1)  # Local move TODO use constants
 
             gate.activate(trans, trans.measure_patches[0]) # type: ignore
             upkeep_gates.append(gate)
+
         return upkeep_gates

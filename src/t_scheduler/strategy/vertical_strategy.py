@@ -1,6 +1,6 @@
 from __future__ import annotations
 from enum import Enum
-from typing import Tuple
+from typing import Literal, Tuple
 
 from ..base import constants
 from ..base import Gate, Patch, PatchOrientation, PatchType, TransactionList
@@ -29,11 +29,16 @@ class VerticalRoutingStrategy(Strategy):
         bus_router,
         buffer_router,
         rot_strat: RotationStrategyOption,
+        register_width: Literal[1, 2] = 2,
+        has_bell_states: bool = True
     ):
         self.register_router = register_router
         self.bus_router = bus_router
         self.buffer_router = buffer_router
         self.rot_strat = rot_strat
+        self.register_width = register_width
+        self.has_bell_states = has_bell_states
+        # TODO impl no bell state 
 
         if rot_strat == RotationStrategyOption.LOOKBACK:
             raise NotImplementedError()
@@ -150,14 +155,19 @@ class VerticalRoutingStrategy(Strategy):
         reg_col: int = register_transaction.connect_col  # type: ignore
 
         # TODO remove assumption of 2-wide registers and add enum
-        buffer_cols = []
-        if reg_col > 0 and self.bus_router.request_transaction(reg_col, reg_col):
-            buffer_cols.append(reg_col - 1)
-        if (
-            reg_col < self.bus_router.route_bus.width - 2
-            and self.bus_router.request_transaction(reg_col, reg_col + 1)
-        ):
-            buffer_cols.append(reg_col)
+        if self.register_width == 2:
+            buffer_cols = []
+            if reg_col > 0 and self.bus_router.request_transaction(reg_col, reg_col):
+                buffer_cols.append(reg_col - 1)
+            if (
+                reg_col < self.bus_router.route_bus.width - 2
+                and self.bus_router.request_transaction(reg_col, reg_col + 1)
+            ):
+                buffer_cols.append(reg_col)
+        else:
+            buffer_cols = [self.clamp(reg_col - 1, 0, self.bus_router.route_bus.width - 3)]
+
+
 
         if not (
             buffer_transaction := self.buffer_router.request_transaction(
