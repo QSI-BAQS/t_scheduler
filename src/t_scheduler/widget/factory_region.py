@@ -73,37 +73,24 @@ class MagicStateFactoryRegion(WidgetRegion):
             cell.release(None)
 
     @staticmethod
-    def with_litinski_5x3(width, height):
-        if height < 5:
-            raise ValueError
+    def with_factory_factory(width, height, factory_width, factory_height, factory):
+        if height < factory_height:
+            raise ValueError('Height too small for factory!')
 
         msf_region = MagicStateFactoryRegion(width, height)
+        for col in range(0, width - factory_width + 1, factory_width):
+            msf_region.add_factory(height - factory_height, col, factory())
 
-        for col in range(0, width - 2, 3):
-            msf_region.add_factory(height - 5, col, TFactory_Litinski_5x3_15_to_1())
-            # print(height - 5, col)
+        for row in range(height - 2 * factory_height - 1, -1, -factory_height - 1):
+            for col in range(0, width - factory_width + 1, factory_width + 1):
+                msf_region.add_factory(row, col, factory())
 
-        for row in range(height - 11, -1, -6):
-            for col in range(0, width - 2, 4):
-                msf_region.add_factory(row, col, TFactory_Litinski_5x3_15_to_1())
-                # print(row, col)
         return msf_region
 
     @staticmethod
+    def with_litinski_5x3(width, height):
+        return MagicStateFactoryRegion.with_factory_factory(width, height, 3, 5, TFactory_Litinski_5x3_15_to_1)
+
+    @staticmethod
     def with_litinski_6x3_dense(width, height):
-        if height < 6:
-            raise ValueError
-
-        msf_region = MagicStateFactoryRegion(width, height)
-
-        for col in range(0, width - 2, 3):
-            msf_region.add_factory(
-                height - 6, col, TFactory_Litinski_6x3_20_to_4_dense()
-            )
-            # print(height - 6, col)
-
-        for row in range(height - 13, -1, -7):
-            for col in range(0, width - 2, 4):
-                msf_region.add_factory(row, col, TFactory_Litinski_6x3_20_to_4_dense())
-                # print(row, col)
-        return msf_region
+        return MagicStateFactoryRegion.with_factory_factory(width, height, 3, 6, TFactory_Litinski_6x3_20_to_4_dense)

@@ -228,6 +228,7 @@ class Widget:
             if isinstance(component, SingleRowRegisterRegion):
                 for cell_idx in range(0, component.width, 2):
                     cell = component.sc_patches[0][cell_idx]
+                    
                     coord = self.adapter[cell]
                     output_objs.append(
                         TikzRectangle(
@@ -253,6 +254,8 @@ class Widget:
                     for c, cell in enumerate(row):
                         if cell.patch_type == PatchType.REG:
                             coord = self.adapter[cell]
+                            angle = 90 if cell.orientation == PatchOrientation.Z_TOP else 0
+
                             output_objs.append(
                                 TikzRectangle(
                                     *self._to_tikz_coords(
@@ -261,7 +264,7 @@ class Widget:
                                 )
                             )
                             output_objs.append(
-                                SurfaceCodePatch(coord[1] + 0.5, -coord[0] - 0.5)
+                                SurfaceCodePatch(coord[1] + 0.5, -coord[0] - 0.5, angle = angle)
                             )
                             # output_objs.append(TikzCircle(
                             #     coord[1] + 0.5, -coord[0] - 0.5, 0.4, label=str(cell_idx // 2), tikz_style=TikzStyle(fill='red!50')))

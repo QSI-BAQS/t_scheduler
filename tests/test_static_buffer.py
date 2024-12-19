@@ -210,6 +210,31 @@ class StaticBufferTest(unittest.TestCase):
 
         orc = ScheduleOrchestrator(dag_roots, wid, strat, False, tikz)
         orc.schedule()
+    
+    def test_comb_vertical_qft_route_one(self, tikz=False):
+        with open('tests/qft_8_test_obj.json') as f:
+            obj = json.load(f)
+        strat, wid = vertical_strategy_with_prefilled_comb_widget(
+            20, 10, rot_strat=RotationStrategyOption.BACKPROP_INIT, comb_height=3, route_width=1)
+        gates = util.make_gates(obj, lambda x: int(x) * 13 % 11 + 12)
+        dag_layers, all_gates = util.dag_create(obj, gates)
+        dag_roots = dag_layers[0]
+
+        orc = ScheduleOrchestrator(dag_roots, wid, strat, False, tikz)
+        orc.schedule()
+
+    def test_litinski_6x3_buffered_qft_with_prewarm(self, tikz=False):
+        with open('tests/qft_test_obj.json') as f:
+            obj = json.load(f)
+        strat, wid = buffered_naive_strategy_with_buffered_widget(10, 20, 4, factory_factory=MagicStateFactoryRegion.with_litinski_6x3_dense)
+        gates = util.make_gates(obj, lambda x: int(x) % 5)
+        dag_layers, all_gates = util.dag_create(obj, gates)
+        dag_roots = dag_layers[0]
+
+        orc = ScheduleOrchestrator(dag_roots, wid, strat, False, tikz)
+        orc.prewarm(100)
+        orc.schedule()
+
 
 if __name__ == '__main__':
     unittest.main()
