@@ -1,6 +1,8 @@
 from __future__ import annotations
 from typing import Tuple
 
+from t_scheduler.base import constants
+
 from ..base import Gate, Patch, PatchOrientation, PatchType, TransactionList
 
 from ..router import DenseTCultivatorBufferRouter, MagicStateFactoryRouter, StandardBusRouter, BaselineRegisterRouter
@@ -41,7 +43,10 @@ class FlatNaiveStrategy(Strategy):
         )
 
         gate.activate(transactions)
-        # gate.duration += util.RESET_PLUS_DELAY
+        if not matching_rotation:
+            gate.duration += constants.ROTATE_DELAY
+        if len(buffer_transaction.move_patches) > 1:
+            gate.duration += constants.RESET_PLUS_DELAY
         return gate
 
     def alloc_nonlocal(self, gate) -> Gate | None:

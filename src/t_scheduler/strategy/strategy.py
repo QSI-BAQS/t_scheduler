@@ -45,6 +45,7 @@ class Strategy:
             return gate
 
         elif gate.gate_type == GateType.ANCILLA:
+            # See if ancilla can be allocated within the register region
             if (
                 register_transaction := self.register_router.request_transaction(
                     gate.targ, request_type="ancilla"
@@ -52,6 +53,8 @@ class Strategy:
             ):
                 gate.activate(register_transaction)
                 return gate
+
+            # Fallback: allocate an ancilla within the route region
 
             register_transaction = self.register_router.request_transaction(
                 gate.targ, request_type="nonlocal")

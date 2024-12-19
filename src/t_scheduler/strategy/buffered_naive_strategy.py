@@ -62,6 +62,7 @@ class BufferedNaiveStrategy(Strategy):
         return gate
 
     def alloc_nonlocal(self, gate) -> Gate | None:
+        # Check if register is available
         if not (
             register_transaction := self.register_router.request_transaction(
                 gate.targ
@@ -71,10 +72,12 @@ class BufferedNaiveStrategy(Strategy):
 
         reg_col: int = register_transaction.connect_col  # type: ignore
 
+        # Check if T is available in the buffer
         if buffer_transaction := self.buffer_router.request_transaction(
             max(0, reg_col - 1)
         ):
 
+            # Try to connect through the bus
             bus_transaction = self.bus_router.request_transaction(
                 buffer_transaction.connect_col + 1, reg_col # type: ignore
             )  # type: ignore
@@ -84,7 +87,7 @@ class BufferedNaiveStrategy(Strategy):
                     gate, buffer_transaction, bus_transaction, register_transaction
                 )
 
-        # Need passthrough
+        # Need passthrough column, buffer is empty or blocked.
         if not (
             buffer_transaction := self.buffer_router.request_passthrough(
                 max(0, reg_col - 1)
@@ -94,9 +97,12 @@ class BufferedNaiveStrategy(Strategy):
 
         buffer_bus_col = buffer_transaction.connect_col
 
+        # Connect to the register bank 
         if not (bus_transaction := self.bus_router.request_transaction(buffer_bus_col + 1, reg_col)):  # type: ignore
             return None
 
+
+        # See if the passthrough channel can get a T from a factory
         if not (
             factory_transaction := self.factory_router.request_transaction(
                 buffer_bus_col
@@ -104,6 +110,7 @@ class BufferedNaiveStrategy(Strategy):
         ):
             return None
 
+        # Connect up through lower routing layer
         buffer_bus_transaction = self.buffer_bus_router.request_transaction(
             factory_transaction.connect_col, buffer_bus_col # type: ignore
         )
