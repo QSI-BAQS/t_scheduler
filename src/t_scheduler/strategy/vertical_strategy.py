@@ -160,12 +160,12 @@ class VerticalRoutingStrategy(Strategy):
             if reg_col > 0 and self.bus_router.request_transaction(reg_col, reg_col):
                 buffer_cols.append(reg_col - 1)
             if (
-                reg_col < self.bus_router.route_bus.width - 2
+                reg_col < self.bus_router.region.width - 2
                 and self.bus_router.request_transaction(reg_col, reg_col + 1)
             ):
                 buffer_cols.append(reg_col)
         else:
-            buffer_cols = [self.clamp(reg_col - 1, 0, self.bus_router.route_bus.width - 3)]
+            buffer_cols = [self.clamp(reg_col - 1, 0, self.bus_router.region.width - 3)]
 
 
 

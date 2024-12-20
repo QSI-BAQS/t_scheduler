@@ -146,7 +146,7 @@ class BufferedNaiveStrategy(Strategy):
             t.T_available() for t in self.factory_router.region.available_states
         ):
             
-            slots = self.buffer_router.buffer.get_buffer_slots()
+            slots = self.buffer_router.region.get_buffer_slots()
 
             for state in list(self.factory_router.region.available_states):
                 if not state.T_available():

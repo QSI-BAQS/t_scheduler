@@ -27,10 +27,10 @@ class DenseTCultivatorBufferRouter(AbstractRouter):
     Assumption because output_col is used to detect which columns of T to assign
     """
 
-    buffer: TCultivatorBufferRegion
+    region: TCultivatorBufferRegion
 
     def __init__(self, buffer) -> None:
-        self.buffer = buffer
+        self.region = buffer
 
     def request_transaction(
         self, output_col, strict_output_col: bool = True
@@ -42,26 +42,26 @@ class DenseTCultivatorBufferRouter(AbstractRouter):
         the routing bus
         """
         queue = sorted(
-            self.buffer.available_states, key=lambda p: (
+            self.region.available_states, key=lambda p: (
                 abs(p.col - output_col), p.row)
         )
 
         for i, T_patch in enumerate(queue):
             if strict_output_col:
                 vert = [
-                    self.buffer[x, output_col]
+                    self.region[x, output_col]
                     for x in self.range_directed(T_patch.row, 0)
                 ]
             else:
                 vert = [
-                    self.buffer[x, T_patch.col]
+                    self.region[x, T_patch.col]
                     for x in self.range_directed(T_patch.row, 0)
                 ]
 
             if all(p.route_available() for p in vert):
                 if strict_output_col:
                     horizontal = [
-                        self.buffer[T_patch.row, i]
+                        self.region[T_patch.row, i]
                         for i in self.range_directed(T_patch.col, output_col)
                     ]
                     path = horizontal + vert
@@ -70,7 +70,7 @@ class DenseTCultivatorBufferRouter(AbstractRouter):
 
                 if all(p.route_available() for p in path[1:]):
                     transaction = _make_transaction(
-                        self.buffer, path, connect=path[-1].col)
+                        self.region, path, connect=path[-1].col)
 
                     return transaction
         return None

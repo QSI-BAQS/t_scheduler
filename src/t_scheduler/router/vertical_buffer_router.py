@@ -10,10 +10,10 @@ class VerticalFilledBufferRouter(AbstractRouter):
         columns of T to assign
     """
 
-    buffer: PrefilledMagicStateRegion
+    region: PrefilledMagicStateRegion
 
     def __init__(self, buffer) -> None:
-        self.buffer = buffer
+        self.region = buffer
 
     @staticmethod
     def _make_transaction(path, connect=None):
@@ -38,10 +38,10 @@ class VerticalFilledBufferRouter(AbstractRouter):
         if not (path_prefix := self.probe_down(output_col)):
             return None
 
-        if path := self.probe_left_nonowning(self.buffer, path_prefix):
+        if path := self.probe_left_nonowning(self.region, path_prefix):
             return self._make_transaction(path, connect=output_col)
 
-        if path := self.probe_right_nonowning(self.buffer, path_prefix):
+        if path := self.probe_right_nonowning(self.region, path_prefix):
             return self._make_transaction(path, connect=output_col)
 
         return None
@@ -50,15 +50,15 @@ class VerticalFilledBufferRouter(AbstractRouter):
         """
         Finds an available T state in the column output_col
         """
-        for r in range(self.buffer.height):
-            if (patch := self.buffer[r, output_col]).T_available():
+        for r in range(self.region.height):
+            if (patch := self.region[r, output_col]).T_available():
                 return patch
 
     def find_path_owning(self, T_patch):
         """
         Gets corresponding path for a T state in the column output_col
         """
-        return [self.buffer[r, T_patch.col] for r in range(T_patch.row, -1, -1)]
+        return [self.region[r, T_patch.col] for r in range(T_patch.row, -1, -1)]
 
     def probe_down(self, output_col):
         """
@@ -67,8 +67,8 @@ class VerticalFilledBufferRouter(AbstractRouter):
         (consumed magic states -- previously reset to |+>)
         """
         prefix = []
-        for i in range(self.buffer.height):
-            if (patch := self.buffer[i, output_col]).route_available():
+        for i in range(self.region.height):
+            if (patch := self.region[i, output_col]).route_available():
                 prefix.append(patch)
             else:
                 break

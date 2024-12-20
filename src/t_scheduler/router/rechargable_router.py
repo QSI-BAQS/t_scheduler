@@ -9,10 +9,10 @@ class RechargableBufferRouter:
     Assumption because output_col is used to detect which columns of T to assign
     """
 
-    buffer: MagicStateBufferRegion
+    region: MagicStateBufferRegion
 
     def __init__(self, buffer) -> None:
-        self.buffer = buffer
+        self.region = buffer
 
     def request_transaction(
         self, output_col, strict_output_col: bool = True
@@ -20,14 +20,14 @@ class RechargableBufferRouter:
         """
         output_col: which column to output to in routing bus above
         """
-        queue = sorted(range(self.buffer.width), key=lambda p: (abs(p - output_col)))
-        buffer_states = self.buffer.get_buffer_states()
+        queue = sorted(range(self.region.width), key=lambda p: (abs(p - output_col)))
+        buffer_states = self.region.get_buffer_states()
 
         for col in queue:
             if not (T_patch := buffer_states[col]):
                 continue
 
-            vert = [self.buffer[x, T_patch.col] for x in range(T_patch.row)][::-1]
+            vert = [self.region[x, T_patch.col] for x in range(T_patch.row)][::-1]
 
             path = [T_patch] + vert
 
@@ -40,14 +40,14 @@ class RechargableBufferRouter:
         '''
         Request a passthrough column in the buffer for factories below
         '''
-        buffer_slots = self.buffer.get_buffer_slots()
+        buffer_slots = self.region.get_buffer_slots()
         cols = [cell.col for cell in buffer_slots if cell and cell.row == 0]
         
         if not cols: return None
         
         best_col = min((abs(c - output_col), c) for c in cols)[1]
 
-        path = [self.buffer[row, best_col] for row in range(self.buffer.height)][::-1]
+        path = [self.region[row, best_col] for row in range(self.region.height)][::-1]
         return Transaction(path, [], connect_col=path[-1].col)
 
     def upkeep_transaction(self, buffer_slot) -> Transaction:
@@ -56,8 +56,8 @@ class RechargableBufferRouter:
         to buffer_slot.
         '''
         path = [
-            self.buffer[x, buffer_slot.col]
-            for x in range(buffer_slot.row, self.buffer.height)
+            self.region[x, buffer_slot.col]
+            for x in range(buffer_slot.row, self.region.height)
         ][::-1]
         return Transaction(path, [buffer_slot], connect_col=buffer_slot.col)
 
@@ -66,10 +66,10 @@ class RechargableBufferRouter:
         Generate all local moves to shuffle T_state along column queues
         '''
         output_transactions = []
-        for row in range(1, self.buffer.height):
-            for col in range(0, self.buffer.width):
-                if (T := self.buffer[row, col]).T_available() and (
-                    above := self.buffer[row - 1, col]
+        for row in range(1, self.region.height):
+            for col in range(0, self.region.width):
+                if (T := self.region[row, col]).T_available() and (
+                    above := self.region[row - 1, col]
                 ).route_available():
                     output_transactions.append(
                         Transaction([T, above], [above], magic_state_patch=T)

@@ -47,19 +47,19 @@ class TreeFilledBufferRouter(AbstractRouter):
     Also only works with chessboard shape PrefilledMagicStateRegion
     """
 
-    buffer: PrefilledMagicStateRegion
+    region: PrefilledMagicStateRegion
 
     consumption_frontier: List[TreeNode]
 
     def __init__(self, buffer, depth_offset=2 / 3) -> None:
-        self.buffer = buffer
+        self.region = buffer
 
         self.consumption_frontier = [
-            TreeNode(None, [], q) for q in range(self.buffer.width // 2 + 1)
+            TreeNode(None, [], q) for q in range(self.region.width // 2 + 1)
         ]
         # TODO adapt for missing bell state columns
 
-        self.dig_depth = int(self.buffer.height * depth_offset)
+        self.dig_depth = int(self.region.height * depth_offset)
 
         self.init_frontier()
 
@@ -110,31 +110,31 @@ class TreeFilledBufferRouter(AbstractRouter):
 
     def init_frontier(self):
         # TODO add support for no bell state columns
-        for lane in range(self.buffer.width // 2 + 1):
+        for lane in range(self.region.width // 2 + 1):
             root = self.consumption_frontier[lane]
             if lane != 0:
                 c = 2 * lane - 1  # Left col of lane with shifted offset
                 root.children.append(
-                    TreeNode(root, [self.buffer[0, c]], debug_source="init")
+                    TreeNode(root, [self.region[0, c]], debug_source="init")
                 )
             else:
                 c = 2 * lane + 1  # Left col of lane with shifted offset
                 root.children.append(
-                    TreeNode(root, [self.buffer[0, c]], debug_source="init")
+                    TreeNode(root, [self.region[0, c]], debug_source="init")
                 )
             if lane != len(self.consumption_frontier) - 1:
                 c = 2 * lane  # right col of lane with shifted offset
                 root.children.append(
-                    TreeNode(root, [self.buffer[0, c]], debug_source="init")
+                    TreeNode(root, [self.region[0, c]], debug_source="init")
                 )
             else:
                 c = 2 * lane - 2  # Left col of lane with shifted offset
                 root.children.append(
-                    TreeNode(root, [self.buffer[0, c]], debug_source="init")
+                    TreeNode(root, [self.region[0, c]], debug_source="init")
                 )
 
             root.children.sort(
-                key=lambda x: abs(x.path[-1].col - self.buffer.width // 2),
+                key=lambda x: abs(x.path[-1].col - self.region.width // 2),
                 reverse=False,
             )
             if lane != 0 and lane != len(self.consumption_frontier) - 1:
@@ -148,7 +148,7 @@ class TreeFilledBufferRouter(AbstractRouter):
             curr.reparsed = True
             child = TreeNode(
                 curr,
-                curr.path + [self.buffer[r, curr.path[-1].col]],
+                curr.path + [self.region[r, curr.path[-1].col]],
                 debug_source="mine",
             )
             curr.children.append(child)
@@ -159,7 +159,7 @@ class TreeFilledBufferRouter(AbstractRouter):
                 curr,
                 curr.path
                 + [
-                    self.buffer[
+                    self.region[
                         r, 2 * source_lane - (curr.path[-1].col == 2 * source_lane)
                     ]
                 ],
@@ -204,8 +204,8 @@ class TreeFilledBufferRouter(AbstractRouter):
         new_patches = []
 
         for r, c in [(row + 1, col), (row, col - 1), (row, col + 1), (row - 1, col)]:
-            if 0 <= r < self.buffer.height and 0 <= c < self.buffer.width:
-                if (patch := self.buffer[r, c]).patch_type == PatchType.T:
+            if 0 <= r < self.region.height and 0 <= c < self.region.width:
+                if (patch := self.region[r, c]).patch_type == PatchType.T:
                     new_patches.append(patch)
 
         new_children = []
@@ -234,8 +234,8 @@ class TreeFilledBufferRouter(AbstractRouter):
                     (row, col + 1),
                     (row - 1, col),
                 ]:
-                    if 0 <= r < self.buffer.height and 0 <= c < self.buffer.width:
-                        patch = self.buffer[r, c]
+                    if 0 <= r < self.region.height and 0 <= c < self.region.width:
+                        patch = self.region[r, c]
                         matching_rotation = (row == r) ^ (
                             patch.orientation == PatchOrientation.Z_TOP
                         )
@@ -247,10 +247,10 @@ class TreeFilledBufferRouter(AbstractRouter):
                             bfs_queue.append((r, c))
                             seen.add((r, c))
             for r, c in results:
-                fragment = [self.buffer[r, c]]
+                fragment = [self.region[r, c]]
                 while (r, c) in parent:
                     r, c = parent[r, c]
-                    fragment.append(self.buffer[r, c])
+                    fragment.append(self.region[r, c])
                 fragment.pop()
                 new_children.append(
                     TreeNode(tree_node, tree_node.path + fragment[::-1])
