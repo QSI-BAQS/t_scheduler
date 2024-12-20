@@ -152,10 +152,39 @@ class StaticBufferTest(unittest.TestCase):
         orc = ScheduleOrchestrator(dag_roots, wid, strat, False, tikz)
         orc.schedule()
 
+    def test_filled_t_cult(self, tikz=False):
+        with open('tests/qft_test_obj.json') as f:
+            obj = json.load(f)
+        strat, wid = flat_naive_strategy_with_t_cultivator_widget(10, 5)
+        gates = util.make_gates(obj, lambda x: int(x) % 5)
+        dag_layers, all_gates = util.dag_create(obj, gates)
+        dag_roots = dag_layers[0]
+
+        t_cult_router: Any = strat.magic_state_router # type: ignore
+
+        for row in t_cult_router.region.sc_patches:
+            for cell in row:
+                cell.has_T = True # type: ignore
+                t_cult_router.region.available_states.add(cell)
+
+        orc = ScheduleOrchestrator(dag_roots, wid, strat, False, tikz)
+        orc.schedule()
+
     def test_litinski_5x3_qft(self, tikz=False):
         with open('tests/qft_test_obj.json') as f:
             obj = json.load(f)
         strat, wid = flat_naive_strategy_with_litinski_5x3_unbuffered_widget(10, 7)
+        gates = util.make_gates(obj, lambda x: int(x) % 5)
+        dag_layers, all_gates = util.dag_create(obj, gates)
+        dag_roots = dag_layers[0]
+
+        orc = ScheduleOrchestrator(dag_roots, wid, strat, False, tikz)
+        orc.schedule()
+    
+    def test_litinski_5x3_qft_nobell(self, tikz=False):
+        with open('tests/qft_test_obj.json') as f:
+            obj = json.load(f)
+        strat, wid = flat_naive_strategy_with_litinski_5x3_unbuffered_widget(10, 7, False)
         gates = util.make_gates(obj, lambda x: int(x) % 5)
         dag_layers, all_gates = util.dag_create(obj, gates)
         dag_roots = dag_layers[0]
@@ -173,11 +202,33 @@ class StaticBufferTest(unittest.TestCase):
 
         orc = ScheduleOrchestrator(dag_roots, wid, strat, False, tikz)
         orc.schedule()
+    
+    def test_litinski_6x3_qft_nobell(self, tikz=False):
+        with open('tests/qft_test_obj.json') as f:
+            obj = json.load(f)
+        strat, wid = flat_naive_strategy_with_litinski_6x3_dense_unbuffered_widget(10, 8, False)
+        gates = util.make_gates(obj, lambda x: int(x) % 5)
+        dag_layers, all_gates = util.dag_create(obj, gates)
+        dag_roots = dag_layers[0]
+
+        orc = ScheduleOrchestrator(dag_roots, wid, strat, False, tikz)
+        orc.schedule()
 
     def test_litinski_6x3_buffered_qft(self, tikz=False):
         with open('tests/qft_test_obj.json') as f:
             obj = json.load(f)
         strat, wid = buffered_naive_strategy_with_buffered_widget(10, 18, 2, factory_factory=MagicStateFactoryRegion.with_litinski_6x3_dense)
+        gates = util.make_gates(obj, lambda x: int(x) % 5)
+        dag_layers, all_gates = util.dag_create(obj, gates)
+        dag_roots = dag_layers[0]
+
+        orc = ScheduleOrchestrator(dag_roots, wid, strat, False, tikz)
+        orc.schedule()
+
+    def test_litinski_6x3_buffered_qft_nobell(self, tikz=False):
+        with open('tests/qft_test_obj.json') as f:
+            obj = json.load(f)
+        strat, wid = buffered_naive_strategy_with_buffered_widget(10, 18, 2, factory_factory=MagicStateFactoryRegion.with_litinski_6x3_dense, include_bell=False)
         gates = util.make_gates(obj, lambda x: int(x) % 5)
         dag_layers, all_gates = util.dag_create(obj, gates)
         dag_roots = dag_layers[0]

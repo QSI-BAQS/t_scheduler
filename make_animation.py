@@ -44,7 +44,9 @@ funcs = [
     # StaticBufferTest.test_comb_vertical,
     # StaticBufferTest.test_comb_vertical_qft,
     # StaticBufferTest.test_comb_vertical_qft_route_one,
-    StaticBufferTest.test_litinski_6x3_buffered_qft_with_prewarm
+    # StaticBufferTest.test_litinski_6x3_buffered_qft_with_prewarm
+    # StaticBufferTest.test_litinski_6x3_qft_nobell,
+    StaticBufferTest.test_filled_t_cult,
 ]
 
 

@@ -42,15 +42,19 @@ def flat_naive_strategy_with_t_cultivator_widget(width, height) -> Tuple[FlatNai
     return strat, widget
 
 def flat_naive_strategy_with_litinski_5x3_unbuffered_widget(
-    width, height
+    width, height, include_bell = True
 ) -> Tuple[FlatNaiveStrategy, Widget]:
     register_region = SingleRowRegisterRegion(width)
     route_region = RouteBus(width)
+    
+    buffer_width = width - 2 if include_bell else width
+
     buffer_region = MagicStateFactoryRegion.with_litinski_5x3(
-        width - 2, height - 2)
+        buffer_width, height - 2)
 
     board = _concat_vertical(register_region.sc_patches, route_region.sc_patches,
-                             _squash_and_add_bell_regions(buffer_region))
+                             _squash_and_add_bell_regions(buffer_region) if include_bell else buffer_region.sc_patches
+                             )
     widget = Widget(
         width,
         height,
@@ -62,20 +66,26 @@ def flat_naive_strategy_with_litinski_5x3_unbuffered_widget(
         BaselineRegisterRouter(register_region),
         StandardBusRouter(route_region),
         MagicStateFactoryRouter(buffer_region),
+        include_bell = include_bell
     )
     return strat, widget
 
 def flat_naive_strategy_with_litinski_6x3_dense_unbuffered_widget(
-    width, height
+    width, height, include_bell=True
 ) -> Tuple[FlatNaiveStrategy, Widget]:
     register_region = SingleRowRegisterRegion(width)
     route_region = RouteBus(width)
+
+
+    buffer_width = width - 2 if include_bell else width
+
+
     buffer_region = MagicStateFactoryRegion.with_litinski_6x3_dense(
-        width - 2, height - 2
+        buffer_width, height - 2
     )
 
     board = _concat_vertical(register_region.sc_patches, route_region.sc_patches,
-                             _squash_and_add_bell_regions(buffer_region))
+                             _squash_and_add_bell_regions(buffer_region) if include_bell else buffer_region.sc_patches)
     widget = Widget(
         width,
         height,
@@ -87,6 +97,7 @@ def flat_naive_strategy_with_litinski_6x3_dense_unbuffered_widget(
         BaselineRegisterRouter(register_region),
         StandardBusRouter(route_region),
         MagicStateFactoryRouter(buffer_region),
+        include_bell=include_bell
     )
     return strat, widget
 
@@ -95,16 +106,24 @@ def buffered_naive_strategy_with_buffered_widget(
     height,
     buffer_height,
     factory_factory: Callable[[int, int], MagicStateFactoryRegion],
+    include_bell: bool = True
 ) -> Tuple[BufferedNaiveStrategy, Widget]:
     register_region = SingleRowRegisterRegion(width)
     route_region = RouteBus(width)
-    buffer_region = MagicStateBufferRegion(width - 2, buffer_height)
-    buffer_bus_region = RouteBus(width - 2)
-    factory_region = factory_factory(width - 2, height - 3 - buffer_height)
 
-    board = _concat_vertical(register_region.sc_patches, route_region.sc_patches,
-                             _squash_and_add_bell_regions(buffer_region, buffer_bus_region, factory_region))
+    buffer_width = width - 2 if include_bell else width
 
+    buffer_region = MagicStateBufferRegion(buffer_width, buffer_height)
+    buffer_bus_region = RouteBus(buffer_width)
+    factory_region = factory_factory(buffer_width, height - 3 - buffer_height)
+
+    if include_bell:
+        board = _concat_vertical(register_region.sc_patches, route_region.sc_patches,
+                                _squash_and_add_bell_regions(buffer_region, buffer_bus_region, factory_region))
+    else:
+        board = _concat_vertical(register_region.sc_patches, route_region.sc_patches,
+                                buffer_region.sc_patches, buffer_bus_region.sc_patches, factory_region.sc_patches)
+        
     widget = Widget(
         width,
         height,

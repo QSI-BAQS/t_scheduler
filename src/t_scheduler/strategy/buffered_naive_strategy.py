@@ -1,8 +1,10 @@
 from __future__ import annotations
-from typing import Callable, List, Tuple
+from typing import List
 
-from ..base import Gate, Patch, PatchOrientation, PatchType, TransactionList
-from ..base.gate import GateType, MoveGate
+from t_scheduler.router.generic.coordinate_adapter import CoordinateAdapter
+
+from ..base import Gate, PatchOrientation, TransactionList
+from ..base.gate import MoveGate
 
 from ..router import MagicStateFactoryRouter, RechargableBufferRouter, StandardBusRouter, BaselineRegisterRouter
 from ..widget import *
@@ -23,6 +25,7 @@ class BufferedNaiveStrategy(Strategy):
         buffer_router,
         buffer_bus_router,
         factory_router,
+        include_bell: bool = True
     ):
         self.register_router = register_router
         self.bus_router = bus_router
@@ -30,6 +33,12 @@ class BufferedNaiveStrategy(Strategy):
         self.buffer_bus_router = buffer_bus_router
         self.factory_router = factory_router
         self.needs_upkeep = True
+
+        if include_bell:
+            self.register_buffer_adapter = CoordinateAdapter([0, bus_router.region.width], [1, buffer_router.region.width + 1])
+        else:
+            self.register_buffer_adapter = CoordinateAdapter([0, bus_router.region.width], [0, buffer_router.region.width])
+
 
     def validate_rotation(
         self, gate, buffer_transaction, bus_transaction, *other_transactions
@@ -72,14 +81,18 @@ class BufferedNaiveStrategy(Strategy):
 
         reg_col: int = register_transaction.connect_col  # type: ignore
 
+        buffer_request_col = self.register_buffer_adapter.above_to_below(reg_col)
+
         # Check if T is available in the buffer
         if buffer_transaction := self.buffer_router.request_transaction(
-            max(0, reg_col - 1)
+            buffer_request_col
         ):
+
+            buffer_output_col = self.register_buffer_adapter.below_to_above(buffer_transaction.connect_col)
 
             # Try to connect through the bus
             bus_transaction = self.bus_router.request_transaction(
-                buffer_transaction.connect_col + 1, reg_col # type: ignore
+                buffer_output_col, reg_col # type: ignore
             )  # type: ignore
 
             if bus_transaction:
@@ -90,15 +103,17 @@ class BufferedNaiveStrategy(Strategy):
         # Need passthrough column, buffer is empty or blocked.
         if not (
             buffer_transaction := self.buffer_router.request_passthrough(
-                max(0, reg_col - 1)
+                buffer_request_col
             )
         ):
             return None
 
         buffer_bus_col = buffer_transaction.connect_col
 
+        buffer_output_col = self.register_buffer_adapter.below_to_above(buffer_transaction.connect_col)
+
         # Connect to the register bank 
-        if not (bus_transaction := self.bus_router.request_transaction(buffer_bus_col + 1, reg_col)):  # type: ignore
+        if not (bus_transaction := self.bus_router.request_transaction(buffer_output_col, reg_col)):  # type: ignore
             return None
 
 

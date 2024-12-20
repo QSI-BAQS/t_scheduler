@@ -1,11 +1,10 @@
 from __future__ import annotations
-from typing import Tuple
 
-from t_scheduler.base import constants
 
-from ..base import Gate, Patch, PatchOrientation, PatchType, TransactionList
+from ..base import Gate, PatchOrientation, TransactionList, constants
 
-from ..router import DenseTCultivatorBufferRouter, MagicStateFactoryRouter, StandardBusRouter, BaselineRegisterRouter
+from ..router import StandardBusRouter, BaselineRegisterRouter, AbstractRouter
+from ..router.generic.coordinate_adapter import CoordinateAdapter
 from ..widget import *
 from .strategy import Strategy
 
@@ -13,17 +12,21 @@ from .strategy import Strategy
 class FlatNaiveStrategy(Strategy):
     register_router: BaselineRegisterRouter
     bus_router: StandardBusRouter
-    buffer_router: DenseTCultivatorBufferRouter
+    magic_state_router: AbstractRouter
 
-    def __init__(self, register_router, bus_router, buffer_router):
+    def __init__(self, register_router, bus_router, buffer_router, include_bell: bool = True):
         self.register_router = register_router
         self.bus_router = bus_router
-        self.buffer_router = buffer_router
+        self.magic_state_router = buffer_router
+
+        if include_bell:
+            self.bus_magic_adapter = CoordinateAdapter([0, bus_router.region.width], [1, buffer_router.region.width + 1])
+        else:
+            self.bus_magic_adapter = CoordinateAdapter([0, bus_router.region.width], [0, buffer_router.region.width])
 
     def validate_rotation(
         self, gate, register_transaction, bus_transaction, buffer_transaction
     ) -> Gate | None:
-        # TODO currently NOOP
         if len(buffer_transaction.move_patches) == 1:
             # Assume all patches in row below routing layer are Z_TOP orientation
             matching_rotation = True
@@ -36,7 +39,6 @@ class FlatNaiveStrategy(Strategy):
             matching_rotation = (T_patch.row == attack_patch.row) ^ (
                 T_patch.orientation == PatchOrientation.Z_TOP
             )
-        # TODO add cultivator reset delay + rotation consideration (time incl in cult reset)
 
         transactions = TransactionList(
             [buffer_transaction, bus_transaction, register_transaction]
@@ -59,15 +61,19 @@ class FlatNaiveStrategy(Strategy):
 
         reg_col: int = register_transaction.connect_col  # type: ignore
 
+        buffer_request_col = self.bus_magic_adapter.above_to_below(reg_col)
+
         if not (
-            buffer_transaction := self.buffer_router.request_transaction(
-                max(0, reg_col - 1)
+            buffer_transaction := self.magic_state_router.request_transaction(
+                buffer_request_col
             )
         ):
             return None
 
+        buffer_output_col = self.bus_magic_adapter.below_to_above(buffer_transaction.connect_col)
+
         bus_transaction = self.bus_router.request_transaction(
-            buffer_transaction.connect_col + 1, reg_col
+            buffer_output_col, reg_col
         )  # type: ignore
 
         if not bus_transaction:
