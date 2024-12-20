@@ -101,6 +101,12 @@ class Widget:
             self.rep_count = 1
             return buf + "\n"
 
+    ############################################################
+    #
+    # No important logic code lies below: only output formatting
+    #
+    ############################################################
+
     def make_coordinate_adapter(self) -> None:
         """
         Generate a coordinate adapter for local patches to global coordinates
@@ -173,6 +179,29 @@ class Widget:
             return "@"
         else:
             return "."
+    
+    @staticmethod
+    def _patch_to_json(cell):
+        if cell.patch_type == PatchType.BELL:
+            return "bell"
+        elif cell.locked():
+            return "locked"
+        elif cell.patch_type == PatchType.REG:
+            return "reg"
+        elif cell.route_available():
+            return "route"
+        elif cell.T_available():
+            return "magic_state"
+        elif cell.patch_type == PatchType.CULTIVATOR:
+            return "cultivator"
+        elif cell.patch_type == PatchType.RESERVED:
+            return "reserved"
+        elif cell.patch_type == PatchType.FACTORY_OUTPUT:
+            return "factory_output"
+        elif cell.patch_type == PatchType.ROUTE_BUFFER:
+            return "route_buffer"
+        else:
+            return "other"
 
     def save_tikz_region_layer(self):
         from lattice_surgery_draw.region import Region
@@ -206,6 +235,43 @@ class Widget:
                     )
 
         return output_rects
+    
+    def save_json_regions(self):
+        output = []
+        for _, component_name, coords in self.get_component_info():
+            component_json = {
+                'name': component_name,
+                'loc_tl': coords[0],
+                'loc_br': coords[1]
+            }
+            output.append(component_json)
+        return output
+
+    def save_json_patches_state(self):
+        active_gates = set()
+        output_board = []
+        for row in self.board:
+            output_row = []
+            for cell in row:
+                cell_json = {
+                    'type': self._patch_to_json(cell)
+                }
+                if cell.locked():
+                    cell_json['locked_by'] = id(cell.lock.owner) # type: ignore
+                    active_gates.add(cell.lock.owner) # type: ignore
+                output_row.append(cell_json)
+            output_board.append(output_row)
+        output_gates = []
+        for gate in active_gates:
+            gate_json = {
+                'type': gate.__class__.__name__,
+                'holds': list(map(self.adapter.get, gate.transaction.active_cells)),
+                'active_time': gate.timer,
+                'id': id(gate)
+            }
+            output_gates.append(gate_json)
+        output = {'board': output_board, 'gates': output_gates}
+        return output
 
     def save_tikz_patches_layer(self):
 

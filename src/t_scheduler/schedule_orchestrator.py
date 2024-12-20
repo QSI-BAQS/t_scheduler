@@ -39,10 +39,15 @@ class ScheduleOrchestrator:
         self.next_T_queue = []
 
         self.tikz_output = tikz_output
+        self.json_output = False
 
-        if self.tikz_output:
+        if self.tikz_output or self.json_output:
             self.output_objs = []
             self.widget.make_coordinate_adapter()
+        
+        if self.json_output:
+            self.json = {'regions': self.widget.save_json_regions(), 'layers': []}
+
 
     def save_tikz_frame(self):
         from lattice_surgery_draw.primitives.composers import TexFile
@@ -54,6 +59,10 @@ class ScheduleOrchestrator:
             )
             print(output, file=f)
 
+    def save_json(self):
+        import json
+        with open(f"out/json.out", 'w') as f:
+            json.dump(self.json, f)
 
     def prewarm(self, num_cycles):
         for _ in range(num_cycles):
@@ -111,7 +120,9 @@ class ScheduleOrchestrator:
             #                   self.widget.save_tikz_region_layer() + self.widget.save_tikz_patches_layer())), file=file)
             # print('\\end{tikzpicture}\n\\newpage', file=file)
             # file.close()
-            pass
+
+        if self.json_output:
+            self.json['layers'].append(self.widget.save_json_patches_state())
 
         for gate in self.active:
             gate.tick()
