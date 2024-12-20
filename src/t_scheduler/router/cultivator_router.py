@@ -38,7 +38,7 @@ class DenseTCultivatorBufferRouter(AbstractRouter):
         """
         output_col: which column to output to in routing bus above
 
-        strict_output_col: whether we can just output to any column in 
+        strict_output_col: if false, we can just output to any column in 
         the routing bus
         """
         queue = sorted(
@@ -47,7 +47,12 @@ class DenseTCultivatorBufferRouter(AbstractRouter):
         )
 
         for i, T_patch in enumerate(queue):
-            if strict_output_col:
+            if T_patch.col == output_col:
+                vert = [
+                    self.region[x, output_col]
+                    for x in self.range_directed(T_patch.row, 0)
+                ][1:]
+            elif strict_output_col:
                 vert = [
                     self.region[x, output_col]
                     for x in self.range_directed(T_patch.row, 0)
@@ -59,7 +64,9 @@ class DenseTCultivatorBufferRouter(AbstractRouter):
                 ]
 
             if all(p.route_available() for p in vert):
-                if strict_output_col:
+                if T_patch.col == output_col:
+                    path = [T_patch] + vert
+                elif strict_output_col:
                     horizontal = [
                         self.region[T_patch.row, i]
                         for i in self.range_directed(T_patch.col, output_col)
