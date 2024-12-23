@@ -46,7 +46,10 @@ class ScheduleOrchestrator:
             self.widget.make_coordinate_adapter()
         
         if self.json_output:
-            self.json = {'regions': self.widget.save_json_regions(), 'layers': []}
+            self.json = {'regions': self.widget.save_json_regions(), 
+                         'layers': [], 
+                         'width': self.widget.width, 
+                         'height': self.widget.height}
 
 
     def save_tikz_frame(self):

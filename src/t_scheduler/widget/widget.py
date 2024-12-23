@@ -179,7 +179,7 @@ class Widget:
             return "@"
         else:
             return "."
-    
+
     @staticmethod
     def _patch_to_json(cell):
         if cell.patch_type == PatchType.BELL:
@@ -229,21 +229,36 @@ class Widget:
 
                     output_rects.append(
                         Region(
-                            *self._to_tikz_coords(top_left, bottom_right, sep=0.05),
+                            *self._to_tikz_coords(top_left,
+                                                  bottom_right, sep=0.05),
                             region_style=TikzStyle(fill="blue!30"),
                         )
                     )
 
         return output_rects
-    
+
     def save_json_regions(self):
+        from t_scheduler.widget.factory_region import MagicStateFactoryRegion
         output = []
-        for _, component_name, coords in self.get_component_info():
+        for component, component_name, coords in self.get_component_info():
             component_json = {
                 'name': component_name,
                 'loc_tl': coords[0],
                 'loc_br': coords[1]
             }
+            if isinstance(component, MagicStateFactoryRegion):
+                component_json['factories'] = []
+                for factory in component.factories:
+                    top_left = self.adapter[component[factory.layout_position]]
+                    bottom_right = (
+                        top_left[0] + factory.height - 1,
+                        top_left[1] + factory.width - 1,
+                    )
+
+                    component_json['factories'].append({
+                        'loc_tl': top_left,
+                        'loc_br': bottom_right,
+                    })
             output.append(component_json)
         return output
 
@@ -257,8 +272,8 @@ class Widget:
                     'type': self._patch_to_json(cell)
                 }
                 if cell.locked():
-                    cell_json['locked_by'] = id(cell.lock.owner) # type: ignore
-                    active_gates.add(cell.lock.owner) # type: ignore
+                    cell_json['locked_by'] = id(cell.lock.owner)  # type: ignore
+                    active_gates.add(cell.lock.owner)  # type: ignore
                 output_row.append(cell_json)
             output_board.append(output_row)
         output_gates = []
@@ -294,7 +309,7 @@ class Widget:
             if isinstance(component, SingleRowRegisterRegion):
                 for cell_idx in range(0, component.width, 2):
                     cell = component.sc_patches[0][cell_idx]
-                    
+
                     coord = self.adapter[cell]
                     output_objs.append(
                         TikzRectangle(
@@ -330,7 +345,7 @@ class Widget:
                                 )
                             )
                             output_objs.append(
-                                SurfaceCodePatch(coord[1] + 0.5, -coord[0] - 0.5, angle = angle)
+                                SurfaceCodePatch(coord[1] + 0.5, -coord[0] - 0.5, angle=angle)
                             )
                             # output_objs.append(TikzCircle(
                             #     coord[1] + 0.5, -coord[0] - 0.5, 0.4, label=str(cell_idx // 2), tikz_style=TikzStyle(fill='red!50')))
