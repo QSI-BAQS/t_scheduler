@@ -1,3 +1,4 @@
+from t_scheduler.base.response import Response, ResponseStatus
 from ..base import Transaction
 from ..widget import TCultivatorBufferRegion
 from .abstract_router import AbstractRouter
@@ -82,4 +83,11 @@ class DenseTCultivatorBufferRouter(AbstractRouter):
                     return transaction
         return None
 
+
+    def generic_transaction(self, *args, **kwargs):
+        trans = self.request_transaction(*args, **kwargs)
+        if trans:
+            return Response(ResponseStatus.SUCCESS, trans)
+        else:
+            return Response()
 # TODO: Port flat_sparse router (in separate class)

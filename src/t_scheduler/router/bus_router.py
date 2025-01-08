@@ -1,3 +1,4 @@
+from t_scheduler.base.response import Response, ResponseStatus
 from ..base import Transaction
 from ..widget import RouteBus
 from .abstract_router import AbstractRouter
@@ -24,3 +25,12 @@ class StandardBusRouter(AbstractRouter):
             return None
 
         return Transaction(path, [])
+    
+    def generic_transaction(self, start_col, end_col = None):
+        if end_col is None:
+            end_col = start_col
+        trans = self.request_transaction(start_col, end_col)
+        if trans:
+            return Response(ResponseStatus.CHECK_DOWNSTREAM, trans)
+        else:
+            return Response()

@@ -1,5 +1,7 @@
 from typing import Literal
 from collections import deque
+
+from t_scheduler.base.response import Response, ResponseStatus
 from ..base import Transaction
 from ..widget import CombShapedRegisterRegion, SingleRowRegisterRegion
 from .abstract_router import AbstractRouter
@@ -40,8 +42,15 @@ class BaselineRegisterRouter(AbstractRouter):
                 [reg_patch], [reg_patch], connect_col=physical_position[1]
             )
 
+    def generic_transaction(self, col, *args, **kwargs):
+        trans = self.request_transaction(col//2, **kwargs)
+        if trans:
+            return Response(ResponseStatus.CHECK_DOWNSTREAM, trans)
+        else:
+            return Response()
 
-class CombRegisterRouter:
+
+class CombRegisterRouter(AbstractRouter):
     region: CombShapedRegisterRegion
 
     def __init__(self, region) -> None:

@@ -1,4 +1,6 @@
 from typing import List
+
+from t_scheduler.base.response import Response, ResponseStatus
 from ..base import Patch, Transaction
 from ..widget import PrefilledMagicStateRegion
 from .abstract_router import AbstractRouter
@@ -176,3 +178,18 @@ class VerticalFilledBufferRouter(AbstractRouter):
         if not all(p.route_available() for p in path[1:]):
             return False
         return True
+
+
+    def generic_transaction(self, reg_col, *args, **kwargs):
+        buffer_cols = []
+        if reg_col > 0:
+            buffer_cols.append(reg_col - 1)
+        if (
+            reg_col < self.region.width - 2
+        ):
+            buffer_cols.append(reg_col)
+        trans = self.request_transaction(buffer_cols, **kwargs)
+        if trans:
+            return Response(ResponseStatus.SUCCESS, trans)
+        else:
+            return Response()

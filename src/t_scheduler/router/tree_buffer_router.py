@@ -2,6 +2,8 @@ from __future__ import annotations
 from typing import List
 
 from collections import deque
+
+from t_scheduler.base.response import Response, ResponseStatus
 from ..base import Patch, PatchOrientation, PatchType, Transaction
 from ..widget import PrefilledMagicStateRegion
 from .abstract_router import AbstractRouter
@@ -256,3 +258,9 @@ class TreeFilledBufferRouter(AbstractRouter):
                     TreeNode(tree_node, tree_node.path + fragment[::-1])
                 )
             tree_node.children = new_children
+    def generic_transaction(self, reg_col, *args, **kwargs):
+        trans = self.request_transaction(reg_col // 2, **kwargs)
+        if trans:
+            return Response(ResponseStatus.SUCCESS, trans)
+        else:
+            return Response()

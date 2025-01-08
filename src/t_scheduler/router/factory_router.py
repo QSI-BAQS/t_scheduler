@@ -1,4 +1,6 @@
 from collections import deque
+
+from t_scheduler.base.response import Response, ResponseStatus
 from ..base import Transaction
 from ..widget import MagicStateFactoryRegion
 
@@ -14,6 +16,7 @@ class MagicStateFactoryRouter(AbstractRouter):
 
     def __init__(self, region) -> None:
         self.region = region
+        self.magic_source = True
 
     def _make_transaction(self, path, connect=None):
         def on_activate_callback(trans: Transaction):
@@ -90,3 +93,11 @@ class MagicStateFactoryRouter(AbstractRouter):
             fragment.append(self.region[row, col])
         fragment.reverse()
         return fragment
+
+
+    def generic_transaction(self, *args, **kwargs):
+        trans = self.request_transaction(*args, **kwargs)
+        if trans:
+            return Response(ResponseStatus.SUCCESS, trans)
+        else:
+            return Response()

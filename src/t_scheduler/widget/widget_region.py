@@ -1,3 +1,4 @@
+from __future__ import annotations
 from typing import List, Tuple
 from ..base import Patch, PatchOrientation, PatchType
 
@@ -6,11 +7,18 @@ class WidgetRegion:
     width: int
     height: int
     sc_patches: List[List[Patch]]
+    upstream: WidgetRegion | None
+    downstream: List[WidgetRegion]
 
-    def __init__(self, width: int, height: int, sc_patches: List[List[Patch]]) -> None:
+    def __init__(self, width: int, height: int, sc_patches: List[List[Patch]], upstream: WidgetRegion | None = None, downstream: List[WidgetRegion] | None = None) -> None:
         self.width = width
         self.height = height
         self.sc_patches = sc_patches
+        self.upstream = upstream
+        if downstream:
+            self.downstream = downstream
+        else:
+            self.downstream = []
 
     def update(self) -> None:
         """

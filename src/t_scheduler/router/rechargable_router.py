@@ -1,9 +1,12 @@
 from typing import List
+
+from t_scheduler.base.response import Response, ResponseStatus
+from t_scheduler.router.abstract_router import AbstractRouter
 from ..base import Transaction
 from ..widget import MagicStateBufferRegion
 
 
-class RechargableBufferRouter:
+class RechargableBufferRouter(AbstractRouter):
     """
     Note: Works only with passthrough bus router
     Assumption because output_col is used to detect which columns of T to assign
@@ -13,6 +16,7 @@ class RechargableBufferRouter:
 
     def __init__(self, buffer) -> None:
         self.region = buffer
+        self.upkeep_accept = True
 
     def request_transaction(
         self, output_col, strict_output_col: bool = True
@@ -49,6 +53,16 @@ class RechargableBufferRouter:
 
         path = [self.region[row, best_col] for row in range(self.region.height)][::-1]
         return Transaction(path, [], connect_col=path[-1].col)
+
+    def generic_transaction(self, col, *args, **kwargs):
+        trans = self.request_transaction(col, **kwargs)
+        if trans:
+            return Response(ResponseStatus.SUCCESS, trans)
+        trans = self.request_passthrough(col, **kwargs)
+        if trans:
+            return Response(ResponseStatus.CHECK_DOWNSTREAM, trans)
+        else:
+            return Response()
 
     def upkeep_transaction(self, buffer_slot) -> Transaction:
         '''

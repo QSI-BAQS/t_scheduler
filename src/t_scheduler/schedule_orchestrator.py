@@ -12,6 +12,7 @@ class ScheduleOrchestrator:
         strategy,
         debug: bool = False,
         tikz_output: bool = False,
+        json: bool=False
     ):
         self.widget: Widget = widget
         self.strategy: Strategy = strategy
@@ -39,7 +40,7 @@ class ScheduleOrchestrator:
         self.next_T_queue = []
 
         self.tikz_output = tikz_output
-        self.json_output = False
+        self.json_output = json
 
         if self.tikz_output or self.json_output:
             self.output_objs = []
