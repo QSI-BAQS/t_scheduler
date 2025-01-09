@@ -13,6 +13,7 @@ class RegionStats(dict):
         res = RegionStats(self)
         for key, val in other.items():
             res[key] = res.get(key, 0) + val
+        return res
 
     @property
     def num_registers(self):

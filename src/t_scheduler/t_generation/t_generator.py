@@ -1,7 +1,6 @@
 from abc import ABC
 import numpy as np
 
-
 class TGenerator(ABC):
     """
     Base T generator object
@@ -14,6 +13,7 @@ class TGenerator(ABC):
         width: int,  # Width of block
         n_emitted: int = 1,  # Number of T states per emission
         prob: float = 1,  # Probability of generation
+        infidelity: float = 0, # Infidelity of the generated T, default Ts are devout
         generator=None,  # RNG
         bandwidth=None,  # Number of simultaneous T states extractable
     ):
@@ -27,6 +27,7 @@ class TGenerator(ABC):
         self.n_emitted = n_emitted
         self.prob = prob
         self._generator = generator
+        self.infidelity = infidelity
 
         if bandwidth is None:
             bandwidth = self.n_emitted

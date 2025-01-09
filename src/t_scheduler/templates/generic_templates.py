@@ -47,7 +47,7 @@ class LayoutNode:
             routers += downstream_routers
         return regions, routers
 
-def estimate_t_rate(layout_root, num_prewarm_cycles) -> int:
+def estimate_generated_t_count(layout_root, num_prewarm_cycles) -> int:
     regions, routers = layout_root.create()
 
     board = make_board(regions)
@@ -241,7 +241,7 @@ def flat_naive_litinski_6x3_dense_unbuffered_widget(
         )
     return layout
 
-@make_widget
+#@make_widget
 def buffered_naive_buffered_widget(
     width,
     height,
