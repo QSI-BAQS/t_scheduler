@@ -67,8 +67,10 @@ def estimate_generated_t_count(layout_root, num_prewarm_cycles) -> int:
     
     # TODO early exit when buffer full
 
-    orc = ScheduleOrchestrator([], widget, strat)
+    # TODO remove debug
+    orc = ScheduleOrchestrator([], widget, strat, json=True)
     orc.prewarm(num_prewarm_cycles)
+    orc.save_json()
 
     total = 0
 
@@ -78,7 +80,9 @@ def estimate_generated_t_count(layout_root, num_prewarm_cycles) -> int:
                 for cell in row:
                     if cell.T_available(): total += 1
         elif isinstance(reg, MagicStateFactoryRegion):
-            total += len(reg.available_states)
+            for factory in reg.factories:
+                total += sum(output.t_count for output in set(factory.outputs))
+    total += len(orc.active)
     return total
 
 
