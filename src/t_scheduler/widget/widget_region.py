@@ -2,6 +2,29 @@ from __future__ import annotations
 from typing import List, Tuple
 from ..base import Patch, PatchOrientation, PatchType
 
+class RegionStats(dict):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self['num_registers'] = self.get('num_registers', 0)
+        self['num_t_buffers'] = self.get('num_t_buffers', 0)
+        self['num_bell_buffers'] = self.get('num_bell_buffers', 0)
+
+    def __add__(self, other):
+        res = RegionStats(self)
+        for key, val in other.items():
+            res[key] = res.get(key, 0) + val
+
+    @property
+    def num_registers(self):
+        return self['num_registers']
+
+    @property
+    def num_t_buffers(self):
+        return self['num_t_buffers']
+
+    @property
+    def num_bell_buffers(self):
+        return self['num_bell_buffers']
 
 class WidgetRegion:
     width: int
@@ -9,7 +32,7 @@ class WidgetRegion:
     sc_patches: List[List[Patch]]
     upstream: WidgetRegion | None
     downstream: List[WidgetRegion]
-    num_registers: int = 0
+    stats: RegionStats = None
 
     def __init__(self, width: int, height: int, sc_patches: List[List[Patch]], upstream: WidgetRegion | None = None, downstream: List[WidgetRegion] | None = None) -> None:
         self.width = width
@@ -20,6 +43,8 @@ class WidgetRegion:
             self.downstream = downstream
         else:
             self.downstream = []
+        if self.stats == None:
+            self.stats = RegionStats()
 
     def update(self) -> None:
         """

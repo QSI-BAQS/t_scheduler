@@ -93,6 +93,7 @@ class MagicStateBufferRegion(AbstractMagicStateBufferRegion):
             sc_patches.append(row)
 
         super().__init__(width, height, sc_patches)
+        self.stats['num_t_buffers'] = width * height
 
     def get_buffer_slots(self) -> List[None | Patch]:
         buffer_lanes = []

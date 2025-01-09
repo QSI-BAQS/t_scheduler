@@ -13,3 +13,4 @@ class BellRegion(WidgetRegion):
         ]
 
         super().__init__(1, height, sc_patches)
+        self.stats['num_bell_buffers'] = height
