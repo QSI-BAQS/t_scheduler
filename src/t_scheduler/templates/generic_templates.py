@@ -3,6 +3,7 @@ from typing import Callable, List, Literal, Tuple
 from functools import partial
 from xml.etree.ElementInclude import include
 from t_scheduler.router.bell_router import BellRouter
+from t_scheduler.schedule_orchestrator import ScheduleOrchestrator
 from t_scheduler.strategy.generic_strategy import GenericStrategy, RotationStrategyOption
 from t_scheduler.widget.bell_region import BellRegion
 
@@ -46,28 +47,70 @@ class LayoutNode:
             routers += downstream_routers
         return regions, routers
 
+def estimate_t_rate(layout_root, num_prewarm_cycles) -> int:
+    regions, routers = layout_root.create()
+
+    board = make_board(regions)
+    
+    widget = Widget(
+        len(board[0]),
+        len(board),
+        board,
+        components=regions,
+    )  # Pseudo-widget for output clarity
+
+    strat = GenericStrategy(
+        routers,
+        # TODO fix
+        # rot_strat=rot_strat
+    )
+    
+    # TODO early exit when buffer full
+
+    orc = ScheduleOrchestrator([], widget, strat)
+    orc.prewarm(num_prewarm_cycles)
+
+    total = 0
+
+    for reg in regions:
+        if isinstance(reg, MagicStateBufferRegion):
+            for row in reg.sc_patches:
+                for cell in row:
+                    if cell.T_available(): total += 1
+        elif isinstance(reg, MagicStateFactoryRegion):
+            total += len(reg.available_states)
+    return total
+
+
+
+def make_board(regions):
+    board = []
+
+    active = [(regions[0], 0)]
+    while active:
+        curr_row = []
+        next_active = []
+        for region, row_idx in active:
+            if row_idx < region.height:
+                curr_row += region[row_idx]
+                next_active.append((region, row_idx + 1))
+            else:
+                for downstream_region in region.downstream:
+                    curr_row += downstream_region[0]
+                    next_active.append((downstream_region, 1))
+        board.append(curr_row)
+        active = next_active
+    return board
+
+
 def make_widget(func):
     def wrapped(width, height, *args, rot_strat=RotationStrategyOption.ADD_DELAY, **kwargs):
         layout = func(width, height, *args, **kwargs)
 
         regions, routers = layout.create()
 
-        board = []
-
-        active = [(regions[0], 0)]
-        while active:
-            curr_row = []
-            next_active = []
-            for region, row_idx in active:
-                if row_idx < region.height:
-                    curr_row += region[row_idx]
-                    next_active.append((region, row_idx + 1))
-                else:
-                    for downstream_region in region.downstream:
-                        curr_row += downstream_region[0]
-                        next_active.append((downstream_region, 1))
-            board.append(curr_row)
-            active = next_active
+        board = make_board(regions)
+        
         widget = Widget(
             width,
             height,
