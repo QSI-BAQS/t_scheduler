@@ -1,7 +1,6 @@
 from __future__ import annotations
 from abc import ABC
 from typing import List
-from frozenlist import FrozenList
 
 from t_scheduler.base.response import Response, ResponseStatus
 from ..widget import WidgetRegion
