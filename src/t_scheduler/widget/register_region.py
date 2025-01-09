@@ -26,6 +26,7 @@ class SingleRowRegisterRegion(RegisterRegion):
 
     def __init__(self, width: int) -> None:
         patches = [[Patch(PatchType.REG, 0, c) for c in range(width)]]
+        self.num_registers = width // 2
         super().__init__(width, 1, patches)
 
     def get_physical_pos(self, op_targ: int) -> Tuple[int, int]:
@@ -82,7 +83,7 @@ class CombShapedRegisterRegion(RegisterRegion):
                     targ_count += 1
             patches.append(row)
         super().__init__(width, height, patches)
-
+        self.num_registers = len(targ_map)
         self.targ_map = targ_map
 
     def get_physical_pos(self, op_targ: int) -> Tuple[int, int]:

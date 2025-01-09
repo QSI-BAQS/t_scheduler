@@ -9,6 +9,7 @@ class WidgetRegion:
     sc_patches: List[List[Patch]]
     upstream: WidgetRegion | None
     downstream: List[WidgetRegion]
+    num_registers: int = 0
 
     def __init__(self, width: int, height: int, sc_patches: List[List[Patch]], upstream: WidgetRegion | None = None, downstream: List[WidgetRegion] | None = None) -> None:
         self.width = width
