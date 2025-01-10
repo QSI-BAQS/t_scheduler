@@ -1,8 +1,9 @@
 from typing import List
 from ..base import Patch, PatchType
 from .widget_region import WidgetRegion
+from .region_types import region_init, BUS_REGION
 
-
+@region_init(BUS_REGION)
 class RouteBus(WidgetRegion):
     """
     Single row routing bus

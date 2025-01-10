@@ -366,7 +366,6 @@ def vertical_strategy_with_prefilled_comb_widget(
                     partial(BellRegion, height - 2),
                     BellRouter
                 )
-
             ]
         )]
     )

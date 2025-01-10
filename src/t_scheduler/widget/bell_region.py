@@ -1,8 +1,9 @@
-
 from .widget_region import WidgetRegion
+from .region_types import region_init, BELL_REGION 
+
 from ..base import Patch, PatchType
 
-
+@region_init(BELL_REGION)
 class BellRegion(WidgetRegion):
     def __init__(
         self, height

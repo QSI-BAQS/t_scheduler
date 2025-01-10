@@ -5,10 +5,12 @@ from ..t_generation.t_factories import (
     TFactory_Litinski_6x3_20_to_4_dense,
 )
 
+from .region_types import region_init, FACTORY_REGION 
+
 from .widget_region import WidgetRegion
 from ..base.patch import Patch, PatchType, TFactoryOutputPatch
 
-
+@region_init(FACTORY_REGION)
 class MagicStateFactoryRegion(WidgetRegion):
 
     def __init__(self, width, height):

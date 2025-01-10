@@ -1,8 +1,8 @@
 from typing import List, Literal, Tuple
 
+from .region_types import region_init, REGISTER_REGION 
 from ..base.patch import Patch, PatchOrientation, PatchType
 from .widget_region import WidgetRegion
-
 
 class RegisterRegion(WidgetRegion):
     """
@@ -18,7 +18,7 @@ class RegisterRegion(WidgetRegion):
         """
         raise NotImplementedError()
 
-
+@region_init(REGISTER_REGION)
 class SingleRowRegisterRegion(RegisterRegion):
     """
     Single row register region
@@ -37,7 +37,7 @@ class SingleRowRegisterRegion(RegisterRegion):
             )
         return (0, pos)
 
-
+@region_init(REGISTER_REGION)
 class CombShapedRegisterRegion(RegisterRegion):
     """
     Comb shaped register region.

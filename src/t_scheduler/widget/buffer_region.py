@@ -1,16 +1,16 @@
 import itertools
 from typing import List, Literal, Set, Tuple
 
+from .region_types import region_init, BUFFER_REGION 
 from .widget_region import WidgetRegion
 from ..base import Patch, PatchOrientation, PatchType
 from ..base.patch import BufferPatch, TCultPatch
-
 
 class AbstractMagicStateBufferRegion(WidgetRegion):
     def __init__(self, width, height, sc_patches) -> None:
         super().__init__(width, height, sc_patches)
 
-
+@region_init(BUFFER_REGION)
 class PrefilledMagicStateRegion(AbstractMagicStateBufferRegion):
     def __init__(
         self, width, height, rotation: Literal["default", "chessboard"]
@@ -39,7 +39,7 @@ class PrefilledMagicStateRegion(AbstractMagicStateBufferRegion):
             )
         super().__init__(width, height, sc_patches)
 
-
+@region_init(BUFFER_REGION)
 class TCultivatorBufferRegion(AbstractMagicStateBufferRegion):
     available_states: Set[TCultPatch]
     update_cells: List[TCultPatch]
@@ -81,7 +81,7 @@ class TCultivatorBufferRegion(AbstractMagicStateBufferRegion):
         else:
             return self.sc_patches[key]  # type: ignore
 
-
+@region_init(BUFFER_REGION)
 class MagicStateBufferRegion(AbstractMagicStateBufferRegion):
 
     def __init__(self, width, height) -> None:
