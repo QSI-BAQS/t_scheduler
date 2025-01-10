@@ -1,6 +1,9 @@
 from abc import ABC
 from .t_generator import TGenerator
 
+factory_types = {
+
+}
 
 class TFactory(TGenerator):
     def __init__(self, *args, positions=((0, 0)), layout_position=((0, 0)), **kwargs):
@@ -10,6 +13,11 @@ class TFactory(TGenerator):
 
         super().__init__(*args, **kwargs)
 
+    def __init_subclass__(cls, factory_label=None, **kwargs) -> None:
+        if factory_label is None:
+            factory_label = cls.__name__
+        factory_types[factory_label] = cls
+        return super().__init_subclass__(**kwargs)
 
 class TFactory_Litinski_5x3_15_to_1(TFactory):
     """
