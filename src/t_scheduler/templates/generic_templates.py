@@ -344,17 +344,17 @@ def vertical_strategy_with_prefilled_buffer_widget(
 
 @make_widget
 def vertical_strategy_with_prefilled_comb_widget(
-    width, height, comb_height, route_width: Literal[1,2]=2
+    width, height, comb_height, route_width: Literal[1,2]=2, incl_comb_top=True
 ):
     layout = LayoutNode(
-        partial(CombShapedRegisterRegion, width, comb_height, route_width=route_width),
+        partial(CombShapedRegisterRegion, width, comb_height, route_width=route_width, incl_top=incl_comb_top),
         CombRegisterRouter,
         [LayoutNode(
             partial(RouteBus, width),
             StandardBusRouter,
             [
                 LayoutNode(
-                    partial(BellRegion, height - 2),
+                    partial(BellRegion, height - 1 - comb_height),
                     BellRouter
                 ),
                 LayoutNode(
@@ -363,7 +363,7 @@ def vertical_strategy_with_prefilled_comb_widget(
                     VerticalFilledBufferRouter,
                 ),
                 LayoutNode(
-                    partial(BellRegion, height - 2),
+                    partial(BellRegion, height - 1 - comb_height),
                     BellRouter
                 )
             ]

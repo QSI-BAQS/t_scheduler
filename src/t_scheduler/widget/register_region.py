@@ -42,7 +42,7 @@ class CombShapedRegisterRegion(RegisterRegion):
     """
     Comb shaped register region.
 
-    .RR..RR..RR
+    .RR..RR..RR  (optional)
     R  RR  RR
     R  RR  RR
     R  RR  RR
@@ -51,23 +51,24 @@ class CombShapedRegisterRegion(RegisterRegion):
      route_width
     """
 
-    def __init__(self, width: int, height: int, route_width: Literal[1, 2] = 2) -> None:
+    def __init__(self, width: int, height: int, route_width: Literal[1, 2] = 2, incl_top = True) -> None:
 
         targ_map = {}
         targ_count = 0
 
         patches = []
-        top_row = [Patch(PatchType.RESERVED, 0, 0)]
-        for c in range(1, width):
-            if (c - 1) % (2 + route_width) < route_width:
-                new_reg = Patch(PatchType.REG, 0, c)
-                top_row.append(new_reg)
-                targ_map[targ_count] = new_reg
-                targ_count += 1
-            else:
-                top_row.append(Patch(PatchType.RESERVED, 0, c))
-        patches.append(top_row)
-        for r in range(1, height):
+        if incl_top:
+            top_row = [Patch(PatchType.RESERVED, 0, 0)]
+            for c in range(1, width):
+                if (c - 1) % (2 + route_width) < route_width:
+                    new_reg = Patch(PatchType.REG, 0, c)
+                    top_row.append(new_reg)
+                    targ_map[targ_count] = new_reg
+                    targ_count += 1
+                else:
+                    top_row.append(Patch(PatchType.RESERVED, 0, c))
+            patches.append(top_row)
+        for r in range(incl_top, height):
             row = []
             for c in range(width):
                 if (c - 1) % (2 + route_width) < route_width or (

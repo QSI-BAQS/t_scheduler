@@ -28,17 +28,22 @@ orc.queued.extend(orc.waiting)
 '''
 
 class DummyCombMapper:
-    def __init__(self, width) -> None:
+    def __init__(self, width, rw=2) -> None:
         self.width = width
+        self.rw = rw
 
     def __getitem__(self, idx:int):
         return idx
     
     def position_xy(self, idx:int):
-        reg_per_row = (self.width // 2)
-        idx_col = (idx % reg_per_row) * 2
-        idx_col += (idx_col) % 4 // 2
-        
+        if self.rw == 2:
+            reg_per_row = (self.width // 2)
+            idx_col = (idx % reg_per_row) * 2
+            idx_col += (idx_col) % 4 // 2
+        else:
+            reg_per_row = (self.width // 3) * 2
+            idx_col = (idx % reg_per_row) * 3 // 2
+            idx_col += (idx_col) % 3
         xy = (idx_col, idx // reg_per_row + 1)
         # print(xy)
         return xy
