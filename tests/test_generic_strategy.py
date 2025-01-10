@@ -27,6 +27,22 @@ orc.queued.extend(orc.waiting)
 
 '''
 
+class DummyCombMapper:
+    def __init__(self, width) -> None:
+        self.width = width
+
+    def __getitem__(self, idx:int):
+        return idx
+    
+    def position_xy(self, idx:int):
+        reg_per_row = (self.width // 2)
+        idx_col = (idx % reg_per_row) * 2
+        idx_col += (idx_col) % 4 // 2
+        
+        xy = (idx_col, idx // reg_per_row + 1)
+        # print(xy)
+        return xy
+
 
 class GenericStrategyTest(unittest.TestCase):
     def test_flat_naive_qft(self, tikz=False, save_json=False):
@@ -154,6 +170,8 @@ class GenericStrategyTest(unittest.TestCase):
         strat, wid = vertical_strategy_with_prefilled_comb_widget(
             20, 10, rot_strat=RotationStrategyOption.BACKPROP_INIT, comb_height=5)
 
+        strat.mapper = DummyCombMapper(20)
+
         orc = ScheduleOrchestrator(gate_layers[0], wid, strat, False, tikz)
 
         orc.schedule()
@@ -162,7 +180,10 @@ class GenericStrategyTest(unittest.TestCase):
         with open('tests/qft_8_test_obj.json') as f:
             obj = json.load(f)
         strat, wid = vertical_strategy_with_prefilled_comb_widget(
-            20, 10, rot_strat=RotationStrategyOption.BACKPROP_INIT, comb_height=3)
+            20, 11, rot_strat=RotationStrategyOption.BACKPROP_INIT, comb_height=4)
+
+        strat.mapper = DummyCombMapper(20)
+
         gates = util.make_gates(obj, lambda x: int(x) * 13 % 11 + 12)
         dag_layers, all_gates = util.dag_create(obj, gates)
         dag_roots = dag_layers[0]
@@ -174,7 +195,10 @@ class GenericStrategyTest(unittest.TestCase):
         with open('tests/qft_8_test_obj.json') as f:
             obj = json.load(f)
         strat, wid = vertical_strategy_with_prefilled_comb_widget(
-            20, 10, rot_strat=RotationStrategyOption.BACKPROP_INIT, comb_height=3, route_width=1)
+            20, 11, rot_strat=RotationStrategyOption.BACKPROP_INIT, comb_height=4, route_width=1)
+        
+        strat.mapper = DummyCombMapper(20)
+
         gates = util.make_gates(obj, lambda x: int(x) * 13 % 11 + 12)
         dag_layers, all_gates = util.dag_create(obj, gates)
         dag_roots = dag_layers[0]
@@ -215,6 +239,8 @@ class GenericStrategyTest(unittest.TestCase):
 
         strat, wid = vertical_strategy_with_prefilled_comb_widget(
             20, 10, rot_strat=RotationStrategyOption.BACKPROP_INIT, comb_height=5)
+
+        strat.mapper = DummyCombMapper(20)
 
         orc = ScheduleOrchestrator(gate_layers[0], wid, strat, False)
 

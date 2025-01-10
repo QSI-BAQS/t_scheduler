@@ -245,7 +245,7 @@ def flat_naive_litinski_6x3_dense_unbuffered_widget(
         )
     return layout
 
-#@make_widget
+@make_widget
 def buffered_naive_buffered_widget(
     width,
     height,

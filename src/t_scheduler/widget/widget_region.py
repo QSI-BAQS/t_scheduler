@@ -54,11 +54,13 @@ class WidgetRegion:
         pass
 
     def __getitem__(self, key: Tuple[int, int] | int) -> Patch:
-        if isinstance(key, tuple):
+        if isinstance(key, tuple) or isinstance(key, list):
             return self.sc_patches[key[0]][key[1]]
-        else:
+        elif isinstance(key, int):
             return self.sc_patches[key]  # type: ignore
-
+        else:
+            raise TypeError('Invalid index type:', key)
+        
     def to_str_output(self) -> str:
         """
         Prints current state of the region

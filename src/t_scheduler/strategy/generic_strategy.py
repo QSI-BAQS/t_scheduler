@@ -24,18 +24,25 @@ class RotationStrategyOption(Enum):
     REJECT = 3
     ADD_DELAY = 4
 
+class DummyMapper:
+    def __getitem__(self, idx:int):
+        return idx
+    
+    def position_xy(self, idx:int):
+        return (idx, 0)
 
 class GenericStrategy(Strategy):
     register_router: AbstractRouter
 
 
-    def __init__(self, routers, rot_strat = RotationStrategyOption.ADD_DELAY):
+    def __init__(self, routers, rot_strat = RotationStrategyOption.ADD_DELAY, mapper=DummyMapper()):
         self.register_router = routers[0]
         self.factory_routers = [r for r in routers if r.magic_source]
         self.buffer_routers = [r for r in routers if r.upkeep_accept]
         self.needs_upkeep = bool(self.buffer_routers)
         self.rotation_option = rot_strat
 
+        self.mapper = mapper
 
     def validate_rotation(
         self, gate, transaction_list
@@ -139,16 +146,19 @@ class GenericStrategy(Strategy):
         downstream_col = curr_trans.connect_col
 
         while curr_router in upstream_connect:
-            upstream_router, downstream_idx, upstream_col = upstream_connect[curr_router]
+            upstream_router, downstream_idx, upstream_col, *abs_pos = upstream_connect[curr_router]
             # breakpoint()
             translated_downstream = upstream_router.to_local_col(downstream_idx, downstream_col)
-            resp: Response = upstream_router.generic_transaction(translated_downstream, upstream_col)
+            if abs_pos:
+                resp: Response = upstream_router.generic_transaction(translated_downstream, upstream_col, absolute_position=abs_pos)
+            else:
+                resp: Response = upstream_router.generic_transaction(translated_downstream, upstream_col)
             if not resp.status:
                 return None
 
             transactions.append(resp.transaction)
             curr_router, downstream_col = upstream_router, upstream_col
-    
+
         ############################
         #  Process rotation logic
         ############################
@@ -163,17 +173,19 @@ class GenericStrategy(Strategy):
         # curr: tuple('curr_router', 'curr_downstream_idx', 'curr_request_col')
         # upstream_connect: dict[router -> (upstream_router, downstream_idx, upstream_col)]
 
+        target_pos = self.mapper.position_xy(gate.targ)[::-1] # (x, y) -> (row, col)
+
         upstream_connect = {}
 
         curr_router = self.register_router
-        resp : Response = self.register_router.generic_transaction(gate.targ) # type: ignore
+        resp : Response = self.register_router.generic_transaction(gate.targ, absolute_position=target_pos) # type: ignore
         if not resp.status:
             return None
-        curr_transaction : Transaction = resp.transaction # type: ignore
-        dfs_stack = [(curr_router, 0, curr_transaction.connect_col)]
+        reg_transaction : Transaction = resp.transaction # type: ignore
+        dfs_stack = [(curr_router, 0, reg_transaction.connect_col, *target_pos)]
 
         while dfs_stack:
-            curr_router, curr_downstream_idx, curr_request_col = dfs_stack.pop()
+            curr_router, curr_downstream_idx, curr_request_col, *abs_pos = dfs_stack.pop()
             if curr_downstream_idx >= len(curr_router.downstream):
                 continue
 
@@ -188,7 +200,7 @@ class GenericStrategy(Strategy):
                 # Downstream router rejected!
                 continue
             
-            upstream_connect[downstream_router] = (curr_router, curr_downstream_idx, curr_request_col)
+            upstream_connect[downstream_router] = (curr_router, curr_downstream_idx, curr_request_col, *abs_pos)
 
             
             if resp.status == ResponseStatus.SUCCESS:

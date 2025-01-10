@@ -1,4 +1,4 @@
-from typing import Literal
+from typing import Literal, Tuple
 from collections import deque
 
 from t_scheduler.base.response import Response, ResponseStatus
@@ -16,14 +16,17 @@ class BaselineRegisterRouter(AbstractRouter):
         self,
         gate_targ,
         request_type: Literal["local", "nonlocal", "ancilla"] = "nonlocal",
+        absolute_position: Literal[False] | Tuple[int, int] = False
     ) -> Transaction | None:
         '''
             Request a register transaction to gate_targ of type
             request_type. 
         '''
         # TODO add logic if 1x1 register cell and ancilla required
-
-        physical_position = self.region.get_physical_pos(gate_targ)
+        if absolute_position == False:
+            physical_position = self.region.get_physical_pos(gate_targ)
+        else:
+            physical_position = absolute_position
 
         reg_patch = self.region[0, physical_position[1]]
 
@@ -43,7 +46,7 @@ class BaselineRegisterRouter(AbstractRouter):
             )
 
     def generic_transaction(self, col, *args, **kwargs):
-        trans = self.request_transaction(col//2, **kwargs)
+        trans = self.request_transaction(col // 2, **kwargs)
         if trans:
             return Response(ResponseStatus.CHECK_DOWNSTREAM, trans)
         else:
@@ -93,14 +96,17 @@ class CombRegisterRouter(AbstractRouter):
         self,
         gate_targ,
         request_type: Literal["local", "nonlocal", "ancilla"] = "nonlocal",
+        absolute_position: Literal[False] | Tuple[int, int] = False
     ) -> Transaction | None:
         '''
             Request a register transaction to gate_targ of type
             request_type. 
         '''
         # TODO add logic if 1x1 register cell and ancilla required
-
-        physical_position = self.region.get_physical_pos(gate_targ)
+        if absolute_position == False:
+            physical_position = self.region.get_physical_pos(gate_targ)
+        else:
+            physical_position = absolute_position
 
         reg_patch = self.region[physical_position]
 
