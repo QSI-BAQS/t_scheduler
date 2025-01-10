@@ -2,3 +2,7 @@
 dist
 build
 *egg-info*
+out/*
+tst.py
+todo_cleanup
+.gitignore
