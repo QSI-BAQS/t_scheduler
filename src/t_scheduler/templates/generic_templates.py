@@ -106,6 +106,28 @@ def make_board(regions):
         active = next_active
     return board
 
+def make_explicit(layout, width, height):
+    regions, routers = layout.create()
+
+    board = [[None for _ in range(width)] for _ in range(height)]
+    for region in regions:
+        roff, coff = region.offset
+        for r in range(region.height):
+            if board[roff + r][coff:coff + region.width].count(None) != region.width:
+                raise ValueError('Error when applying region: overlap detected.', region)
+            board[roff + r][coff:coff + region.width] = region[r]
+
+    widget = Widget(
+        width,
+        height,
+        board, # type: ignore
+        components=regions,
+    )  # Pseudo-widget for output clarity
+
+    strat = GenericStrategy(
+        routers,
+    )
+    return strat, widget
 
 def make_widget(func):
     def wrapped(width, height, *args, rot_strat=RotationStrategyOption.ADD_DELAY, **kwargs):

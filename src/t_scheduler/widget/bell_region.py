@@ -6,7 +6,7 @@ from ..base import Patch, PatchType
 @region_init(BELL_REGION)
 class BellRegion(WidgetRegion):
     def __init__(
-        self, height
+        self, height, *, width=1
     ) -> None:
 
         sc_patches = [

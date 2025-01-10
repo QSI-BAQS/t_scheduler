@@ -33,9 +33,16 @@ class WidgetRegion:
     sc_patches: List[List[Patch]]
     upstream: WidgetRegion | None
     downstream: List[WidgetRegion]
-    stats: RegionStats = None
+    stats: RegionStats = None # type: ignore
+    offset: Tuple[int, int] # Position of top left cell in global coordinates
 
-    def __init__(self, width: int, height: int, sc_patches: List[List[Patch]], upstream: WidgetRegion | None = None, downstream: List[WidgetRegion] | None = None) -> None:
+    def __init__(self, width: int, height: int, 
+                 sc_patches: List[List[Patch]], 
+                 upstream: WidgetRegion | None = None, 
+                 downstream: List[WidgetRegion] | None = None,
+                 *,
+                 x = None,
+                 y = None) -> None:
         self.width = width
         self.height = height
         self.sc_patches = sc_patches
@@ -46,6 +53,7 @@ class WidgetRegion:
             self.downstream = []
         if self.stats == None:
             self.stats = RegionStats()
+        self.offset = (y, x) # type: ignore
 
     def update(self) -> None:
         """

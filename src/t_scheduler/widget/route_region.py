@@ -11,7 +11,7 @@ class RouteBus(WidgetRegion):
 
     sc_patches: List[List[Patch]]
 
-    def __init__(self, width: int) -> None:
+    def __init__(self, width: int, *, height=1) -> None:
         """
         Creates a 1 x width routing bus
         """
