@@ -1,4 +1,4 @@
-from typing import List
+from typing import List, Literal, Set, Tuple
 
 from ..t_generation.t_factories import (
     TFactory_Litinski_5x3_15_to_1,
@@ -8,7 +8,9 @@ from ..t_generation.t_factories import (
 from .region_types import region_init, FACTORY_REGION 
 
 from .widget_region import WidgetRegion
-from ..base.patch import Patch, PatchType, TFactoryOutputPatch
+from ..base.patch import Patch, PatchType, TCultPatch, TFactoryOutputPatch
+
+import itertools
 
 @region_init(FACTORY_REGION)
 class MagicStateFactoryRegion(WidgetRegion):
@@ -96,3 +98,47 @@ class MagicStateFactoryRegion(WidgetRegion):
     @staticmethod
     def with_litinski_6x3_dense(width, height):
         return MagicStateFactoryRegion.with_factory_factory(width, height, 3, 6, TFactory_Litinski_6x3_20_to_4_dense)
+
+
+
+@region_init(FACTORY_REGION)
+class TCultivatorBufferRegion(WidgetRegion):
+    available_states: Set[TCultPatch]
+    update_cells: List[TCultPatch]
+
+    def __init__(self, width, height, buffer_type: Literal["dense", "sparse"]) -> None:
+        self.available_states = set()
+
+        if buffer_type == "dense":
+            sc_patches = [
+                [TCultPatch(r, c) for c in range(width)] for r in range(height)
+            ]
+            self.update_cells = list(itertools.chain(*sc_patches))  # type: ignore
+        elif buffer_type == "sparse":
+            sc_patches = []
+            self.update_cells = []
+            for r in range(height):
+                if (height - r) % 3 == 2:
+                    row = [Patch(PatchType.ROUTE, r, c) for c in range(width)]
+                else:
+                    row = [TCultPatch(r, c) for c in range(width)]
+                    self.update_cells.extend(row)
+                sc_patches.append(row)
+
+        super().__init__(width, height, sc_patches)  # type: ignore
+
+    def update(self):
+        for cell in self.update_cells:
+            if cell.update():
+                self.available_states.add(cell)
+
+    def release_cells(self, sc_patches: List[TCultPatch]):
+        for cell in sc_patches:
+            # TODO time etc.
+            cell.release(None)
+
+    def __getitem__(self, key: Tuple[int, int] | int) -> Patch:
+        if isinstance(key, tuple):
+            return self.sc_patches[key[0]][key[1]]
+        else:
+            return self.sc_patches[key]  # type: ignore

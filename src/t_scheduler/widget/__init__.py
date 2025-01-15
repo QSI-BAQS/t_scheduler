@@ -1,8 +1,8 @@
 from .widget import Widget
 from .widget_region import WidgetRegion
-from .factory_region import MagicStateFactoryRegion
+from .factory_region import MagicStateFactoryRegion, TCultivatorBufferRegion
 from .register_region import RegisterRegion, SingleRowRegisterRegion, CombShapedRegisterRegion
-from .buffer_region import MagicStateBufferRegion, TCultivatorBufferRegion, PrefilledMagicStateRegion, AbstractMagicStateBufferRegion
+from .buffer_region import MagicStateBufferRegion, PrefilledMagicStateRegion, AbstractMagicStateBufferRegion
 from .route_region import RouteBus
 from .bell_region import BellRegion
 

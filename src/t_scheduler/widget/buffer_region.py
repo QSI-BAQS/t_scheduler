@@ -40,48 +40,6 @@ class PrefilledMagicStateRegion(AbstractMagicStateBufferRegion):
         super().__init__(width, height, sc_patches)
 
 @region_init(BUFFER_REGION)
-class TCultivatorBufferRegion(AbstractMagicStateBufferRegion):
-    available_states: Set[TCultPatch]
-    update_cells: List[TCultPatch]
-
-    def __init__(self, width, height, buffer_type: Literal["dense", "sparse"]) -> None:
-        self.available_states = set()
-
-        if buffer_type == "dense":
-            sc_patches = [
-                [TCultPatch(r, c) for c in range(width)] for r in range(height)
-            ]
-            self.update_cells = list(itertools.chain(*sc_patches))  # type: ignore
-        elif buffer_type == "sparse":
-            sc_patches = []
-            self.update_cells = []
-            for r in range(height):
-                if (height - r) % 3 == 2:
-                    row = [Patch(PatchType.ROUTE, r, c) for c in range(width)]
-                else:
-                    row = [TCultPatch(r, c) for c in range(width)]
-                    self.update_cells.extend(row)
-                sc_patches.append(row)
-
-        super().__init__(width, height, sc_patches)  # type: ignore
-
-    def update(self):
-        for cell in self.update_cells:
-            if cell.update():
-                self.available_states.add(cell)
-
-    def release_cells(self, sc_patches: List[TCultPatch]):
-        for cell in sc_patches:
-            # TODO time etc.
-            cell.release(None)
-
-    def __getitem__(self, key: Tuple[int, int] | int) -> Patch:
-        if isinstance(key, tuple):
-            return self.sc_patches[key[0]][key[1]]
-        else:
-            return self.sc_patches[key]  # type: ignore
-
-@region_init(BUFFER_REGION)
 class MagicStateBufferRegion(AbstractMagicStateBufferRegion):
 
     def __init__(self, width, height) -> None:
