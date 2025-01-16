@@ -6,6 +6,7 @@ from .rechargable_router import RechargableBufferRouter
 from .register_router import BaselineRegisterRouter, CombRegisterRouter
 from .tree_buffer_router import TreeFilledBufferRouter
 from .vertical_buffer_router import VerticalFilledBufferRouter
+from .bell_router import BellRouter
 
 __all__ = [
     'AbstractRouter',
@@ -13,7 +14,8 @@ __all__ = [
     'DenseTCultivatorBufferRouter',
     'MagicStateFactoryRouter',
     'RechargableBufferRouter',
-    'BaselineRegisterRouter', 'CombRegisterRouter',
-    'TreeFilledBufferRouter',
-    'VerticalFilledBufferRouter'
+    'BaselineRegisterRouter', 
+    'CombRegisterRouter',
+    'TreeFilledBufferRouter', 'VerticalFilledBufferRouter',
+    'BellRouter'
 ]
