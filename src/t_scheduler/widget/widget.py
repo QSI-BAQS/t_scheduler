@@ -238,7 +238,7 @@ class Widget:
         return output_rects
 
     def save_json_regions(self):
-        from .widget.factory_region import MagicStateFactoryRegion
+        from .factory_region import MagicStateFactoryRegion
         output = []
         for component, component_name, coords in self.get_component_info():
             component_json = {
