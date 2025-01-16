@@ -13,7 +13,7 @@ class AbstractMagicStateBufferRegion(WidgetRegion):
 @region_init(BUFFER_REGION)
 class PrefilledMagicStateRegion(AbstractMagicStateBufferRegion):
     def __init__(
-        self, width, height, rotation: Literal["default", "chessboard"]
+        self, width, height, rotation: Literal["default", "chessboard"], **kwargs
     ) -> None:
         if rotation == "default":
             sc_patches = [
@@ -37,12 +37,12 @@ class PrefilledMagicStateRegion(AbstractMagicStateBufferRegion):
                     for r in range(1, height)
                 ]
             )
-        super().__init__(width, height, sc_patches)
+        super().__init__(width, height, sc_patches, **kwargs)
 
 @region_init(BUFFER_REGION)
 class MagicStateBufferRegion(AbstractMagicStateBufferRegion):
 
-    def __init__(self, width, height) -> None:
+    def __init__(self, width, height, **kwargs) -> None:
 
         self.available_states = set()
         sc_patches = []
@@ -50,7 +50,7 @@ class MagicStateBufferRegion(AbstractMagicStateBufferRegion):
             row = [BufferPatch(r, c) for c in range(width)]
             sc_patches.append(row)
 
-        super().__init__(width, height, sc_patches)
+        super().__init__(width, height, sc_patches, **kwargs)
         self.stats['num_t_buffers'] = width * height
 
     def get_buffer_slots(self) -> List[None | Patch]:

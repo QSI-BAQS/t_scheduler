@@ -9,8 +9,8 @@ class RegisterRegion(WidgetRegion):
     Abstract register region
     """
 
-    def __init__(self, width: int, height: int, sc_patches: List[List[Patch]]) -> None:
-        super().__init__(width, height, sc_patches)
+    def __init__(self, width: int, height: int, sc_patches: List[List[Patch]], **kwargs) -> None:
+        super().__init__(width, height, sc_patches, **kwargs)
 
     def get_physical_pos(self, op_targ: int) -> Tuple[int, int]:
         """
@@ -24,9 +24,9 @@ class SingleRowRegisterRegion(RegisterRegion):
     Single row register region
     """
 
-    def __init__(self, width: int) -> None:
+    def __init__(self, width: int, **kwargs) -> None:
         patches = [[Patch(PatchType.REG, 0, c) for c in range(width)]]
-        super().__init__(width, 1, patches)
+        super().__init__(width, 1, patches, **kwargs)
         self.stats['num_registers'] = width // 2
 
     def get_physical_pos(self, op_targ: int) -> Tuple[int, int]:
@@ -51,7 +51,7 @@ class CombShapedRegisterRegion(RegisterRegion):
      route_width
     """
 
-    def __init__(self, width: int, height: int, route_width: Literal[1, 2] = 2, incl_top = True) -> None:
+    def __init__(self, width: int, height: int, route_width: Literal[1, 2] = 2, incl_top = True, **kwargs) -> None:
 
         targ_map = {}
         targ_count = 0
@@ -83,7 +83,7 @@ class CombShapedRegisterRegion(RegisterRegion):
                     targ_map[targ_count] = new_reg
                     targ_count += 1
             patches.append(row)
-        super().__init__(width, height, patches)
+        super().__init__(width, height, patches, **kwargs)
         self.stats['num_registers'] = len(targ_map)
         self.targ_map = targ_map
 

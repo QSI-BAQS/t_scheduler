@@ -11,12 +11,12 @@ class RouteBus(WidgetRegion):
 
     sc_patches: List[List[Patch]]
 
-    def __init__(self, width: int, *, height=1) -> None:
+    def __init__(self, width: int, *, height=1, **kwargs) -> None:
         """
         Creates a 1 x width routing bus
         """
         sc_patches = [[Patch(PatchType.ROUTE, 0, c) for c in range(width)]]
-        super().__init__(width, 1, sc_patches)
+        super().__init__(width, 1, sc_patches, **kwargs)
 
     def route_priority(self, source: int):
         """

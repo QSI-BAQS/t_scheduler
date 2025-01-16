@@ -15,11 +15,11 @@ import itertools
 @region_init(FACTORY_REGION)
 class MagicStateFactoryRegion(WidgetRegion):
 
-    def __init__(self, width, height):
+    def __init__(self, width, height, **kwargs):
         sc_patches = [
             [Patch(PatchType.ROUTE, r, c) for c in range(width)] for r in range(height)
         ]
-        super().__init__(width, height, sc_patches)
+        super().__init__(width, height, sc_patches, **kwargs)
         self.factories = []
         self.active_factories = set()
         self.available_states = set()
@@ -106,7 +106,7 @@ class TCultivatorBufferRegion(WidgetRegion):
     available_states: Set[TCultPatch]
     update_cells: List[TCultPatch]
 
-    def __init__(self, width, height, buffer_type: Literal["dense", "sparse"]) -> None:
+    def __init__(self, width, height, buffer_type: Literal["dense", "sparse"] = 'dense', **kwargs) -> None:
         self.available_states = set()
 
         if buffer_type == "dense":
@@ -125,7 +125,7 @@ class TCultivatorBufferRegion(WidgetRegion):
                     self.update_cells.extend(row)
                 sc_patches.append(row)
 
-        super().__init__(width, height, sc_patches)  # type: ignore
+        super().__init__(width, height, sc_patches, **kwargs)  # type: ignore
 
     def update(self):
         for cell in self.update_cells:

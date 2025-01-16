@@ -42,7 +42,8 @@ class WidgetRegion:
                  downstream: List[WidgetRegion] | None = None,
                  *,
                  x = None,
-                 y = None) -> None:
+                 y = None,
+                 **kwargs) -> None:
         self.width = width
         self.height = height
         self.sc_patches = sc_patches
@@ -54,6 +55,8 @@ class WidgetRegion:
         if self.stats == None:
             self.stats = RegionStats()
         self.offset = (y, x) # type: ignore
+        for key in kwargs:
+            print(f'Ignoring unknown parameter: {key}')
 
     def update(self) -> None:
         """
