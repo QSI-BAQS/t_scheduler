@@ -2,16 +2,15 @@ from __future__ import annotations
 from enum import Enum
 from typing import List
 
-from t_scheduler.base.gate import MoveGate, RotateGate
-from t_scheduler.base.patch import TCultPatch
-from t_scheduler.base.response import Response, ResponseStatus
-from t_scheduler.base.transaction import Transaction
+from ..base.patch import TCultPatch
+from ..base.gate import MoveGate, RotateGate
+from ..base import constants
 
 # TODO move into templates
 from ..widget.bell_region import BellRegion
 from ..router.bell_router import BellRouter
 
-from ..base import Gate, PatchOrientation, TransactionList, constants
+from ..base import *
 
 from ..router import AbstractRouter
 from ..widget import *

@@ -1,9 +1,7 @@
 from typing import Any, List
 
-from t_scheduler.base.transaction import TransactionList
-
 from ..base.gate import GateType
-from ..base import Gate
+from ..base import Gate, TransactionList
 from ..router import BaselineRegisterRouter, StandardBusRouter
 
 

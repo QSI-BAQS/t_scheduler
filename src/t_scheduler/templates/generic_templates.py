@@ -1,11 +1,10 @@
 from __future__ import annotations
-from typing import Callable, List, Literal, Tuple
+from typing import Callable, List, Literal
 from functools import partial
-from xml.etree.ElementInclude import include
-from t_scheduler.router.bell_router import BellRouter
-from t_scheduler.schedule_orchestrator import ScheduleOrchestrator
-from t_scheduler.strategy.generic_strategy import GenericStrategy, RotationStrategyOption
-from t_scheduler.widget.bell_region import BellRegion
+
+from ..schedule_orchestrator import ScheduleOrchestrator
+
+from ..strategy.generic_strategy import GenericStrategy, RotationStrategyOption
 
 from ..base import *
 from ..router import *

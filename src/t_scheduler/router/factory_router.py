@@ -1,7 +1,6 @@
 from collections import deque
 
-from t_scheduler.base.response import Response, ResponseStatus
-from ..base import Transaction
+from ..base import Transaction, Response, ResponseStatus
 from ..widget import MagicStateFactoryRegion
 
 from .abstract_router import AbstractRouter

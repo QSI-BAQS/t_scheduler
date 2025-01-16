@@ -1,8 +1,7 @@
 from typing import List
 
-from t_scheduler.base.response import Response, ResponseStatus
-from t_scheduler.router.abstract_router import AbstractRouter
-from ..base import Transaction
+from .abstract_router import AbstractRouter
+from ..base import Transaction, Response, ResponseStatus
 from ..widget import MagicStateBufferRegion
 
 

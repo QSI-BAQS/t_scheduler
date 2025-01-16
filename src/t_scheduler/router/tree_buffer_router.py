@@ -3,8 +3,12 @@ from typing import List
 
 from collections import deque
 
-from t_scheduler.base.response import Response, ResponseStatus
-from ..base import Patch, PatchOrientation, PatchType, Transaction
+from ..base import (Patch, 
+                    PatchOrientation, 
+                    PatchType, 
+                    Transaction,
+                    Response, 
+                    ResponseStatus)
 from ..widget import PrefilledMagicStateRegion
 from .abstract_router import AbstractRouter
 

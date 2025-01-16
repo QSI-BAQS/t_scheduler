@@ -1,7 +1,7 @@
 from __future__ import annotations
 from typing import List
 
-from t_scheduler.router.generic.coordinate_adapter import CoordinateAdapter
+from ..router.generic.coordinate_adapter import CoordinateAdapter
 
 from ..base import Gate, PatchOrientation, TransactionList
 from ..base.gate import MoveGate

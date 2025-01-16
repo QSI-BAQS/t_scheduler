@@ -136,10 +136,10 @@ class Widget:
 
     @staticmethod
     def _component_to_style(component):
-        from t_scheduler.widget.register_region import RegisterRegion
-        from t_scheduler.widget.route_region import RouteBus
-        from t_scheduler.widget.buffer_region import AbstractMagicStateBufferRegion
-        from t_scheduler.widget.factory_region import MagicStateFactoryRegion
+        from .register_region import RegisterRegion
+        from .route_region import RouteBus
+        from .buffer_region import AbstractMagicStateBufferRegion
+        from .factory_region import MagicStateFactoryRegion
         from lattice_surgery_draw.primitives.style import TikzStyle
 
         if isinstance(component, RegisterRegion):
@@ -205,7 +205,7 @@ class Widget:
 
     def save_tikz_region_layer(self):
         from lattice_surgery_draw.region import Region
-        from t_scheduler.widget.factory_region import MagicStateFactoryRegion
+        from .factory_region import MagicStateFactoryRegion
         from lattice_surgery_draw.primitives.style import TikzStyle
 
         regions = self.get_component_info()
@@ -238,7 +238,7 @@ class Widget:
         return output_rects
 
     def save_json_regions(self):
-        from t_scheduler.widget.factory_region import MagicStateFactoryRegion
+        from .widget.factory_region import MagicStateFactoryRegion
         output = []
         for component, component_name, coords in self.get_component_info():
             component_json = {
@@ -297,7 +297,7 @@ class Widget:
         )
         from lattice_surgery_draw.primitives.style import TikzStyle
         from lattice_surgery_draw.img import SurfaceCodePatch, SurfaceCodePatchWide
-        from t_scheduler.widget.register_region import (
+        from .widget.register_region import (
             SingleRowRegisterRegion,
             CombShapedRegisterRegion,
         )
