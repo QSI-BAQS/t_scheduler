@@ -10,6 +10,8 @@ class RegisterRegion(WidgetRegion):
     """
 
     def __init__(self, width: int, height: int, sc_patches: List[List[Patch]], **kwargs) -> None:
+        if height in kwargs:
+            assert height == kwargs.pop(height)
         super().__init__(width, height, sc_patches, **kwargs)
 
     def get_physical_pos(self, op_targ: int) -> Tuple[int, int]:
