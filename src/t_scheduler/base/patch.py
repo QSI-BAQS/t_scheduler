@@ -7,6 +7,7 @@ from ..t_generation import TFactory
 
 
 class PatchType(Enum):
+    UNUSED = 0
     REG = 1
     ROUTE = 2
     ROUTE_BUFFER = 3

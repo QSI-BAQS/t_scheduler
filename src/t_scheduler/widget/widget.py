@@ -200,6 +200,8 @@ class Widget:
             return "factory_output"
         elif cell.patch_type == PatchType.ROUTE_BUFFER:
             return "route_buffer"
+        elif cell.patch_type == PatchType.UNUSED:
+            return "unused"
         else:
             return "other"
 

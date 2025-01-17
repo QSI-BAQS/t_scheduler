@@ -108,12 +108,12 @@ def make_board(regions):
 def make_explicit(layout, width, height):
     regions, routers = layout.create()
 
-    board = [[Patch(PatchType.RESERVED, r, c) for c in range(width)] for r in range(height)]
+    board = [[Patch(PatchType.UNUSED, r, c) for c in range(width)] for r in range(height)]
     for region in regions:
         roff, coff = region.offset
         for r in range(region.height):
-            # if board[roff + r][coff:coff + region.width].count(None) != region.width:
-            #     raise ValueError('Error when applying region: overlap detected.', region)
+            if any(p.patch_type != PatchType.UNUSED for p in board[roff + r][coff:coff + region.width]):
+                raise ValueError('Error when applying region: overlap detected.', region)
             board[roff + r][coff:coff + region.width] = region[r]
 
     widget = Widget(
