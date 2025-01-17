@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 
-from ..base import Gate, PatchOrientation, TransactionList, constants
+from ..base import Gate, PatchOrientation, TransactionList, constants, Patch
 
 from ..router import StandardBusRouter, BaselineRegisterRouter, AbstractRouter
 from ..router.generic.coordinate_adapter import CoordinateAdapter
@@ -33,8 +33,8 @@ class FlatNaiveStrategy(Strategy):
         else:
             # This depends on implementation details of ordering of move_patches in
             # our router
-            T_patch = buffer_transaction.move_patches[0]
-            attack_patch = buffer_transaction.move_patches[1]
+            T_patch: Patch = buffer_transaction.move_patches[0]
+            attack_patch: Patch = buffer_transaction.move_patches[1]
 
             matching_rotation = (T_patch.row == attack_patch.row) ^ (
                 T_patch.orientation == PatchOrientation.Z_TOP

@@ -55,7 +55,7 @@ class VerticalFilledBufferRouter(AbstractRouter):
             if (patch := self.region[r, output_col]).T_available():
                 return patch
 
-    def find_path_owning(self, T_patch):
+    def find_path_owning(self, T_patch: Patch):
         """
         Gets corresponding path for a T state in the column output_col
         """
@@ -76,7 +76,7 @@ class VerticalFilledBufferRouter(AbstractRouter):
         return prefix
 
     @staticmethod
-    def probe_left_nonowning(buffer, prefix):
+    def probe_left_nonowning(buffer, prefix: List[Patch]):
         """
         Find an available T state in any column to the left of output_col
 
@@ -127,7 +127,7 @@ class VerticalFilledBufferRouter(AbstractRouter):
             next_left_path = []
 
     @staticmethod
-    def probe_right_nonowning(widget, prefix):
+    def probe_right_nonowning(widget, prefix: List[Patch]):
         """
         Same as probe_left, except direction is to the right
         """
@@ -168,7 +168,7 @@ class VerticalFilledBufferRouter(AbstractRouter):
             next_right_path = []
 
     @staticmethod
-    def validate_T_path(path):
+    def validate_T_path(path: List[Patch]):
         """
         Validate that a path is valid
         """

@@ -1,4 +1,4 @@
-from typing import List, Literal, Tuple
+from typing import Dict, List, Literal, Tuple
 
 from .region_types import region_init, REGISTER_REGION 
 from ..base.patch import Patch, PatchOrientation, PatchType
@@ -55,7 +55,7 @@ class CombShapedRegisterRegion(RegisterRegion):
 
     def __init__(self, width: int, height: int, route_width: Literal[1, 2] = 2, incl_top = True, **kwargs) -> None:
 
-        targ_map = {}
+        targ_map: Dict[int, Patch] = {}
         targ_count = 0
 
         patches = []

@@ -1,7 +1,7 @@
 from typing import Literal, Tuple
 from collections import deque
 
-from ..base import Transaction, Response, ResponseStatus
+from ..base import Transaction, Response, ResponseStatus, Patch
 from ..widget import CombShapedRegisterRegion, SingleRowRegisterRegion
 from .abstract_router import AbstractRouter
 
@@ -58,7 +58,7 @@ class CombRegisterRouter(AbstractRouter):
     def __init__(self, region) -> None:
         self.region = region
 
-    def bfs(self, curr_patch):
+    def bfs(self, curr_patch: Patch):
         '''
         Search for path along routing net to routing bus below
         '''

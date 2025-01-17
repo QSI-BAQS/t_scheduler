@@ -54,8 +54,8 @@ class VerticalRoutingStrategy(Strategy):
             # This depends on implementation details of ordering of move_patches in
             # VerticalFilledBufferRouter (Currently other routers are not supported
             # for this strategy)
-            T_patch = buffer_transaction.move_patches[0]
-            attack_patch = buffer_transaction.move_patches[1]
+            T_patch: Patch = buffer_transaction.move_patches[0]
+            attack_patch: Patch = buffer_transaction.move_patches[1]
 
             matching_rotation = (T_patch.row == attack_patch.row) ^ (
                 T_patch.orientation == PatchOrientation.Z_TOP

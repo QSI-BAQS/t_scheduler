@@ -3,7 +3,7 @@ from typing import List
 
 from ..router.generic.coordinate_adapter import CoordinateAdapter
 
-from ..base import Gate, PatchOrientation, TransactionList
+from ..base import Gate, PatchOrientation, TransactionList, Patch
 from ..base.gate import MoveGate
 
 from ..router import MagicStateFactoryRouter, RechargableBufferRouter, StandardBusRouter, BaselineRegisterRouter
@@ -54,8 +54,8 @@ class BufferedNaiveStrategy(Strategy):
         else:
             # This depends on implementation details of ordering of move_patches in
             # our router
-            T_patch = buffer_transaction.move_patches[0]
-            attack_patch = buffer_transaction.move_patches[1]
+            T_patch: Patch = buffer_transaction.move_patches[0]
+            attack_patch: Patch = buffer_transaction.move_patches[1]
 
             matching_rotation = (T_patch.row == attack_patch.row) ^ (
                 T_patch.orientation == PatchOrientation.Z_TOP

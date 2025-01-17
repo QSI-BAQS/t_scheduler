@@ -14,7 +14,8 @@ import itertools
 
 @region_init(FACTORY_REGION)
 class MagicStateFactoryRegion(WidgetRegion):
-
+    available_states: Set[Patch]
+    
     def __init__(self, width, height, **kwargs):
         sc_patches = [
             [Patch(PatchType.ROUTE, r, c) for c in range(width)] for r in range(height)

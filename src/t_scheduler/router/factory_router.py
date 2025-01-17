@@ -1,6 +1,6 @@
 from collections import deque
 
-from ..base import Transaction, Response, ResponseStatus
+from ..base import Transaction, Response, ResponseStatus, Patch
 from ..widget import MagicStateFactoryRegion
 
 from .abstract_router import AbstractRouter
@@ -59,7 +59,7 @@ class MagicStateFactoryRouter(AbstractRouter):
                 return self._make_transaction(path, connect=path[-1].col)
         return None
 
-    def bfs(self, curr_patch, strict_col=None):
+    def bfs(self, curr_patch: Patch, strict_col=None):
         '''
         BFS from a T state along routing net to top row
         '''

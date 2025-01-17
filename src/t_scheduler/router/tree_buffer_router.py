@@ -87,11 +87,11 @@ class TreeFilledBufferRouter(AbstractRouter):
         return self._make_transaction(reduced_path, connect=reduced_path[-1].col)
 
     @staticmethod
-    def adjacent(cell1, cell2):
+    def adjacent(cell1: Patch, cell2: Patch):
         return abs(cell1.row - cell2.row) + abs(cell1.col - cell2.col) == 1
 
     @staticmethod
-    def path_reduce(path):
+    def path_reduce(path: List[Patch]):
         prev_len = float("inf")
         curr_len = len(path)
         while curr_len < prev_len:
@@ -174,7 +174,7 @@ class TreeFilledBufferRouter(AbstractRouter):
             curr.children.append(child)
             curr = child
 
-    def tree_search(self, lane, retry=True):
+    def tree_search(self, lane: int, retry=True):
         stack = deque([(self.consumption_frontier[lane], 0)])
         while stack:
             curr, child_idx = stack.popleft()
@@ -203,11 +203,11 @@ class TreeFilledBufferRouter(AbstractRouter):
 
         return None
 
-    def reparse_tree(self, tree_node):
+    def reparse_tree(self, tree_node: TreeNode):
         curr_patch = tree_node.path[-1]
 
         row, col = curr_patch.row, curr_patch.col
-        new_patches = []
+        new_patches: List[Patch] = []
 
         for r, c in [(row + 1, col), (row, col - 1), (row, col + 1), (row - 1, col)]:
             if 0 <= r < self.region.height and 0 <= c < self.region.width:

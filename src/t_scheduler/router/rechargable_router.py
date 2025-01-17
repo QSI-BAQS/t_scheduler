@@ -1,7 +1,7 @@
 from typing import List
 
 from .abstract_router import AbstractRouter
-from ..base import Transaction, Response, ResponseStatus
+from ..base import Transaction, Response, ResponseStatus, Patch
 from ..widget import MagicStateBufferRegion
 
 
@@ -63,7 +63,7 @@ class RechargableBufferRouter(AbstractRouter):
         else:
             return Response()
 
-    def upkeep_transaction(self, buffer_slot) -> Transaction:
+    def upkeep_transaction(self, buffer_slot: Patch) -> Transaction:
         '''
         Generate a transaction for moving a T_state from routing bus below
         to buffer_slot.
