@@ -1,4 +1,4 @@
-from .abstract_router import AbstractRouter
+from .abstract_router import AbstractRouter, AbstractFactoryRouter
 from .bus_router import StandardBusRouter
 from .cultivator_router import DenseTCultivatorBufferRouter
 from .factory_router import MagicStateFactoryRouter
@@ -17,5 +17,6 @@ __all__ = [
     'BaselineRegisterRouter', 
     'CombRegisterRouter',
     'TreeFilledBufferRouter', 'VerticalFilledBufferRouter',
-    'BellRouter'
+    'BellRouter', 
+    'AbstractFactoryRouter'
 ]

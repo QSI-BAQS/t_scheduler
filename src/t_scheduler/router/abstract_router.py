@@ -3,7 +3,7 @@ from abc import ABC
 from typing import List
 
 from ..base.response import Response, ResponseStatus
-from ..widget import WidgetRegion
+from ..widget import WidgetRegion, AbstractFactoryRegion
 
 class AbstractRouter(ABC):
     upstream: AbstractRouter | None = None
@@ -49,3 +49,6 @@ class AbstractRouter(ABC):
             return Response(ResponseStatus.CHECK_DOWNSTREAM, trans)
         else:
             return Response()
+
+class AbstractFactoryRouter(AbstractRouter):
+    region: AbstractFactoryRegion

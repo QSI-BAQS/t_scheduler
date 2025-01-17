@@ -12,7 +12,7 @@ from ..router.bell_router import BellRouter
 
 from ..base import *
 
-from ..router import AbstractRouter
+from ..router import AbstractRouter, AbstractFactoryRouter
 from ..widget import *
 from .strategy import Strategy
 
@@ -36,7 +36,7 @@ class GenericStrategy(Strategy):
 
     def __init__(self, routers, rot_strat = RotationStrategyOption.ADD_DELAY, mapper=DummyMapper()):
         self.register_router = routers[0]
-        self.factory_routers = [r for r in routers if r.magic_source]
+        self.factory_routers: List[AbstractFactoryRouter] = [r for r in routers if r.magic_source]
         self.buffer_routers = [r for r in routers if r.upkeep_accept]
         self.needs_upkeep = bool(self.buffer_routers)
         self.rotation_option = rot_strat

@@ -1,6 +1,6 @@
 from .widget import Widget
 from .widget_region import WidgetRegion
-from .factory_region import MagicStateFactoryRegion, TCultivatorBufferRegion
+from .factory_region import AbstractFactoryRegion, MagicStateFactoryRegion, TCultivatorBufferRegion
 from .register_region import RegisterRegion, SingleRowRegisterRegion, CombShapedRegisterRegion
 from .buffer_region import MagicStateBufferRegion, PrefilledMagicStateRegion, AbstractMagicStateBufferRegion
 from .route_region import RouteBus
@@ -13,6 +13,7 @@ __all__ = [
     'RegisterRegion',
     'SingleRowRegisterRegion',
     'CombShapedRegisterRegion',
+    'AbstractFactoryRegion',
     'MagicStateBufferRegion',
     'TCultivatorBufferRegion',
     'PrefilledMagicStateRegion',

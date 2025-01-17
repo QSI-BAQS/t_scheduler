@@ -12,6 +12,11 @@ from ..base.patch import Patch, PatchType, TCultPatch, TFactoryOutputPatch
 
 import itertools
 
+class AbstractFactoryRegion(WidgetRegion):
+    available_states: Set[Patch]
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+
 @region_init(FACTORY_REGION)
 class MagicStateFactoryRegion(WidgetRegion):
     available_states: Set[Patch]
