@@ -31,6 +31,7 @@ class DenseTCultivatorBufferRouter(AbstractRouter):
 
     def __init__(self, buffer) -> None:
         self.region = buffer
+        self.magic_source = True
 
     def request_transaction(
         self, output_col, strict_output_col: bool = True
