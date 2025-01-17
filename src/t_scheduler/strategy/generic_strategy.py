@@ -53,8 +53,8 @@ class GenericStrategy(Strategy):
         else:
             # This depends on implementation details of ordering of move_patches in
             # our router
-            T_patch = buffer_transaction.move_patches[0]
-            attack_patch = buffer_transaction.move_patches[1]
+            T_patch: Patch = buffer_transaction.move_patches[0]
+            attack_patch: Patch = buffer_transaction.move_patches[1]
 
             matching_rotation = (T_patch.row == attack_patch.row) ^ (
                 T_patch.orientation == PatchOrientation.Z_TOP
@@ -265,7 +265,7 @@ class GenericStrategy(Strategy):
                 transactions = TransactionList([factory_transaction])
 
                 upstream_router = factory_router.upstream
-                upstream_col = factory_router.to_local_col(upstream_router.downstream.index(factory_router), factory_transaction.connect_col)
+                upstream_col = upstream_router.to_local_col(upstream_router.downstream.index(factory_router), factory_transaction.connect_col)
                 status = ResponseStatus.SUCCESS
                 while upstream_router.upstream != buffer_router:
                     resp = upstream_router.generic_transaction(upstream_col, upstream_col)
@@ -280,7 +280,7 @@ class GenericStrategy(Strategy):
 
                 if not (
                     bus_transaction := upstream_router.request_transaction(
-                        factory_transaction.connect_col, buffer_transaction.connect_col # type: ignore
+                        upstream_col, slot_col # type: ignore
                     )
                 ):  # type: ignore
                     continue
