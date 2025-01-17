@@ -108,7 +108,7 @@ def make_board(regions):
 def make_explicit(layout, width, height):
     regions, routers = layout.create()
 
-    board = [[None for _ in range(width)] for _ in range(height)]
+    board = [[Patch(PatchType.RESERVED, r, c) for c in range(width)] for r in range(height)]
     for region in regions:
         roff, coff = region.offset
         for r in range(region.height):

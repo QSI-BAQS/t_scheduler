@@ -7,8 +7,8 @@ from ..base import Patch, PatchOrientation, PatchType
 from ..base.patch import BufferPatch, TCultPatch
 
 class AbstractMagicStateBufferRegion(WidgetRegion):
-    def __init__(self, width, height, sc_patches) -> None:
-        super().__init__(width, height, sc_patches)
+    def __init__(self, width, height, sc_patches, **kwargs) -> None:
+        super().__init__(width, height, sc_patches, **kwargs)
 
 @region_init(BUFFER_REGION)
 class PrefilledMagicStateRegion(AbstractMagicStateBufferRegion):
