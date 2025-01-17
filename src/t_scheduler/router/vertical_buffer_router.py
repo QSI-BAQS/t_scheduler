@@ -1,7 +1,7 @@
 from typing import List
 
 from ..base import Patch, Transaction, Response, ResponseStatus
-from ..widget import PrefilledMagicStateRegion
+from ..widget import PrefilledMagicStateRegion, WidgetRegion
 from .abstract_router import AbstractRouter
 
 class VerticalFilledBufferRouter(AbstractRouter):
@@ -76,7 +76,7 @@ class VerticalFilledBufferRouter(AbstractRouter):
         return prefix
 
     @staticmethod
-    def probe_left_nonowning(buffer, prefix: List[Patch]):
+    def probe_left_nonowning(buffer: WidgetRegion, prefix: List[Patch]):
         """
         Find an available T state in any column to the left of output_col
 
@@ -91,7 +91,7 @@ class VerticalFilledBufferRouter(AbstractRouter):
         start_row = prefix[-1].row
         start_col = prefix[-1].col
 
-        left_path = []
+        left_path: List[Patch] = []
         # Tracks previous search of contiguous route blocks
         #  -- must be row below due to bottom up search
 
@@ -104,7 +104,7 @@ class VerticalFilledBufferRouter(AbstractRouter):
                 else:
                     break
 
-        next_left_path = []
+        next_left_path: List[Patch] = []
         # Tracks current encounters of contiguous route blocks
 
         for r in range(start_row - 1, -1, -1):
@@ -127,14 +127,14 @@ class VerticalFilledBufferRouter(AbstractRouter):
             next_left_path = []
 
     @staticmethod
-    def probe_right_nonowning(widget, prefix: List[Patch]):
+    def probe_right_nonowning(widget: WidgetRegion, prefix: List[Patch]):
         """
         Same as probe_left, except direction is to the right
         """
         start_row = prefix[-1].row
         start_col = prefix[-1].col
 
-        right_path = []
+        right_path: List[Patch] = []
 
         if start_row > 1:
             for c in range(start_col + 1, widget.width):
@@ -145,7 +145,7 @@ class VerticalFilledBufferRouter(AbstractRouter):
                 else:
                     break
 
-        next_right_path = []
+        next_right_path: List[Patch] = []
         for r in range(start_row - 1, -1, -1):
             for c in range(start_col + 1, widget.width):
                 if (patch := widget[r, c]).route_available():
