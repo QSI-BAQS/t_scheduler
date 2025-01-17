@@ -36,7 +36,7 @@ class FlatNaiveStrategy(Strategy):
             T_patch: Patch = buffer_transaction.move_patches[0]
             attack_patch: Patch = buffer_transaction.move_patches[1]
 
-            matching_rotation = (T_patch.row == attack_patch.row) ^ (
+            matching_rotation = (T_patch.local_y == attack_patch.local_y) ^ (
                 T_patch.orientation == PatchOrientation.Z_TOP
             )
 

@@ -59,7 +59,7 @@ class VerticalFilledBufferRouter(AbstractRouter):
         """
         Gets corresponding path for a T state in the column output_col
         """
-        return [self.region[r, T_patch.col] for r in range(T_patch.row, -1, -1)]
+        return [self.region[r, T_patch.local_x] for r in range(T_patch.local_y, -1, -1)]
 
     def probe_down(self, output_col):
         """
@@ -88,8 +88,8 @@ class VerticalFilledBufferRouter(AbstractRouter):
                     -- (tracked in next_left_path)
                 -> otherwise attack from X boundary
         """
-        start_row = prefix[-1].row
-        start_col = prefix[-1].col
+        start_row = prefix[-1].local_y
+        start_col = prefix[-1].local_x
 
         left_path: List[Patch] = []
         # Tracks previous search of contiguous route blocks
@@ -112,7 +112,7 @@ class VerticalFilledBufferRouter(AbstractRouter):
                 if (patch := buffer[r, c]).route_available():
                     next_left_path.append(patch)
                 elif (
-                    patch.T_available() and left_path and patch.col >= left_path[-1].col
+                    patch.T_available() and left_path and patch.local_x >= left_path[-1].local_x
                 ):
                     return (
                         [patch]
@@ -131,8 +131,8 @@ class VerticalFilledBufferRouter(AbstractRouter):
         """
         Same as probe_left, except direction is to the right
         """
-        start_row = prefix[-1].row
-        start_col = prefix[-1].col
+        start_row = prefix[-1].local_y
+        start_col = prefix[-1].local_x
 
         right_path: List[Patch] = []
 
@@ -153,7 +153,7 @@ class VerticalFilledBufferRouter(AbstractRouter):
                 elif (
                     patch.T_available()
                     and right_path
-                    and patch.col <= right_path[-1].col
+                    and patch.local_x <= right_path[-1].local_x
                 ):
                     return (
                         [patch]

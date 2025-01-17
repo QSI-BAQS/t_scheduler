@@ -56,7 +56,7 @@ class GenericStrategy(Strategy):
             T_patch: Patch = buffer_transaction.move_patches[0]
             attack_patch: Patch = buffer_transaction.move_patches[1]
 
-            matching_rotation = (T_patch.row == attack_patch.row) ^ (
+            matching_rotation = (T_patch.local_y == attack_patch.local_y) ^ (
                 T_patch.orientation == PatchOrientation.Z_TOP
             )
 
@@ -158,6 +158,14 @@ class GenericStrategy(Strategy):
             transactions.append(resp.transaction)
             curr_router, downstream_col = upstream_router, upstream_col
 
+        # path = []
+        # for transaction in transactions:
+        #     path += transaction.move_patches
+        
+        # for i in range(len(path) - 1):
+        #     if abs(path[i]._r - path[i+1]._r) + abs(path[i]._c - path[i+1]._c) > 1:
+        #         breakpoint()
+
         ############################
         #  Process rotation logic
         ############################
@@ -252,7 +260,7 @@ class GenericStrategy(Strategy):
 
                 if not (
                     factory_transaction := factory_router.request_transaction(
-                        state.col
+                        state.local_x
                     )
                 ) or not (free_slot := self._get_closest(slots, factory_transaction.connect_col)):
                     continue

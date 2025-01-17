@@ -91,4 +91,4 @@ class CombShapedRegisterRegion(RegisterRegion):
 
     def get_physical_pos(self, op_targ: int) -> Tuple[int, int]:
         reg = self.targ_map[op_targ]
-        return (reg.row, reg.col)
+        return (reg.local_y, reg.local_x)

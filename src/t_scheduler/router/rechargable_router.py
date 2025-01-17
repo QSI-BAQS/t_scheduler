@@ -30,12 +30,12 @@ class RechargableBufferRouter(AbstractRouter):
             if not (T_patch := buffer_states[col]):
                 continue
 
-            vert = [self.region[x, T_patch.col] for x in range(T_patch.row)][::-1]
+            vert = [self.region[x, T_patch.local_x] for x in range(T_patch.local_y)][::-1]
 
             path = [T_patch] + vert
 
             return Transaction(
-                path, [path[0]], magic_state_patch=path[0], connect_col=path[-1].col
+                path, [path[0]], magic_state_patch=path[0], connect_col=path[-1].local_x
             )
         return None
 
@@ -44,14 +44,14 @@ class RechargableBufferRouter(AbstractRouter):
         Request a passthrough column in the buffer for factories below
         '''
         buffer_slots = self.region.get_buffer_slots()
-        cols = [cell.col for cell in buffer_slots if cell and cell.row == 0]
+        cols = [cell.local_x for cell in buffer_slots if cell and cell.local_y == 0]
         
         if not cols: return None
         
         best_col = min((abs(c - output_col), c) for c in cols)[1]
 
         path = [self.region[row, best_col] for row in range(self.region.height)][::-1]
-        return Transaction(path, [], connect_col=path[-1].col)
+        return Transaction(path, [], connect_col=path[-1].local_x)
 
     def generic_transaction(self, col, *args, **kwargs):
         trans = self.request_transaction(col, **kwargs)
@@ -69,10 +69,10 @@ class RechargableBufferRouter(AbstractRouter):
         to buffer_slot.
         '''
         path = [
-            self.region[x, buffer_slot.col]
-            for x in range(buffer_slot.row, self.region.height)
+            self.region[x, buffer_slot.local_x]
+            for x in range(buffer_slot.local_y, self.region.height)
         ][::-1]
-        return Transaction(path, [buffer_slot], connect_col=buffer_slot.col)
+        return Transaction(path, [buffer_slot], connect_col=buffer_slot.local_x)
 
     def all_local_upkeep_transactions(self) -> List[Transaction]:
         '''

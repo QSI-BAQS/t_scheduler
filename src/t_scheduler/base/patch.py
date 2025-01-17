@@ -64,20 +64,22 @@ class Patch:
     Important: row, col are local coordinates in a WidgetRegion!
     '''
     patch_type: PatchType
-    row: int
-    col: int
+    local_x: int
+    local_y: int
     orientation: PatchOrientation
+    x: int
+    y: int
 
     def __init__(
         self,
         patch_type: PatchType,
-        row: int,
-        col: int,
+        local_y: int,
+        local_x: int,
         starting_orientation=PatchOrientation.Z_TOP,
     ):
         self.patch_type = patch_type
-        self.row = row
-        self.col = col
+        self.local_y = local_y
+        self.local_x = local_x
         self.lock: None | PatchLock = None
         self.orientation = starting_orientation
         self.used = False
@@ -85,7 +87,7 @@ class Patch:
         self.rotation = None
 
     def __repr__(self):
-        return f"P({self.row}, {self.col})"
+        return f"P({self.local_y}, {self.local_x})"
 
     def locked(self):
         return self.lock is not None

@@ -45,7 +45,7 @@ class MagicStateFactoryRouter(AbstractRouter):
         the routing bus
         """
         queue = sorted(
-            self.region.available_states, key=lambda p: (abs(p.col - output_col), p.row)
+            self.region.available_states, key=lambda p: (abs(p.local_x - output_col), p.local_y)
         )
         for output in queue:
             if not output.T_available():
@@ -56,16 +56,16 @@ class MagicStateFactoryRouter(AbstractRouter):
                 path = self.bfs(output)
 
             if path:
-                return self._make_transaction(path, connect=path[-1].col)
+                return self._make_transaction(path, connect=path[-1].local_x)
         return None
 
     def bfs(self, curr_patch: Patch, strict_col=None):
         '''
         BFS from a T state along routing net to top row
         '''
-        bfs_queue = deque([(curr_patch.row, curr_patch.col)])
+        bfs_queue = deque([(curr_patch.local_y, curr_patch.local_x)])
         parent = {}
-        seen = {(curr_patch.row, curr_patch.col)}
+        seen = {(curr_patch.local_y, curr_patch.local_x)}
         while bfs_queue:
             row, col = bfs_queue.popleft()
             if row == 0:

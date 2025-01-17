@@ -44,33 +44,33 @@ class DenseTCultivatorBufferRouter(AbstractRouter):
         """
         queue = sorted(
             self.region.available_states, key=lambda p: (
-                abs(p.col - output_col), p.row)
+                abs(p.local_x - output_col), p.local_y)
         )
 
         for i, T_patch in enumerate(queue):
-            if T_patch.col == output_col:
+            if T_patch.local_x == output_col:
                 vert = [
                     self.region[x, output_col]
-                    for x in self.range_directed(T_patch.row, 0)
+                    for x in self.range_directed(T_patch.local_y, 0)
                 ][1:]
             elif strict_output_col:
                 vert = [
                     self.region[x, output_col]
-                    for x in self.range_directed(T_patch.row, 0)
+                    for x in self.range_directed(T_patch.local_y, 0)
                 ]
             else:
                 vert = [
-                    self.region[x, T_patch.col]
-                    for x in self.range_directed(T_patch.row, 0)
+                    self.region[x, T_patch.local_x]
+                    for x in self.range_directed(T_patch.local_y, 0)
                 ]
 
             if all(p.route_available() for p in vert):
-                if T_patch.col == output_col:
+                if T_patch.local_x == output_col:
                     path = [T_patch] + vert
                 elif strict_output_col:
                     horizontal = [
-                        self.region[T_patch.row, i]
-                        for i in self.range_directed(T_patch.col, output_col)
+                        self.region[T_patch.local_y, i]
+                        for i in self.range_directed(T_patch.local_x, output_col)
                     ]
                     path = horizontal + vert
                 else:
@@ -78,7 +78,7 @@ class DenseTCultivatorBufferRouter(AbstractRouter):
 
                 if all(p.route_available() for p in path[1:]):
                     transaction = _make_transaction(
-                        self.region, path, connect=path[-1].col)
+                        self.region, path, connect=path[-1].local_x)
 
                     return transaction
         return None

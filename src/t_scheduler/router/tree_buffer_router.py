@@ -84,11 +84,11 @@ class TreeFilledBufferRouter(AbstractRouter):
         reduced_path = self.path_reduce(path)
         # if lane == 1:
         #     breakpoint()
-        return self._make_transaction(reduced_path, connect=reduced_path[-1].col)
+        return self._make_transaction(reduced_path, connect=reduced_path[-1].local_x)
 
     @staticmethod
     def adjacent(cell1: Patch, cell2: Patch):
-        return abs(cell1.row - cell2.row) + abs(cell1.col - cell2.col) == 1
+        return abs(cell1.local_y - cell2.local_y) + abs(cell1.local_x - cell2.local_x) == 1
 
     @staticmethod
     def path_reduce(path: List[Patch]):
@@ -101,7 +101,7 @@ class TreeFilledBufferRouter(AbstractRouter):
             i = 1
             while i < len(path):
                 new_path.append(path[i])
-                if path[i].row == 0:
+                if path[i].local_y == 0:
                     break
                 if i + 3 < len(path) and TreeFilledBufferRouter.adjacent(
                     path[i], path[i + 3]
@@ -140,7 +140,7 @@ class TreeFilledBufferRouter(AbstractRouter):
                 )
 
             root.children.sort(
-                key=lambda x: abs(x.path[-1].col - self.region.width // 2),
+                key=lambda x: abs(x.path[-1].local_x - self.region.width // 2),
                 reverse=False,
             )
             if lane != 0 and lane != len(self.consumption_frontier) - 1:
@@ -154,7 +154,7 @@ class TreeFilledBufferRouter(AbstractRouter):
             curr.reparsed = True
             child = TreeNode(
                 curr,
-                curr.path + [self.region[r, curr.path[-1].col]],
+                curr.path + [self.region[r, curr.path[-1].local_x]],
                 debug_source="mine",
             )
             curr.children.append(child)
@@ -166,7 +166,7 @@ class TreeFilledBufferRouter(AbstractRouter):
                 curr.path
                 + [
                     self.region[
-                        r, 2 * source_lane - (curr.path[-1].col == 2 * source_lane)
+                        r, 2 * source_lane - (curr.path[-1].local_x == 2 * source_lane)
                     ]
                 ],
                 debug_source="mine",
@@ -196,8 +196,8 @@ class TreeFilledBufferRouter(AbstractRouter):
         if retry:
             self.reparse_tree(self.consumption_frontier[lane].children[0])
             self.consumption_frontier[lane].children[0].children.sort(
-                key=lambda x: abs(x.path[-1].row - self.dig_depth)
-                + abs(x.path[-1].col - lane * 2)
+                key=lambda x: abs(x.path[-1].local_y - self.dig_depth)
+                + abs(x.path[-1].local_x - lane * 2)
             )
             return self.tree_search(lane, False)
 
@@ -206,7 +206,7 @@ class TreeFilledBufferRouter(AbstractRouter):
     def reparse_tree(self, tree_node: TreeNode):
         curr_patch = tree_node.path[-1]
 
-        row, col = curr_patch.row, curr_patch.col
+        row, col = curr_patch.local_y, curr_patch.local_x
         new_patches: List[Patch] = []
 
         for r, c in [(row + 1, col), (row, col - 1), (row, col + 1), (row - 1, col)]:
@@ -217,7 +217,7 @@ class TreeFilledBufferRouter(AbstractRouter):
         new_children = []
         if new_patches:
             for patch in new_patches:
-                matching_rotation = (patch.row == curr_patch.row) ^ (
+                matching_rotation = (patch.local_y == curr_patch.local_y) ^ (
                     patch.orientation == PatchOrientation.Z_TOP
                 )
                 if matching_rotation and patch.T_available():
@@ -225,9 +225,9 @@ class TreeFilledBufferRouter(AbstractRouter):
             tree_node.children = new_children
 
         if not new_children:
-            bfs_queue = deque([(curr_patch.row, curr_patch.col)])
+            bfs_queue = deque([(curr_patch.local_y, curr_patch.local_x)])
             parent = {}
-            seen = {(curr_patch.row, curr_patch.col)}
+            seen = {(curr_patch.local_y, curr_patch.local_x)}
             results = []
             while bfs_queue:
                 row, col = bfs_queue.popleft()

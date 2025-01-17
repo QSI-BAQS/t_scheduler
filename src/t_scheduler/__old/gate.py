@@ -151,7 +151,7 @@ class CorrectionGate(BaseGate):
 
         self.path = [reg_patch, t_patch]
         self.lock = None
-        self.targ = reg_patch.col // 2
+        self.targ = reg_patch.local_x // 2
         self.duration = duration
 
     def cleanup(self, scheduler):

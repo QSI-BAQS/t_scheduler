@@ -62,9 +62,9 @@ class CombRegisterRouter(AbstractRouter):
         '''
         Search for path along routing net to routing bus below
         '''
-        bfs_queue = deque([(curr_patch.row, curr_patch.col)])
+        bfs_queue = deque([(curr_patch.local_y, curr_patch.local_x)])
         parent = {}
-        seen = {(curr_patch.row, curr_patch.col)}
+        seen = {(curr_patch.local_y, curr_patch.local_x)}
         while bfs_queue:
             row, col = bfs_queue.popleft()
             if row == self.region.height - 1:
@@ -114,7 +114,7 @@ class CombRegisterRouter(AbstractRouter):
 
         # Below relies on 1x2 reg patches
         if request_type == "ancilla":
-            row, col = reg_patch.row, reg_patch.col
+            row, col = reg_patch.local_y, reg_patch.local_x
             for r, c in [
                 (row + 1, col),
                 (row, col - 1),
@@ -140,4 +140,4 @@ class CombRegisterRouter(AbstractRouter):
             if not path:
                 return None
 
-            return Transaction(path, [reg_patch], connect_col=path[0].col)
+            return Transaction(path, [reg_patch], connect_col=path[0].local_x)
