@@ -253,6 +253,7 @@ class GenericStrategy(Strategy):
 
         for factory_router in self.factory_routers:
             # TODO cascade down -> buffer reparse if topmost buffer full etc.
+            # Currently we always use the topmost buffer
             buffer_router = None
             curr_router = factory_router.upstream
             while curr_router:

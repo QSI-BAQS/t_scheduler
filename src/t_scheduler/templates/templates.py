@@ -101,51 +101,6 @@ def flat_naive_strategy_with_litinski_6x3_dense_unbuffered_widget(
     )
     return strat, widget
 
-def buffered_naive_strategy_with_buffered_widget(
-    width,
-    height,
-    buffer_height,
-    factory_factory: Callable[[int, int], MagicStateFactoryRegion],
-    include_bell: bool = True
-) -> Tuple[BufferedNaiveStrategy, Widget]:
-    register_region = SingleRowRegisterRegion(width)
-    route_region = RouteBus(width)
-
-    buffer_width = width - 2 if include_bell else width
-
-    buffer_region = MagicStateBufferRegion(buffer_width, buffer_height)
-    buffer_bus_region = RouteBus(buffer_width)
-    factory_region = factory_factory(buffer_width, height - 3 - buffer_height)
-
-    if include_bell:
-        board = _concat_vertical(register_region.sc_patches, route_region.sc_patches,
-                                _squash_and_add_bell_regions(buffer_region, buffer_bus_region, factory_region))
-    else:
-        board = _concat_vertical(register_region.sc_patches, route_region.sc_patches,
-                                buffer_region.sc_patches, buffer_bus_region.sc_patches, factory_region.sc_patches)
-        
-    widget = Widget(
-        width,
-        height,
-        board,
-        components=[
-            register_region,
-            route_region,
-            buffer_region,
-            buffer_bus_region,
-            factory_region,
-        ],
-    )  # Pseudo-widget for output clarity
-
-    strat = BufferedNaiveStrategy(
-        BaselineRegisterRouter(register_region),
-        StandardBusRouter(route_region),
-        RechargableBufferRouter(buffer_region),
-        StandardBusRouter(buffer_bus_region),
-        MagicStateFactoryRouter(factory_region),
-    )
-    return strat, widget
-
 
 def vertical_strategy_with_prefilled_buffer_widget(
     width, height, rot_strat
