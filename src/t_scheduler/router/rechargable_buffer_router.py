@@ -18,7 +18,7 @@ class RechargableBufferRouter(AbstractRouter):
         self.upkeep_accept = True
 
     def _request_transaction(
-        self, output_col, strict_output_col: bool = True
+        self, output_col, strict_output_col: bool = False
     ) -> Transaction | None:
         """
         output_col: which column to output to in routing bus above
@@ -53,11 +53,11 @@ class RechargableBufferRouter(AbstractRouter):
         path = [self.region[row, best_col] for row in range(self.region.height)][::-1]
         return Transaction(path, [], connect_col=path[-1].local_x)
 
-    def generic_transaction(self, col, *args, target_orientation=None, **kwargs):
-        trans = self._request_transaction(col, **kwargs)
+    def generic_transaction(self, source_patch, *args, target_orientation=None, **kwargs):
+        trans = self._request_transaction(source_patch.x - self.region.offset[1], **kwargs)
         if trans:
             return Response(ResponseStatus.SUCCESS, trans)
-        trans = self.request_passthrough(col, **kwargs)
+        trans = self.request_passthrough(source_patch.x - self.region.offset[1], **kwargs)
         if trans:
             return Response(ResponseStatus.CHECK_DOWNSTREAM, trans)
         else:

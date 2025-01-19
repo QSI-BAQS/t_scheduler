@@ -27,16 +27,13 @@ class BaselineRegisterRouter(AbstractRouter):
         else:
             return Transaction([reg_patch], [reg_patch])
 
-    def generic_transaction(self, absolute_position, *args, target_orientation=None, **kwargs):
-        physical_position = absolute_position
-
-        reg_patch = self.region[physical_position]
+    def generic_transaction(self, reg_patch, *args, target_orientation=None, **kwargs):
 
         if reg_patch.locked():
             return Response()
 
         return Response(ResponseStatus.CHECK_DOWNSTREAM, Transaction(
-            [reg_patch], [reg_patch], connect_col=physical_position[1]
+            [reg_patch], [reg_patch], connect_col=reg_patch.local_x
         ))
 
 class CombRegisterRouter(AbstractRouter):
@@ -118,10 +115,7 @@ class CombRegisterRouter(AbstractRouter):
         # fragment.reverse()
         return fragment
 
-    def generic_transaction(self, absolute_position, *args, target_orientation=None, **kwargs):
-        physical_position = absolute_position
-
-        reg_patch = self.region[physical_position]
+    def generic_transaction(self, reg_patch, *args, target_orientation=None, **kwargs):
 
         if reg_patch.locked():
             return Response()

@@ -141,33 +141,7 @@ class GenericStrategy(BaseStrategy):
             raise NotImplementedError()
 
 
-    def return_pass(self, gate, curr_trans, downstream_patch, curr_router, upstream_connect): # type: ignore
-        transactions = TransactionList([curr_trans])
-        initial = curr_router
-        while curr_router in upstream_connect:
-            upstream_router, downstream_idx, upstream_patch, *abs_pos = upstream_connect[curr_router]
-            # translated_downstream = upstream_router.to_local_col(downstream_idx, downstream_col)
-            translated_downstream = downstream_patch.x - upstream_router.region.offset[1]
-            upstream_col = upstream_patch.x - upstream_router.region.offset[1]
-            if abs_pos:
-                resp: Response = upstream_router.generic_transaction(abs_pos, upstream_col)
-            else:
-                resp: Response = upstream_router.generic_transaction(translated_downstream, upstream_col)
-            if not resp.status:
-                return None
-
-            transactions.append(resp.transaction)
-            curr_router, downstream_col = upstream_router, upstream_col
-            downstream_patch = upstream_patch
-
-        self.validate(transactions)
-
-        ############################
-        #  Process rotation logic
-        ############################
-        return self.validate_rotation(
-            gate, transactions
-        )
+   
 
     @staticmethod
     def validate(transaction_list):
@@ -190,48 +164,89 @@ class GenericStrategy(BaseStrategy):
 
         upstream_connect = {}
 
-        curr_router = self.register_router
-        resp : Response = self.register_router.generic_transaction(target_pos) # type: ignore
-        if not resp.status:
-            return None
-        reg_transaction : Transaction = resp.transaction # type: ignore
-        # stack layout: tuple(curr_router, curr_downstream_idx, input_pos, )
-        dfs_stack = [(curr_router, 0, resp.upstream_patch, *target_pos)]
+
+        # stack layout: tuple(curr_router, curr_downstream_idx, input_pos | source)
+        dfs_stack = [(self.register_router, 0, self.register_router.region[target_pos])] # type: ignore
 
         while dfs_stack:
-            curr_router, curr_downstream_idx, curr_patch, *abs_pos = dfs_stack.pop()
-            if curr_downstream_idx >= len(curr_router.downstream):
+            curr_router, curr_downstream_idx, source_patch = dfs_stack.pop()
+            if len(curr_router.downstream) == 0:
+                if curr_router != self.register_router:
+                    request_arg = resp.downstream_patch # .x - curr_router.region.offset[1]
+                else:
+                    request_arg = source_patch
+
+                resp : Response = curr_router.generic_transaction(request_arg)
+
+                if resp.status == ResponseStatus.SUCCESS:
+                    # Resource found in curr router!
+                    # Now check if path available...
+
+                    return_resp = self.return_pass(gate, resp.transaction, resp.upstream_patch, downstream_router, upstream_connect)
+                    if return_resp:
+                        return return_resp
+                continue
+            elif curr_downstream_idx >= len(curr_router.downstream):
                 continue
 
             # Save state to stack!
-            dfs_stack.append((curr_router, curr_downstream_idx + 1, curr_patch))
+            dfs_stack.append((curr_router, curr_downstream_idx + 1, source_patch))
 
             # Recurse!
             downstream_router = curr_router.downstream[curr_downstream_idx]
-            # downstream_request_col = curr_router.to_downstream_col(curr_downstream_idx, curr_request_col)
-            downstream_request_col = curr_patch.x - downstream_router.region.offset[1]
-            resp : Response = downstream_router.generic_transaction(downstream_request_col)
+
+            if curr_router != self.register_router:
+                request_arg = source_patch
+            else:
+                request_arg = source_patch
+
+            resp : Response = curr_router.generic_transaction(request_arg, target_orientation=downstream_router.region.rotation) # type: ignore
             if not resp.status:
-                # Downstream router rejected!
                 continue
-            
-            upstream_connect[downstream_router] = (curr_router, curr_downstream_idx, curr_patch, *abs_pos)
 
-            
-            if resp.status == ResponseStatus.SUCCESS:
-                # Resource found in downstream router!
-                # Now check if path available...
-
-                return_resp = self.return_pass(gate, resp.transaction, resp.upstream_patch, downstream_router, upstream_connect)
-                if return_resp:
-                    return return_resp
-                
-                
-            # Downstream router gives OK?
             dfs_stack.append((downstream_router, 0, resp.downstream_patch))
 
+            upstream_connect[downstream_router] = (curr_router, curr_downstream_idx, source_patch)
+
         return None
-    
+
+
+
+    def return_pass(self, gate, curr_trans, downstream_patch, curr_router, upstream_connect): # type: ignore
+        print()
+        transactions = TransactionList([curr_trans])
+        initial = curr_router
+        while curr_router in upstream_connect:
+            upstream_router, downstream_idx, upstream_patch, *abs_pos = upstream_connect[curr_router]
+            # translated_downstream = upstream_router.to_local_col(downstream_idx, downstream_col)
+            translated_downstream = downstream_patch.x - upstream_router.region.offset[1]
+            upstream_col = upstream_patch.x - upstream_router.region.offset[1]
+            print(upstream_router, translated_downstream, (downstream_patch.x, downstream_patch.y), upstream_col, (upstream_patch.x, upstream_patch.y))
+            if upstream_router == self.register_router:
+                resp: Response = upstream_router.generic_transaction(upstream_patch, upstream_col)
+            else:
+                resp: Response = upstream_router.generic_transaction(downstream_patch, upstream_patch)
+            
+            if resp.status == ResponseStatus.SUCCESS:
+                transactions = TransactionList()
+
+            if not resp.status:
+                return None
+
+            transactions.append(resp.transaction)
+            curr_router, downstream_col = upstream_router, upstream_col
+            downstream_patch = resp.upstream_patch
+
+        self.validate(transactions)
+
+        ############################
+        #  Process rotation logic
+        ############################
+        return self.validate_rotation(
+            gate, transactions
+        )
+
+
     @staticmethod
     def _get_closest(slots, col):
         if slots[col]: return slots[col]
@@ -272,7 +287,7 @@ class GenericStrategy(BaseStrategy):
 
                 if not (
                     (factory_resp := factory_router.generic_transaction(
-                        state.local_x
+                        state
                     )).status): continue
                 factory_transaction = factory_resp.transaction
                 local_col = factory_resp.upstream_patch.x - buffer_router.region.offset[1]
@@ -292,7 +307,7 @@ class GenericStrategy(BaseStrategy):
                 status = ResponseStatus.SUCCESS
                 while upstream_router.upstream != buffer_router:
                     upstream_col = upstream_patch.x - upstream_router.region.offset[1]
-                    resp = upstream_router.generic_transaction(upstream_col, upstream_col)
+                    resp = upstream_router.generic_transaction(upstream_patch, upstream_patch)
                     if not resp.status:
                         status = resp.status
                         break
@@ -304,7 +319,7 @@ class GenericStrategy(BaseStrategy):
                 
                 if not (
                     (bus_resp := upstream_router.generic_transaction(
-                        upstream_patch.x - upstream_router.region.offset[1], free_slot.x - upstream_router.region.offset[1] # type: ignore
+                        upstream_patch, free_slot # type: ignore
                     )).status
                 ):  # type: ignore
                     continue

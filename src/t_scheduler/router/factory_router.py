@@ -94,8 +94,8 @@ class MagicStateFactoryRouter(AbstractRouter):
         return fragment
 
 
-    def generic_transaction(self, *args, target_orientation=None, **kwargs):
-        trans = self._request_transaction(*args, **kwargs)
+    def generic_transaction(self, source_patch, *args, target_orientation=None, **kwargs):
+        trans = self._request_transaction(source_patch.x - self.region.offset[1], *args, **kwargs)
         if trans:
             return Response(ResponseStatus.SUCCESS, trans)
         else:

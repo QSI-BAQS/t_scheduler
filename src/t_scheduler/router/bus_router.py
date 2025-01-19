@@ -25,9 +25,12 @@ class StandardBusRouter(AbstractRouter):
 
         return Transaction(path, [])
     
-    def generic_transaction(self, start_col, end_col = None, target_orientation=None, ):
-        if end_col is None:
+    def generic_transaction(self, source_patch, end_patch = None, target_orientation=None, ):
+        start_col = source_patch.x - self.region.offset[1]
+        if end_patch is None:
             end_col = start_col
+        else:
+            end_col = end_patch.x - self.region.offset[1]
         trans = self._request_transaction(start_col, end_col)
         if trans:
             return Response(ResponseStatus.CHECK_DOWNSTREAM, trans)

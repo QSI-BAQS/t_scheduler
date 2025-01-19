@@ -43,8 +43,8 @@ class AbstractRouter(ABC):
     def clamp(val, range_low, range_high):
         return max(range_low, min(val, range_high))    
     
-    def generic_transaction(self, *args, target_orientation=None, **kwargs):
-        trans = self._request_transaction(*args, **kwargs)
+    def generic_transaction(self, source_patch, *args, target_orientation=None, **kwargs):
+        trans = self._request_transaction(source_patch.x - self.region.offset[1], *args, **kwargs)
         if trans:
             return Response(ResponseStatus.CHECK_DOWNSTREAM, trans)
         else:

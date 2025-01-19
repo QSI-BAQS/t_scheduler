@@ -179,9 +179,9 @@ class VerticalFilledBufferRouter(AbstractRouter):
         return True
 
 
-    def generic_transaction(self, reg_col, *args, target_orientation=None, **kwargs):
+    def generic_transaction(self, source_patch, *args, target_orientation=None, **kwargs):
         buffer_cols = []
-        reg_col = self.clamp(reg_col, 0, self.region.width - 1)
+        reg_col = self.clamp(source_patch.x - self.region.offset[1], 0, self.region.width - 1)
         buffer_cols.append(reg_col)
         if (
             reg_col < self.region.width - 1
