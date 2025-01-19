@@ -1,7 +1,7 @@
-import itertools
+from __future__ import annotations
 from typing import List, Literal, Set, Tuple
 
-from .region_types import region_init, BUFFER_REGION 
+from .region_types import export_region, BUFFER_REGION 
 from .widget_region import WidgetRegion
 from ..base import Patch, PatchOrientation, PatchType
 from ..base.patch import BufferPatch, TCultPatch
@@ -10,7 +10,6 @@ class AbstractMagicStateBufferRegion(WidgetRegion):
     def __init__(self, width, height, sc_patches, **kwargs) -> None:
         super().__init__(width, height, sc_patches, **kwargs)
 
-@region_init(BUFFER_REGION)
 class PrefilledMagicStateRegion(AbstractMagicStateBufferRegion):
     def __init__(
         self, width, height, rotation: Literal["default", "chessboard"], **kwargs
@@ -39,7 +38,19 @@ class PrefilledMagicStateRegion(AbstractMagicStateBufferRegion):
             )
         super().__init__(width, height, sc_patches, **kwargs)
 
-@region_init(BUFFER_REGION)
+    @export_region(BUFFER_REGION)
+    @staticmethod
+    def with_default_rotation(*args, rotation = "default", **kwargs) -> PrefilledMagicStateRegion:
+        assert rotation == "default"
+        return PrefilledMagicStateRegion(*args, rotation = "default", **kwargs)
+    
+    @export_region(BUFFER_REGION)
+    @staticmethod
+    def with_chessboard_rotation(*args, rotation = "chessboard", **kwargs) -> PrefilledMagicStateRegion:
+        assert rotation == "chessboard"
+        return PrefilledMagicStateRegion(*args, rotation = "chessboard", **kwargs)
+
+@export_region(BUFFER_REGION)
 class MagicStateBufferRegion(AbstractMagicStateBufferRegion):
 
     def __init__(self, width, height, **kwargs) -> None:

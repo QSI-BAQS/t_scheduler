@@ -19,18 +19,18 @@ region_types = {
 
 # Class decorator for injecting into the region 
 # type table
-def region_init(region_type: RegionType, region_label=None):
+def export_region(region_type: RegionType, region_label=None):
     if region_label is None:
-        # Autodetect from class __name__
-        def _cls_init(cls):
-            cls_name = cls.__name__
-            region_types[region_type][cls_name] = cls
-            return cls
-        return _cls_init
+        # Autodetect from obj __qualname__
+        def _init(obj):
+            name = obj.__qualname__
+            region_types[region_type][name] = obj
+            return obj
+        return _init
     else:
-        def _factory_init(fn):
-            region_types[region_type][region_label] = fn
-            return fn
-        return _factory_init
+        def _init(obj):
+            region_types[region_type][region_label] = obj
+            return obj
+        return _init
 
 

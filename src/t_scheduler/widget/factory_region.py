@@ -5,7 +5,7 @@ from ..t_generation.t_factories import (
     TFactory_Litinski_6x3_20_to_4_dense,
 )
 
-from .region_types import region_init, FACTORY_REGION 
+from .region_types import export_region, FACTORY_REGION 
 
 from .widget_region import WidgetRegion
 from ..base.patch import Patch, PatchType, TCultPatch, TFactoryOutputPatch
@@ -96,18 +96,19 @@ class MagicStateFactoryRegion(WidgetRegion):
 
         return msf_region
 
+    @export_region(FACTORY_REGION)
     @staticmethod
     def with_litinski_5x3(width, height, **kwargs):
         return MagicStateFactoryRegion.with_factory_factory(width, height, 3, 5, TFactory_Litinski_5x3_15_to_1, **kwargs)
 
-    @region_init(FACTORY_REGION, region_label='MagicStateFactoryRegion_auto_litinski_6x3_dense')
+    @export_region(FACTORY_REGION)
     @staticmethod
     def with_litinski_6x3_dense(width, height, **kwargs):
         return MagicStateFactoryRegion.with_factory_factory(width, height, 3, 6, TFactory_Litinski_6x3_20_to_4_dense, **kwargs)
 
 
 
-@region_init(FACTORY_REGION)
+@export_region(FACTORY_REGION)
 class TCultivatorBufferRegion(WidgetRegion):
     available_states: Set[TCultPatch]
     update_cells: List[TCultPatch]
