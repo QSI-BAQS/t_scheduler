@@ -150,7 +150,7 @@ class GenericStrategy(BaseStrategy):
             translated_downstream = downstream_patch.x - upstream_router.region.offset[1]
             upstream_col = upstream_patch.x - upstream_router.region.offset[1]
             if abs_pos:
-                resp: Response = upstream_router.generic_transaction(translated_downstream, upstream_col, absolute_position=abs_pos)
+                resp: Response = upstream_router.generic_transaction(abs_pos, upstream_col)
             else:
                 resp: Response = upstream_router.generic_transaction(translated_downstream, upstream_col)
             if not resp.status:
@@ -191,11 +191,12 @@ class GenericStrategy(BaseStrategy):
         upstream_connect = {}
 
         curr_router = self.register_router
-        resp : Response = self.register_router.generic_transaction(gate.targ, absolute_position=target_pos) # type: ignore
+        resp : Response = self.register_router.generic_transaction(target_pos) # type: ignore
         if not resp.status:
             return None
         reg_transaction : Transaction = resp.transaction # type: ignore
-        dfs_stack = [(curr_router, 0, resp.downstream_patch, *target_pos)]
+        # stack layout: tuple(curr_router, curr_downstream_idx, input_pos, )
+        dfs_stack = [(curr_router, 0, resp.upstream_patch, *target_pos)]
 
         while dfs_stack:
             curr_router, curr_downstream_idx, curr_patch, *abs_pos = dfs_stack.pop()

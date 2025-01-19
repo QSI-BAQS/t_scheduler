@@ -179,7 +179,7 @@ class VerticalFilledBufferRouter(AbstractRouter):
         return True
 
 
-    def generic_transaction(self, reg_col, *args, **kwargs):
+    def generic_transaction(self, reg_col, *args, target_orientation=None, **kwargs):
         buffer_cols = []
         reg_col = self.clamp(reg_col, 0, self.region.width - 1)
         buffer_cols.append(reg_col)

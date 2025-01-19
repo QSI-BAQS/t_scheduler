@@ -25,7 +25,7 @@ class StandardBusRouter(AbstractRouter):
 
         return Transaction(path, [])
     
-    def generic_transaction(self, start_col, end_col = None):
+    def generic_transaction(self, start_col, end_col = None, target_orientation=None, ):
         if end_col is None:
             end_col = start_col
         trans = self._request_transaction(start_col, end_col)

@@ -27,8 +27,8 @@ class BaselineRegisterRouter(AbstractRouter):
         else:
             return Transaction([reg_patch], [reg_patch])
 
-    def generic_transaction(self, col, *args, **kwargs):
-        physical_position = kwargs['absolute_position']
+    def generic_transaction(self, absolute_position, *args, target_orientation=None, **kwargs):
+        physical_position = absolute_position
 
         reg_patch = self.region[physical_position]
 
@@ -118,8 +118,8 @@ class CombRegisterRouter(AbstractRouter):
         # fragment.reverse()
         return fragment
 
-    def generic_transaction(self, col, *args, **kwargs):
-        physical_position = kwargs['absolute_position']
+    def generic_transaction(self, absolute_position, *args, target_orientation=None, **kwargs):
+        physical_position = absolute_position
 
         reg_patch = self.region[physical_position]
 

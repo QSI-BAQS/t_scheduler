@@ -262,7 +262,7 @@ class TreeFilledBufferRouter(AbstractRouter):
                     TreeNode(tree_node, tree_node.path + fragment[::-1])
                 )
             tree_node.children = new_children
-    def generic_transaction(self, reg_col, *args, **kwargs):
+    def generic_transaction(self, reg_col, *args, target_orientation=None, **kwargs):
         reg_col = self.clamp(reg_col, 0, self.region.width - 1)
         trans = self._request_transaction(reg_col // 2, **kwargs)
         if trans:

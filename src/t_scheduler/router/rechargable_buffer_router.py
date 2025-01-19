@@ -53,7 +53,7 @@ class RechargableBufferRouter(AbstractRouter):
         path = [self.region[row, best_col] for row in range(self.region.height)][::-1]
         return Transaction(path, [], connect_col=path[-1].local_x)
 
-    def generic_transaction(self, col, *args, **kwargs):
+    def generic_transaction(self, col, *args, target_orientation=None, **kwargs):
         trans = self._request_transaction(col, **kwargs)
         if trans:
             return Response(ResponseStatus.SUCCESS, trans)
