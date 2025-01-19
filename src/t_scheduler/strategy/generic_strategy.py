@@ -6,13 +6,9 @@ from ..base.patch import TCultPatch
 from ..base.gate import MoveGate, RotateGate
 from ..base import constants
 
-# TODO move into templates
-from ..widget.bell_region import BellRegion
-from ..router.bell_router import BellRouter
-
 from ..base import *
 
-from ..router import AbstractRouter, AbstractFactoryRouter
+from ..router import AbstractRouter, AbstractFactoryRouter, RechargableBufferRouter
 from ..widget import *
 from .strategy import Strategy
 
@@ -40,7 +36,7 @@ class GenericStrategy(Strategy):
     def __init__(self, routers, rot_strat = RotationStrategyOption.ADD_DELAY, mapper=DummyMapper()):
         self.register_router = routers[0]
         self.factory_routers: List[AbstractFactoryRouter] = [r for r in routers if r.magic_source]
-        self.buffer_routers = [r for r in routers if r.upkeep_accept]
+        self.buffer_routers: List[RechargableBufferRouter] = [r for r in routers if r.upkeep_accept]
         self.needs_upkeep = bool(self.buffer_routers)
         self.rotation_option = rot_strat
 
@@ -256,11 +252,11 @@ class GenericStrategy(Strategy):
         for factory_router in self.factory_routers:
             # TODO cascade down -> buffer reparse if topmost buffer full etc.
             # Currently we always use the topmost buffer
-            buffer_router = None
+            buffer_router: RechargableBufferRouter | None = None
             curr_router = factory_router.upstream
             while curr_router:
                 if curr_router.upkeep_accept:
-                    buffer_router = curr_router
+                    buffer_router = curr_router # type: ignore
                 curr_router = curr_router.upstream
             if not buffer_router:
                 continue
@@ -290,7 +286,7 @@ class GenericStrategy(Strategy):
 
                 transactions = TransactionList([factory_transaction])
 
-                upstream_router = factory_router.upstream
+                upstream_router: AbstractRouter = factory_router.upstream # type: ignore
                 upstream_patch = factory_resp.upstream_patch
                 status = ResponseStatus.SUCCESS
                 while upstream_router.upstream != buffer_router:
@@ -301,12 +297,10 @@ class GenericStrategy(Strategy):
                         break
                     transactions.append(resp.transaction)
                     upstream_patch = resp.upstream_patch
-                    upstream_router = upstream_router.upstream
+                    upstream_router = upstream_router.upstream # type: ignore
                 if not status:
                     continue
                 
-                # slot_col = buffer_router.to_downstream_col(buffer_router.downstream.index(upstream_router), buffer_transaction.connect_col)
-
                 if not (
                     (bus_resp := upstream_router.generic_transaction(
                         upstream_patch.x - upstream_router.region.offset[1], free_slot.x - upstream_router.region.offset[1] # type: ignore
