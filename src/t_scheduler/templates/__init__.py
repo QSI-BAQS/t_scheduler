@@ -1,7 +1,4 @@
 from .templates import (
-    flat_naive_strategy_with_t_cultivator_widget, 
-    flat_naive_strategy_with_litinski_5x3_unbuffered_widget, 
-    flat_naive_strategy_with_litinski_6x3_dense_unbuffered_widget, 
     vertical_strategy_with_prefilled_buffer_widget, 
     vertical_strategy_with_prefilled_comb_widget, 
     tree_strategy_with_prefilled_buffer_widget
