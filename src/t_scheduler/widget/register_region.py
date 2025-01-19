@@ -28,7 +28,9 @@ class SingleRowRegisterRegion(RegisterRegion):
 
     def __init__(self, width: int, **kwargs) -> None:
         patches = [[Patch(PatchType.REG, 0, c) for c in range(width)]]
-        super().__init__(width, 1, patches, **kwargs)
+        if 'height' not in kwargs:
+            kwargs['height'] = 1
+        super().__init__(width, sc_patches=patches, **kwargs)
         self.stats['num_registers'] = width // 2
 
     def get_physical_pos(self, op_targ: int) -> Tuple[int, int]:
