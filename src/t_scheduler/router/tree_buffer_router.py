@@ -75,7 +75,7 @@ class TreeFilledBufferRouter(AbstractRouter):
             path, [path[0]], connect_col=connect, magic_state_patch=path[0]
         )
 
-    def request_transaction(self, lane: int) -> Transaction | None:
+    def _request_transaction(self, lane: int) -> Transaction | None:
         """
         lane: which lane to search from
         """
@@ -264,7 +264,7 @@ class TreeFilledBufferRouter(AbstractRouter):
             tree_node.children = new_children
     def generic_transaction(self, reg_col, *args, **kwargs):
         reg_col = self.clamp(reg_col, 0, self.region.width - 1)
-        trans = self.request_transaction(reg_col // 2, **kwargs)
+        trans = self._request_transaction(reg_col // 2, **kwargs)
         if trans:
             return Response(ResponseStatus.SUCCESS, trans)
         else:

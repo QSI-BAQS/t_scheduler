@@ -35,7 +35,7 @@ class MagicStateFactoryRouter(AbstractRouter):
             on_unlock_callback=on_unlock_callback,
         )
 
-    def request_transaction(
+    def _request_transaction(
         self, output_col, strict_output_col: bool = False
     ) -> Transaction | None:
         """
@@ -95,7 +95,7 @@ class MagicStateFactoryRouter(AbstractRouter):
 
 
     def generic_transaction(self, *args, **kwargs):
-        trans = self.request_transaction(*args, **kwargs)
+        trans = self._request_transaction(*args, **kwargs)
         if trans:
             return Response(ResponseStatus.SUCCESS, trans)
         else:

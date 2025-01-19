@@ -12,7 +12,7 @@ class AbstractRouter(ABC):
     upkeep_accept = False
     magic_source = False
 
-    def request_transaction(self, *args, **kwargs):
+    def _request_transaction(self, *args, **kwargs):
         '''
         Request a transaction from the router with specified args.
 
@@ -44,7 +44,7 @@ class AbstractRouter(ABC):
         return max(range_low, min(val, range_high))    
     
     def generic_transaction(self, *args, **kwargs):
-        trans = self.request_transaction(*args, **kwargs)
+        trans = self._request_transaction(*args, **kwargs)
         if trans:
             return Response(ResponseStatus.CHECK_DOWNSTREAM, trans)
         else:

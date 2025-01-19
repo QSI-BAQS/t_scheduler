@@ -8,7 +8,7 @@ class StandardBusRouter(AbstractRouter):
     def __init__(self, route_bus) -> None:
         self.region = route_bus
 
-    def request_transaction(self, start_col: int, end_col: int):
+    def _request_transaction(self, start_col: int, end_col: int):
         '''
         Request the route bus between start_col and end_col
         (both inclusive)
@@ -28,7 +28,7 @@ class StandardBusRouter(AbstractRouter):
     def generic_transaction(self, start_col, end_col = None):
         if end_col is None:
             end_col = start_col
-        trans = self.request_transaction(start_col, end_col)
+        trans = self._request_transaction(start_col, end_col)
         if trans:
             return Response(ResponseStatus.CHECK_DOWNSTREAM, trans)
         else:

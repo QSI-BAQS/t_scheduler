@@ -1,6 +1,13 @@
 from __future__ import annotations
+from enum import IntEnum
 from typing import List, Tuple
 from ..base import Patch, PatchOrientation, PatchType
+
+class TopEdgePosition(IntEnum):
+    TOP = 0
+    RIGHT = 90
+    BOTTOM = 180
+    LEFT = 270
 
 class RegionStats(dict):
     def __init__(self, *args, **kwargs):
@@ -36,13 +43,13 @@ class WidgetRegionView:
         '''
             Input: Row, col
         '''
-        if self.underlying.rotation == 0:
+        if self.underlying.rotation == TopEdgePosition.TOP:
             new_pos = pos
-        elif self.underlying.rotation == 180:
+        elif self.underlying.rotation == TopEdgePosition.BOTTOM:
             new_pos = self.underlying.height - 1 - pos[0], self.underlying.width - 1 - pos[1]
-        elif self.underlying.rotation == 90:
+        elif self.underlying.rotation == TopEdgePosition.RIGHT:
             new_pos = pos[1], self.underlying.height - 1 - pos[0]
-        elif self.underlying.rotation == 270:
+        elif self.underlying.rotation == TopEdgePosition.LEFT:
             new_pos = self.underlying.width - 1 - pos[1], pos[0]
         else:
             raise NotImplementedError()
@@ -95,16 +102,16 @@ class WidgetRegion:
             upstream_col = self.upstream.offset[1]
             if self_row >= upstream_row + self.upstream.height:
                 # We are below
-                self.rotation = 0
+                self.rotation = TopEdgePosition.TOP
             elif self_row + self.height <= upstream_row:
                 # We are above
-                self.rotation = 180
+                self.rotation = TopEdgePosition.BOTTOM
             elif self_col >= upstream_col + self.upstream.width:
                 # We are right
-                self.rotation = 270
+                self.rotation = TopEdgePosition.LEFT
             elif self_col + self.width <= upstream_col:
                 # We are left
-                self.rotation = 90
+                self.rotation = TopEdgePosition.RIGHT
             print("got rotation:", self.rotation)
 
         self.local_view = WidgetRegionView(self)

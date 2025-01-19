@@ -50,7 +50,7 @@ def benchmark_single_register(
         updated = []
         targs = list(generator.choice(targs, gate_load, replace=False))
         for targ in dropped_gates + targs: 
-            transaction = router.request_transaction(targ)          
+            transaction = router._request_transaction(targ)          
             if transaction is not None:
                 transaction.lock_move(None)
                 transactions[transaction] = 0
@@ -73,7 +73,7 @@ def benchmark_single_register(
         # New gates 
         updated = []
         for targ in dropped_gates: 
-            transaction = router.request_transaction(targ)          
+            transaction = router._request_transaction(targ)          
             if transaction is not None:
                 transaction.lock_move(None)
                 transactions[transaction] = 0

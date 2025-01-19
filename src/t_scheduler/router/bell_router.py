@@ -8,5 +8,5 @@ class BellRouter(AbstractRouter):
     def __init__(self, bell) -> None:
         self.region = bell
 
-    def request_transaction(self, *args, **kwargs):
+    def _request_transaction(self, *args, **kwargs):
         return None

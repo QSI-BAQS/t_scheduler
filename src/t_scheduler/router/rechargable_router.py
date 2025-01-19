@@ -17,7 +17,7 @@ class RechargableBufferRouter(AbstractRouter):
         self.region = buffer
         self.upkeep_accept = True
 
-    def request_transaction(
+    def _request_transaction(
         self, output_col, strict_output_col: bool = True
     ) -> Transaction | None:
         """
@@ -54,7 +54,7 @@ class RechargableBufferRouter(AbstractRouter):
         return Transaction(path, [], connect_col=path[-1].local_x)
 
     def generic_transaction(self, col, *args, **kwargs):
-        trans = self.request_transaction(col, **kwargs)
+        trans = self._request_transaction(col, **kwargs)
         if trans:
             return Response(ResponseStatus.SUCCESS, trans)
         trans = self.request_passthrough(col, **kwargs)

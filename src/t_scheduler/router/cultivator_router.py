@@ -33,7 +33,7 @@ class DenseTCultivatorBufferRouter(AbstractRouter):
         self.region = buffer.local_view
         self.magic_source = True
 
-    def request_transaction(
+    def _request_transaction(
         self, output_col, strict_output_col: bool = True
     ) -> Transaction | None:
         """
@@ -88,7 +88,7 @@ class DenseTCultivatorBufferRouter(AbstractRouter):
 
 
     def generic_transaction(self, *args, **kwargs):
-        trans = self.request_transaction(*args, **kwargs)
+        trans = self._request_transaction(*args, **kwargs)
         if trans:
             return Response(ResponseStatus.SUCCESS, trans)
         else:

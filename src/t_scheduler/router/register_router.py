@@ -11,52 +11,79 @@ class BaselineRegisterRouter(AbstractRouter):
     def __init__(self, region) -> None:
         self.region = region
 
-    def request_transaction(
+    def request_explicit(self, position, request_type: Literal["local", "ancilla"] = "local"):
+        reg_patch = self.region[position]
+
+        if reg_patch.locked():
+            return None
+
+        # TODO add logic if 1x1 register cell and ancilla required
+        # Below relies on 1x2 reg patches
+        if request_type == "ancilla":
+            anc = self.region[position[0], position[1] + 1]
+            if anc.locked():  # This should never happen for single row regions
+                return None
+            return Transaction([anc, reg_patch], [])
+        else:
+            return Transaction([reg_patch], [reg_patch])
+
+    def generic_transaction(self, col, *args, **kwargs):
+        physical_position = kwargs['absolute_position']
+
+        reg_patch = self.region[physical_position]
+
+        if reg_patch.locked():
+            return Response()
+
+        return Response(ResponseStatus.CHECK_DOWNSTREAM, Transaction(
+            [reg_patch], [reg_patch], connect_col=physical_position[1]
+        ))
+
+class CombRegisterRouter(AbstractRouter):
+    region: CombShapedRegisterRegion
+
+    def __init__(self, region: CombShapedRegisterRegion) -> None:
+        self.region = region
+
+    def request_explicit(
         self,
-        gate_targ,
-        request_type: Literal["local", "nonlocal", "ancilla"] = "nonlocal",
-        absolute_position: Literal[False] | Tuple[int, int] = False
+        position,
+        request_type: Literal["local", "ancilla"] = "local"
     ) -> Transaction | None:
         '''
             Request a register transaction to gate_targ of type
             request_type. 
         '''
-        # TODO add logic if 1x1 register cell and ancilla required
-        if absolute_position == False:
-            physical_position = self.region.get_physical_pos(gate_targ)
-        else:
-            physical_position = absolute_position
 
-        reg_patch = self.region[0, physical_position[1]]
+        reg_patch = self.region[position]
 
         if reg_patch.locked():
             return None
 
-        # Below relies on 1x2 reg patches
         if request_type == "ancilla":
-            anc = self.region[0, physical_position[1] + 1]
-            if anc.locked():  # This should never happen
+            # Check all neighbours for ancilla available
+            row, col = reg_patch.local_y, reg_patch.local_x
+            for r, c in [
+                (row + 1, col),
+                (row, col - 1),
+                (row, col + 1),
+                (row - 1, col),
+            ]:
+                if 0 <= r < self.region.height and 0 <= c < self.region.width:
+                    patch = self.region[r, c]
+                    if patch.route_available():
+                        anc_patch = patch
+                        break
+            else:
                 return None
-            lock = [anc, reg_patch]
+            if anc_patch.locked():  # This should never happen
+                return None
+            lock = [anc_patch, reg_patch]
             return Transaction(lock, [])
+        elif request_type == "local":
+            return Transaction([reg_patch], [reg_patch])
         else:
-            return Transaction(
-                [reg_patch], [reg_patch], connect_col=physical_position[1]
-            )
-
-    def generic_transaction(self, col, *args, **kwargs):
-        trans = self.request_transaction(col // 2, **kwargs)
-        if trans:
-            return Response(ResponseStatus.CHECK_DOWNSTREAM, trans)
-        else:
-            return Response()
-
-
-class CombRegisterRouter(AbstractRouter):
-    region: CombShapedRegisterRegion
-
-    def __init__(self, region) -> None:
-        self.region = region
+            raise NotImplementedError()
 
     def bfs(self, curr_patch: Patch):
         '''
@@ -91,53 +118,17 @@ class CombRegisterRouter(AbstractRouter):
         # fragment.reverse()
         return fragment
 
-    def request_transaction(
-        self,
-        gate_targ,
-        request_type: Literal["local", "nonlocal", "ancilla"] = "nonlocal",
-        absolute_position: Literal[False] | Tuple[int, int] = False
-    ) -> Transaction | None:
-        '''
-            Request a register transaction to gate_targ of type
-            request_type. 
-        '''
-        # TODO add logic if 1x1 register cell and ancilla required
-        if absolute_position == False:
-            physical_position = self.region.get_physical_pos(gate_targ)
-        else:
-            physical_position = absolute_position
+    def generic_transaction(self, col, *args, **kwargs):
+        physical_position = kwargs['absolute_position']
 
         reg_patch = self.region[physical_position]
 
         if reg_patch.locked():
-            return None
+            return Response()
 
-        # Below relies on 1x2 reg patches
-        if request_type == "ancilla":
-            row, col = reg_patch.local_y, reg_patch.local_x
-            for r, c in [
-                (row + 1, col),
-                (row, col - 1),
-                (row, col + 1),
-                (row - 1, col),
-            ]:
-                if 0 <= r < self.region.height and 0 <= c < self.region.width:
-                    patch = self.region[r, c]
-                    if patch.route_available():
-                        anc_patch = patch
-                        break
-            else:
-                return None
-            if anc_patch.locked():  # This should never happen
-                return None
-            lock = [anc_patch, reg_patch]
-            return Transaction(lock, [])
-        elif request_type == "local":
-            return Transaction([reg_patch], [reg_patch])
-        else:
-            path = self.bfs(reg_patch)
+        path = self.bfs(reg_patch)
 
-            if not path:
-                return None
+        if not path:
+            return Response()
 
-            return Transaction(path, [reg_patch], connect_col=path[0].local_x)
+        return Response(ResponseStatus.CHECK_DOWNSTREAM, Transaction(path, [reg_patch], connect_col=path[0].local_x))

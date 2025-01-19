@@ -22,7 +22,7 @@ class VerticalFilledBufferRouter(AbstractRouter):
             path, [path[0]], connect_col=connect, magic_state_patch=path[0]
         )
 
-    def request_transaction(self, output_cols: List[int]) -> Transaction | None:
+    def _request_transaction(self, output_cols: List[int]) -> Transaction | None:
         """
         output_col: which column to output to in routing bus above
         """
@@ -187,7 +187,7 @@ class VerticalFilledBufferRouter(AbstractRouter):
             reg_col < self.region.width - 1
         ):
             buffer_cols.append(reg_col + 1)
-        trans = self.request_transaction(buffer_cols, **kwargs)
+        trans = self._request_transaction(buffer_cols, **kwargs)
         if trans:
             return Response(ResponseStatus.SUCCESS, trans)
         else:

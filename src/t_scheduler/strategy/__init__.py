@@ -1,7 +1,7 @@
-from .strategy import Strategy
+from .base_strategy import BaseStrategy
 from .generic_strategy import GenericStrategy
 
 __all__ = [
-    'Strategy',
+    'BaseStrategy',
     'GenericStrategy'
 ]

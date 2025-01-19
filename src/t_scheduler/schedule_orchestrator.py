@@ -1,6 +1,6 @@
 from collections import deque
 
-from .strategy import Strategy
+from .strategy import BaseStrategy
 from .widget import Widget
 
 
@@ -15,7 +15,7 @@ class ScheduleOrchestrator:
         json: bool=False
     ):
         self.widget: Widget = widget
-        self.strategy: Strategy = strategy
+        self.strategy: BaseStrategy = strategy
 
         self.processed = set()
 

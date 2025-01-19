@@ -10,7 +10,7 @@ from ..base import *
 
 from ..router import AbstractRouter, AbstractFactoryRouter, RechargableBufferRouter
 from ..widget import *
-from .strategy import Strategy
+from .base_strategy import BaseStrategy
 
 class RotationStrategyOption(Enum):
     BACKPROP_INIT = 0
@@ -29,7 +29,7 @@ class DummyMapper:
     def position_xy(self, idx:int):
         return (idx * self.reg_width, 0)
 
-class GenericStrategy(Strategy):
+class GenericStrategy(BaseStrategy):
     register_router: AbstractRouter
 
 

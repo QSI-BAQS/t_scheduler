@@ -19,7 +19,7 @@ class GenericVerticalRouter(AbstractRouter):
     def __init__(self, buffer) -> None:
         self.buffer = buffer
 
-    def request_transaction(
+    def _request_transaction(
         self, output_col, input_col
     ) -> Transaction | None:
         
