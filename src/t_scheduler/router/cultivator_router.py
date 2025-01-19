@@ -31,6 +31,10 @@ class DenseTCultivatorBufferRouter(AbstractRouter):
 
     def __init__(self, buffer) -> None:
         self.region = buffer.local_view
+        for r in range(self.region.height):
+            for c in range(self.region.width):
+                self.region[r, c].local_y = r
+                self.region[r, c].local_x = c
         self.magic_source = True
 
     def _request_transaction(
@@ -43,14 +47,13 @@ class DenseTCultivatorBufferRouter(AbstractRouter):
         the routing bus
         """
         output_col = self.clamp(output_col, 0, self.region.width-1)
-        _, output_col = self.region.tl((0, output_col))
         queue = sorted(
-            self.region.available_states, key=lambda p: (
-                abs(self.region.tl((p.local_y,p.local_x))[1] - output_col), self.region.tl((p.local_y,p.local_x))[0])
+            self.region.available_states, key=lambda p: 
+                (abs(p.local_x - output_col), p.local_y)
         )
 
         for i, T_patch in enumerate(queue):
-            T_patch_y, T_patch_x = self.region.tl((T_patch.local_y, T_patch.local_x))
+            T_patch_y, T_patch_x = (T_patch.local_y, T_patch.local_x)
             if T_patch_x == output_col:
                 vert = [
                     self.region[x, output_col]
@@ -88,7 +91,8 @@ class DenseTCultivatorBufferRouter(AbstractRouter):
 
 
     def generic_transaction(self, source_patch, *args, target_orientation=None, **kwargs):
-        trans = self._request_transaction(source_patch.x - self.region.offset[1], *args, **kwargs)
+        local_y, local_x = self.region.tl((source_patch.y - self.region.offset[0], source_patch.x - self.region.offset[1]))
+        trans = self._request_transaction(local_x, *args, **kwargs)
         if trans:
             return Response(ResponseStatus.SUCCESS, trans)
         else:

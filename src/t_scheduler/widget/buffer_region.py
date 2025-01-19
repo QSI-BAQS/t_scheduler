@@ -52,28 +52,3 @@ class MagicStateBufferRegion(AbstractMagicStateBufferRegion):
 
         super().__init__(width, height, sc_patches, **kwargs)
         self.stats['num_t_buffers'] = width * height
-
-    def get_buffer_slots(self) -> List[None | Patch]:
-        buffer_lanes = []
-        for col in range(self.width):
-            topmost = None
-            for row in range(self.height - 1, -1, -1):
-                if (cell := self.sc_patches[row][col]).route_available():
-                    topmost = cell
-                else:
-                    break
-            buffer_lanes.append(topmost)
-        return buffer_lanes
-
-    def get_buffer_states(self) -> List[None | Patch]:
-        buffer_lanes = []
-        for col in range(self.width):
-            topmost = None
-            for row in range(self.height):
-                if (cell := self.sc_patches[row][col]).T_available():
-                    topmost = cell
-                    break
-                elif not cell.route_available():
-                    break
-            buffer_lanes.append(topmost)
-        return buffer_lanes

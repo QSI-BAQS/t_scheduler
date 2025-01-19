@@ -1,6 +1,8 @@
 from typing import Literal, Tuple
 from collections import deque
 
+from ..widget.widget_region import TopEdgePosition
+
 from ..base import Transaction, Response, ResponseStatus, Patch
 from ..widget import CombShapedRegisterRegion, SingleRowRegisterRegion
 from .abstract_router import AbstractRouter
@@ -82,7 +84,7 @@ class CombRegisterRouter(AbstractRouter):
         else:
             raise NotImplementedError()
 
-    def bfs(self, curr_patch: Patch):
+    def bfs(self, curr_patch: Patch, target_orientation):
         '''
         Search for path along routing net to routing bus below
         '''
@@ -91,8 +93,12 @@ class CombRegisterRouter(AbstractRouter):
         seen = {(curr_patch.local_y, curr_patch.local_x)}
         while bfs_queue:
             row, col = bfs_queue.popleft()
-            if row == self.region.height - 1:
-                break
+            if target_orientation is None or target_orientation == TopEdgePosition.TOP:
+                if row == self.region.height - 1:
+                    break
+            elif target_orientation == TopEdgePosition.BOTTOM:
+                if row == 0:
+                    break
 
             for r, c in [
                 (row + 1, col),
@@ -120,7 +126,7 @@ class CombRegisterRouter(AbstractRouter):
         if reg_patch.locked():
             return Response()
 
-        path = self.bfs(reg_patch)
+        path = self.bfs(reg_patch, target_orientation=target_orientation)
 
         if not path:
             return Response()

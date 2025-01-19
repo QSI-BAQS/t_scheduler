@@ -39,18 +39,18 @@ class WidgetRegionView:
         self.underlying = underlying
 
 
-    def tl(self, pos: Tuple[int, int]) -> Tuple[int, int]:
+    def tl(self, local_pos: Tuple[int, int]) -> Tuple[int, int]:
         '''
             Input: Row, col
         '''
         if self.underlying.rotation == TopEdgePosition.TOP:
-            new_pos = pos
+            new_pos = local_pos
         elif self.underlying.rotation == TopEdgePosition.BOTTOM:
-            new_pos = self.underlying.height - 1 - pos[0], self.underlying.width - 1 - pos[1]
+            new_pos = self.underlying.height - 1 - local_pos[0], self.underlying.width - 1 - local_pos[1]
         elif self.underlying.rotation == TopEdgePosition.RIGHT:
-            new_pos = pos[1], self.underlying.height - 1 - pos[0]
+            new_pos = local_pos[1], self.underlying.height - 1 - local_pos[0]
         elif self.underlying.rotation == TopEdgePosition.LEFT:
-            new_pos = self.underlying.width - 1 - pos[1], pos[0]
+            new_pos = self.underlying.width - 1 - local_pos[1], local_pos[0]
         else:
             raise NotImplementedError()
         return new_pos

@@ -14,8 +14,39 @@ class RechargableBufferRouter(AbstractRouter):
     region: MagicStateBufferRegion
 
     def __init__(self, buffer) -> None:
-        self.region = buffer
+        self.region = buffer.local_view
+        for r in range(self.region.height):
+            for c in range(self.region.width):
+                self.region[r, c].local_y = r
+                self.region[r, c].local_x = c
         self.upkeep_accept = True
+
+    def get_buffer_slots(self) -> List[None | Patch]:
+        buffer_lanes = []
+        for col in range(self.region.width):
+            topmost = None
+            for row in range(self.region.height - 1, -1, -1):
+                if (cell := self.region[row, col]).route_available():
+                    topmost = cell
+                else:
+                    break
+            buffer_lanes.append(topmost)
+        return buffer_lanes
+
+    def get_buffer_states(self) -> List[None | Patch]:
+        buffer_lanes = []
+        for col in range(self.region.width):
+            topmost = None
+            for row in range(self.region.height):
+                if (cell := self.region[row, col]).T_available():
+                    topmost = cell
+                    break
+                elif not cell.route_available():
+                    break
+            buffer_lanes.append(topmost)
+        return buffer_lanes
+
+
 
     def _request_transaction(
         self, output_col, strict_output_col: bool = False
@@ -24,7 +55,7 @@ class RechargableBufferRouter(AbstractRouter):
         output_col: which column to output to in routing bus above
         """
         queue = sorted(range(self.region.width), key=lambda p: (abs(p - output_col)))
-        buffer_states = self.region.get_buffer_states()
+        buffer_states = self.get_buffer_states()
 
         for col in queue:
             if not (T_patch := buffer_states[col]):
@@ -43,7 +74,7 @@ class RechargableBufferRouter(AbstractRouter):
         '''
         Request a passthrough column in the buffer for factories below
         '''
-        buffer_slots = self.region.get_buffer_slots()
+        buffer_slots = self.get_buffer_slots()
         cols = [cell.local_x for cell in buffer_slots if cell and cell.local_y == 0]
         
         if not cols: return None
@@ -54,10 +85,12 @@ class RechargableBufferRouter(AbstractRouter):
         return Transaction(path, [], connect_col=path[-1].local_x)
 
     def generic_transaction(self, source_patch, *args, target_orientation=None, **kwargs):
-        trans = self._request_transaction(source_patch.x - self.region.offset[1], **kwargs)
+        local_y, local_x = self.region.tl((source_patch.y - self.region.offset[0], source_patch.x - self.region.offset[1]))
+
+        trans = self._request_transaction(local_x, **kwargs)
         if trans:
             return Response(ResponseStatus.SUCCESS, trans)
-        trans = self.request_passthrough(source_patch.x - self.region.offset[1], **kwargs)
+        trans = self.request_passthrough(local_x, **kwargs)
         if trans:
             return Response(ResponseStatus.CHECK_DOWNSTREAM, trans)
         else:

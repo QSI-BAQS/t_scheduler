@@ -55,7 +55,7 @@ class GenericStrategy(BaseStrategy):
             T_patch: Patch = buffer_transaction.move_patches[0]
             attack_patch: Patch = buffer_transaction.move_patches[1]
 
-            matching_rotation = (T_patch.local_y == attack_patch.local_y) ^ (
+            matching_rotation = (T_patch.y == attack_patch.y) ^ (
                 T_patch.orientation == PatchOrientation.Z_TOP
             )
 
@@ -213,7 +213,7 @@ class GenericStrategy(BaseStrategy):
 
 
     def return_pass(self, gate, curr_trans, downstream_patch, curr_router, upstream_connect): # type: ignore
-        print()
+        # print()
         transactions = TransactionList([curr_trans])
         initial = curr_router
         while curr_router in upstream_connect:
@@ -221,9 +221,9 @@ class GenericStrategy(BaseStrategy):
             # translated_downstream = upstream_router.to_local_col(downstream_idx, downstream_col)
             translated_downstream = downstream_patch.x - upstream_router.region.offset[1]
             upstream_col = upstream_patch.x - upstream_router.region.offset[1]
-            print(upstream_router, translated_downstream, (downstream_patch.x, downstream_patch.y), upstream_col, (upstream_patch.x, upstream_patch.y))
+            # print(upstream_router, translated_downstream, (downstream_patch.x, downstream_patch.y), upstream_col, (upstream_patch.x, upstream_patch.y))
             if upstream_router == self.register_router:
-                resp: Response = upstream_router.generic_transaction(upstream_patch, upstream_col)
+                resp: Response = upstream_router.generic_transaction(upstream_patch, upstream_col, target_orientation=curr_router.region.rotation)
             else:
                 resp: Response = upstream_router.generic_transaction(downstream_patch, upstream_patch)
             
@@ -280,7 +280,7 @@ class GenericStrategy(BaseStrategy):
             if not factory_router.region.available_states:
                 continue
 
-            slots = buffer_router.region.get_buffer_slots()
+            slots = buffer_router.get_buffer_slots()
             for state in list(factory_router.region.available_states):
                 if not state.T_available():
                     continue
@@ -290,7 +290,8 @@ class GenericStrategy(BaseStrategy):
                         state
                     )).status): continue
                 factory_transaction = factory_resp.transaction
-                local_col = factory_resp.upstream_patch.x - buffer_router.region.offset[1]
+                local_col = buffer_router.region.tl((factory_resp.upstream_patch.y - buffer_router.region.offset[0],
+                                                    factory_resp.upstream_patch.x - buffer_router.region.offset[1]))[1]
 
                 if not (free_slot := self._get_closest(slots, local_col)):
                     continue
