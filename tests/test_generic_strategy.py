@@ -5,7 +5,7 @@ from t_scheduler.base import gate, util
 from t_scheduler.schedule_orchestrator import ScheduleOrchestrator
 
 from t_scheduler.templates.generic_templates import *
-
+from t_scheduler.strategy.generic_strategy import DummyMapper
 '''
 import json
 import unittest
@@ -50,15 +50,17 @@ class DummyCombMapper:
 
 
 class GenericStrategyTest(unittest.TestCase):
-    def test_flat_naive_qft(self, tikz=False, save_json=False):
+    def test_cult_flat_naive_qft(self, tikz=False, save_json=False):
         with open('tests/qft_test_obj.json') as f:
             obj = json.load(f)
         strat, wid = flat_naive_t_cultivator_widget(10, 5)
+        strat.mapper = DummyMapper(2)
+
         gates = util.make_gates(obj, lambda x: int(x) % 5)
         dag_layers, all_gates = util.dag_create(obj, gates)
         dag_roots = dag_layers[0]
 
-        orc = ScheduleOrchestrator(dag_roots, wid, strat, False, tikz, save_json)
+        orc = ScheduleOrchestrator(dag_roots, wid, strat, False, tikz, json=save_json)
         orc.schedule()
         return orc
 
@@ -66,6 +68,8 @@ class GenericStrategyTest(unittest.TestCase):
         with open('tests/qft_test_obj.json') as f:
             obj = json.load(f)
         strat, wid = flat_naive_t_cultivator_widget(10, 5)
+        strat.mapper = DummyMapper(2)
+
         gates = util.make_gates(obj, lambda x: int(x) % 5)
         dag_layers, all_gates = util.dag_create(obj, gates)
         dag_roots = dag_layers[0]
@@ -75,7 +79,7 @@ class GenericStrategyTest(unittest.TestCase):
                 cell.has_T = True # type: ignore
                 wid.components[-2].available_states.add(cell)
 
-        orc = ScheduleOrchestrator(dag_roots, wid, strat, False, tikz, save_json)
+        orc = ScheduleOrchestrator(dag_roots, wid, strat, False, tikz, json=save_json)
         orc.schedule()
         return orc
 
@@ -83,11 +87,13 @@ class GenericStrategyTest(unittest.TestCase):
         with open('tests/qft_test_obj.json') as f:
             obj = json.load(f)
         strat, wid = flat_naive_litinski_5x3_unbuffered_widget(10, 7)
+        strat.mapper = DummyMapper(2)
+
         gates = util.make_gates(obj, lambda x: int(x) % 5)
         dag_layers, all_gates = util.dag_create(obj, gates)
         dag_roots = dag_layers[0]
 
-        orc = ScheduleOrchestrator(dag_roots, wid, strat, False, tikz, save_json)
+        orc = ScheduleOrchestrator(dag_roots, wid, strat, False, tikz, json=save_json)
         orc.schedule()
         return orc
     
@@ -95,11 +101,13 @@ class GenericStrategyTest(unittest.TestCase):
         with open('tests/qft_test_obj.json') as f:
             obj = json.load(f)
         strat, wid = flat_naive_litinski_5x3_unbuffered_widget(10, 7, False)
+        strat.mapper = DummyMapper(2)
+
         gates = util.make_gates(obj, lambda x: int(x) % 5)
         dag_layers, all_gates = util.dag_create(obj, gates)
         dag_roots = dag_layers[0]
 
-        orc = ScheduleOrchestrator(dag_roots, wid, strat, False, tikz, save_json)
+        orc = ScheduleOrchestrator(dag_roots, wid, strat, False, tikz, json=save_json)
         orc.schedule()
         return orc
 
@@ -108,11 +116,13 @@ class GenericStrategyTest(unittest.TestCase):
         with open('tests/qft_test_obj.json') as f:
             obj = json.load(f)
         strat, wid = flat_naive_litinski_6x3_dense_unbuffered_widget(10, 8)
+        strat.mapper = DummyMapper(2)
+
         gates = util.make_gates(obj, lambda x: int(x) % 5)
         dag_layers, all_gates = util.dag_create(obj, gates)
         dag_roots = dag_layers[0]
 
-        orc = ScheduleOrchestrator(dag_roots, wid, strat, False, tikz, save_json)
+        orc = ScheduleOrchestrator(dag_roots, wid, strat, False, tikz, json=save_json)
         orc.schedule()
         return orc
 
@@ -120,11 +130,13 @@ class GenericStrategyTest(unittest.TestCase):
         with open('tests/qft_test_obj.json') as f:
             obj = json.load(f)
         strat, wid = flat_naive_litinski_6x3_dense_unbuffered_widget(10, 8, False)
+        strat.mapper = DummyMapper(2)
+
         gates = util.make_gates(obj, lambda x: int(x) % 5)
         dag_layers, all_gates = util.dag_create(obj, gates)
         dag_roots = dag_layers[0]
 
-        orc = ScheduleOrchestrator(dag_roots, wid, strat, False, tikz, save_json)
+        orc = ScheduleOrchestrator(dag_roots, wid, strat, False, tikz, json=save_json)
         orc.schedule()
         return orc
 
@@ -132,26 +144,31 @@ class GenericStrategyTest(unittest.TestCase):
         with open('tests/qft_test_obj.json') as f:
             obj = json.load(f)
         strat, wid = buffered_naive_buffered_widget(10, 18, 2, factory_factory=MagicStateFactoryRegion.with_litinski_6x3_dense)
+        strat.mapper = DummyMapper(2)
+
         gates = util.make_gates(obj, lambda x: int(x) % 5)
         dag_layers, all_gates = util.dag_create(obj, gates)
         dag_roots = dag_layers[0]
 
-        orc = ScheduleOrchestrator(dag_roots, wid, strat, False, tikz, save_json)
+        orc = ScheduleOrchestrator(dag_roots, wid, strat, False, tikz, json=save_json)
         orc.schedule()
         return orc
     
-    def test_litinski_6x3_buffered_qft_nobell(self, tikz=False):
+    def test_litinski_6x3_buffered_qft_nobell(self, tikz=False, save_json=False):
         with open('tests/qft_test_obj.json') as f:
             obj = json.load(f)
         strat, wid = buffered_naive_buffered_widget(10, 18, 2, factory_factory=MagicStateFactoryRegion.with_litinski_6x3_dense, include_bell=False)
+        strat.mapper = DummyMapper(2)
+
         gates = util.make_gates(obj, lambda x: int(x) % 5)
         dag_layers, all_gates = util.dag_create(obj, gates)
         dag_roots = dag_layers[0]
 
-        orc = ScheduleOrchestrator(dag_roots, wid, strat, False, tikz)
+        orc = ScheduleOrchestrator(dag_roots, wid, strat, False, tikz, json=save_json)
         orc.schedule()
+        return orc
 
-    def test_end_to_end_inject_vertical(self, tikz=False):
+    def test_end_to_end_inject_vertical(self, tikz=False, save_json=False):
         gate_layers = [
             [*chain(*(([x] * 8) for x in [5, 0, 6, 8, 7]))],
         ]
@@ -160,12 +177,13 @@ class GenericStrategyTest(unittest.TestCase):
 
         strat, wid = vertical_strategy_with_prefilled_buffer_widget(
             20, 5, rot_strat=RotationStrategyOption.INJECT)
-
-        orc = ScheduleOrchestrator(gate_layers[0], wid, strat, False, tikz)
+        strat.mapper = DummyMapper(2)
+        orc = ScheduleOrchestrator(gate_layers[0], wid, strat, False, tikz, json=save_json)
 
         orc.schedule()
+        return orc
 
-    def test_comb_vertical(self, tikz=False):
+    def test_comb_vertical(self, tikz=False, save_json=False):
         gate_layers = [
             [*chain(*(([x] * 8) for x in [5, 0, 16, 8, 26]))],
         ]
@@ -177,11 +195,12 @@ class GenericStrategyTest(unittest.TestCase):
 
         strat.mapper = DummyCombMapper(20)
 
-        orc = ScheduleOrchestrator(gate_layers[0], wid, strat, False, tikz)
+        orc = ScheduleOrchestrator(gate_layers[0], wid, strat, False, tikz, json=save_json)
 
         orc.schedule()
+        return orc
 
-    def test_comb_vertical_qft(self, tikz=False):
+    def test_comb_vertical_qft(self, tikz=False, save_json=False):
         with open('tests/qft_8_test_obj.json') as f:
             obj = json.load(f)
         strat, wid = vertical_strategy_with_prefilled_comb_widget(
@@ -193,10 +212,11 @@ class GenericStrategyTest(unittest.TestCase):
         dag_layers, all_gates = util.dag_create(obj, gates)
         dag_roots = dag_layers[0]
 
-        orc = ScheduleOrchestrator(dag_roots, wid, strat, False, tikz)
+        orc = ScheduleOrchestrator(dag_roots, wid, strat, False, tikz, json=save_json)
         orc.schedule()
-    
-    def test_comb_vertical_qft_route_one(self, tikz=False):
+        return orc
+
+    def test_comb_vertical_qft_route_one(self, tikz=False, save_json=False):
         with open('tests/qft_8_test_obj.json') as f:
             obj = json.load(f)
         strat, wid = vertical_strategy_with_prefilled_comb_widget(
@@ -208,20 +228,26 @@ class GenericStrategyTest(unittest.TestCase):
         dag_layers, all_gates = util.dag_create(obj, gates)
         dag_roots = dag_layers[0]
 
-        orc = ScheduleOrchestrator(dag_roots, wid, strat, False, tikz)
+        orc = ScheduleOrchestrator(dag_roots, wid, strat, False, tikz, json=save_json)
         orc.schedule()
-    def test_litinski_6x3_buffered_qft_with_prewarm(self, tikz=False):
+        return orc
+
+    def test_litinski_6x3_buffered_qft_with_prewarm(self, tikz=False, save_json=False):
         with open('tests/qft_test_obj.json') as f:
             obj = json.load(f)
         strat, wid = buffered_naive_buffered_widget(10, 20, 4, factory_factory=MagicStateFactoryRegion.with_litinski_6x3_dense)
+        strat.mapper = DummyMapper(2)
+
         gates = util.make_gates(obj, lambda x: int(x) % 5)
         dag_layers, all_gates = util.dag_create(obj, gates)
         dag_roots = dag_layers[0]
 
-        orc = ScheduleOrchestrator(dag_roots, wid, strat, False, tikz)
+        orc = ScheduleOrchestrator(dag_roots, wid, strat, False, tikz, json=save_json)
         orc.prewarm(100)
         orc.schedule()
-    def test_end_to_end_backprop_vertical(self, tikz=False):
+        return orc
+
+    def test_end_to_end_backprop_vertical(self, tikz=False, save_json=False):
         gate_layers = [
             [*chain(*(([x] * 8) for x in [5, 0, 6, 8, 7]))],
         ]
@@ -230,12 +256,14 @@ class GenericStrategyTest(unittest.TestCase):
 
         strat, wid = vertical_strategy_with_prefilled_buffer_widget(
             20, 5, rot_strat=RotationStrategyOption.BACKPROP_INIT)
+        strat.mapper = DummyMapper(2)
 
-        orc = ScheduleOrchestrator(gate_layers[0], wid, strat, False, tikz)
+        orc = ScheduleOrchestrator(gate_layers[0], wid, strat, False, tikz, json=save_json)
 
         orc.schedule()
-    
-    def test_end_to_end_backprop_vertical_comb(self):
+        return orc
+
+    def test_end_to_end_backprop_vertical_comb(self, save_json=False):
         gate_layers = [
             [*chain(*(([x] * 8) for x in [5, 0, 16, 8, 26]))],
         ]
@@ -247,12 +275,13 @@ class GenericStrategyTest(unittest.TestCase):
 
         strat.mapper = DummyCombMapper(20)
 
-        orc = ScheduleOrchestrator(gate_layers[0], wid, strat, False)
+        orc = ScheduleOrchestrator(gate_layers[0], wid, strat, False, json=save_json)
 
         orc.schedule()
+        return orc
 
     
-    def test_end_to_end_2(self, tikz=False):
+    def test_end_to_end_2(self, tikz=False, save_json=False):
         gate_layers = [
             [*chain(*(([x] * 10) for x in [5, 0, 6, 8, 7]))],
         ]
@@ -260,31 +289,40 @@ class GenericStrategyTest(unittest.TestCase):
                        for layer in gate_layers]
 
         strat, wid = tree_strategy_with_prefilled_buffer_widget(20, 5)
-        
-        orc = ScheduleOrchestrator(gate_layers[0], wid, strat, False, tikz)
+        strat.mapper = DummyMapper(2)
+
+        orc = ScheduleOrchestrator(gate_layers[0], wid, strat, False, tikz, json=save_json)
 
         orc.schedule()
+        return orc
 
     
-    def test_vertical_toffoli(self, tikz=False):
+    def test_vertical_toffoli(self, tikz=False, save_json=False):
         strat, wid = vertical_strategy_with_prefilled_buffer_widget(26, 5, rot_strat=RotationStrategyOption.BACKPROP_INIT)
+        strat.mapper = DummyMapper(2)
+
         obj = util.toffoli_example_input()
         gates = util.make_gates(obj)
         dag_layers, all_gates = util.dag_create(obj, gates)
         dag_roots = dag_layers[0]
 
-        orc = ScheduleOrchestrator(dag_roots, wid, strat, False, tikz)
+        orc = ScheduleOrchestrator(dag_roots, wid, strat, False, tikz, json=save_json)
         orc.schedule()
-    
-    def test_tree_qft(self, tikz=False):
+        return orc
+
+    def test_tree_qft(self, tikz=False, save_json=False):
         with open('tests/qft_test_obj.json') as f:
             obj = json.load(f)
         strat, wid = tree_strategy_with_prefilled_buffer_widget(12, 10)
+        strat.mapper = DummyMapper(2)
+
         gates = util.make_gates(obj, lambda x: int(x) % 5)
         dag_layers, all_gates = util.dag_create(obj, gates)
         dag_roots = dag_layers[0]
 
-        orc = ScheduleOrchestrator(dag_roots, wid, strat, False, tikz)
+        orc = ScheduleOrchestrator(dag_roots, wid, strat, False, tikz, json=save_json)
         orc.schedule()
+        return orc
+
 if __name__ == '__main__':
     unittest.main()

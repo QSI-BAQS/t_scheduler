@@ -103,6 +103,12 @@ def make_board(regions):
                     next_active.append((downstream_region, 1))
         board.append(curr_row)
         active = next_active
+    if not board[-1]:
+        board.pop()
+    for r in range(len(board)):
+        for c in range(len(board[0])):
+            board[r][c].x = c
+            board[r][c].y = r
     return board
 
 def make_explicit(layout, width, height):
@@ -115,6 +121,11 @@ def make_explicit(layout, width, height):
             if any(p.patch_type != PatchType.UNUSED for p in board[roff + r][coff:coff + region.width]):
                 raise ValueError('Error when applying region: overlap detected.', region)
             board[roff + r][coff:coff + region.width] = region[r]
+
+    for r in range(height):
+        for c in range(width):
+            board[r][c].x = c
+            board[r][c].y = r
 
     widget = Widget(
         width,
@@ -154,23 +165,23 @@ def make_widget(func):
 def flat_naive_litinski_5x3_unbuffered_widget(width, height, include_bell=True):
     if include_bell:
         layout = LayoutNode(
-            partial(SingleRowRegisterRegion, width),
+            partial(SingleRowRegisterRegion, width, x=0, y=0),
             BaselineRegisterRouter,
             [LayoutNode(
-                partial(RouteBus, width),
+                partial(RouteBus, width, x=0, y=1),
                 StandardBusRouter,
                 [
                     LayoutNode(
-                        partial(BellRegion, height - 2),
+                        partial(BellRegion, height - 2, x=0, y=2),
                         BellRouter
                     ),
                     LayoutNode(
                         partial(MagicStateFactoryRegion.with_litinski_5x3,
-                                width - 2, height - 2),
+                                width - 2, height - 2, x=1, y=2),
                         MagicStateFactoryRouter,
                     ),
                     LayoutNode(
-                        partial(BellRegion, height - 2),
+                        partial(BellRegion, height - 2, x=width-1, y=2),
                         BellRouter
                     )
 
@@ -179,14 +190,14 @@ def flat_naive_litinski_5x3_unbuffered_widget(width, height, include_bell=True):
         )
     else:
         layout = LayoutNode(
-            partial(SingleRowRegisterRegion, width),
+            partial(SingleRowRegisterRegion, width, x=0, y=0),
             BaselineRegisterRouter,
             [LayoutNode(
-                partial(RouteBus, width),
+                partial(RouteBus, width, x=0, y=1),
                 StandardBusRouter,
                 [LayoutNode(
                     partial(MagicStateFactoryRegion.with_litinski_5x3,
-                            width, height - 2),
+                            width, height - 2, x=0, y=2),
                     MagicStateFactoryRouter,
                 )]
             )]
@@ -196,23 +207,23 @@ def flat_naive_litinski_5x3_unbuffered_widget(width, height, include_bell=True):
 @make_widget
 def flat_naive_t_cultivator_widget(width, height):
     layout = LayoutNode(
-        partial(SingleRowRegisterRegion, width),
+        partial(SingleRowRegisterRegion, width, x=0, y=0),
         BaselineRegisterRouter,
         [LayoutNode(
-            partial(RouteBus, width),
+            partial(RouteBus, width, x=0, y=1),
             StandardBusRouter,
             [
                 LayoutNode(
-                    partial(BellRegion, height - 2),
+                    partial(BellRegion, height - 2, x=0, y=2),
                     BellRouter
                 ),
                 LayoutNode(
                     partial(TCultivatorBufferRegion,
-                            width - 2, height - 2, "dense"),
+                            width - 2, height - 2, "dense", x=1, y=2),
                     DenseTCultivatorBufferRouter,
                 ),
                 LayoutNode(
-                    partial(BellRegion, height - 2),
+                    partial(BellRegion, height - 2, x=width-1, y=2),
                     BellRouter
                 )
 
@@ -227,23 +238,23 @@ def flat_naive_litinski_6x3_dense_unbuffered_widget(
 ):
     if include_bell:
         layout = LayoutNode(
-            partial(SingleRowRegisterRegion, width),
+            partial(SingleRowRegisterRegion, width, x=0, y=0),
             BaselineRegisterRouter,
             [LayoutNode(
-                partial(RouteBus, width),
+                partial(RouteBus, width, x=0, y=1),
                 StandardBusRouter,
                 [
                     LayoutNode(
-                        partial(BellRegion, height - 2),
+                        partial(BellRegion, height - 2, x=0, y=2),
                         BellRouter
                     ),
                     LayoutNode(
                         partial(MagicStateFactoryRegion.with_litinski_6x3_dense,
-                                width - 2, height - 2),
+                                width - 2, height - 2, x=1, y=2),
                         MagicStateFactoryRouter,
                     ),
                     LayoutNode(
-                        partial(BellRegion, height - 2),
+                        partial(BellRegion, height - 2, x=width-1, y=2),
                         BellRouter
                     )
 
@@ -252,14 +263,14 @@ def flat_naive_litinski_6x3_dense_unbuffered_widget(
         )
     else:
         layout = LayoutNode(
-            partial(SingleRowRegisterRegion, width),
+            partial(SingleRowRegisterRegion, width, x=0,y=0),
             BaselineRegisterRouter,
             [LayoutNode(
-                partial(RouteBus, width),
+                partial(RouteBus, width, x=0, y=1),
                 StandardBusRouter,
                 [LayoutNode(
                     partial(MagicStateFactoryRegion.with_litinski_6x3_dense,
-                            width, height - 2),
+                            width, height - 2, x=0, y=2),
                     MagicStateFactoryRouter,
                 )]
             )]
@@ -276,32 +287,32 @@ def buffered_naive_buffered_widget(
 ):
     if include_bell:
         layout = LayoutNode(
-            partial(SingleRowRegisterRegion, width),
+            partial(SingleRowRegisterRegion, width, x=0, y=0),
             BaselineRegisterRouter,
             [LayoutNode(
-                partial(RouteBus, width),
+                partial(RouteBus, width, x=0, y=1),
                 StandardBusRouter,
                 [
                     LayoutNode(
-                        partial(BellRegion, height - 2),
+                        partial(BellRegion, height - 2, x=0, y=2),
                         BellRouter
                     ),
                     LayoutNode(
                         partial(MagicStateBufferRegion,
-                                width - 2, buffer_height),
+                                width - 2, buffer_height, x=1, y=2),
                         RechargableBufferRouter,
                         [LayoutNode(
-                            partial(RouteBus, width - 2),
+                            partial(RouteBus, width - 2, x=1, y=2+buffer_height),
                             StandardBusRouter,
                             [LayoutNode(
                                 partial(factory_factory,
-                                        width - 2, height - 3 - buffer_height),
+                                        width - 2, height - 3 - buffer_height, x=1, y=3+buffer_height),
                                 MagicStateFactoryRouter,
                             )]
                         )]
                     ),
                     LayoutNode(
-                        partial(BellRegion, height - 2),
+                        partial(BellRegion, height - 2, x=width-1, y=2),
                         BellRouter
                     )
                 ]
@@ -309,21 +320,21 @@ def buffered_naive_buffered_widget(
         )
     else:
         layout = LayoutNode(
-            partial(SingleRowRegisterRegion, width),
+            partial(SingleRowRegisterRegion, width, x=0, y=0),
             BaselineRegisterRouter,
             [LayoutNode(
-                partial(RouteBus, width),
+                partial(RouteBus, width, x=0, y=1),
                 StandardBusRouter,
                 [LayoutNode(
                     partial(MagicStateBufferRegion,
-                            width, buffer_height),
+                            width, buffer_height, x=0, y=2),
                     RechargableBufferRouter,
                     [LayoutNode(
-                        partial(RouteBus, width),
+                        partial(RouteBus, width, x=0, y=2+buffer_height),
                         StandardBusRouter,
                         [LayoutNode(
                             partial(factory_factory,
-                                    width, height - 3 - buffer_height),
+                                    width, height - 3 - buffer_height, x=0, y=3+buffer_height),
                             MagicStateFactoryRouter,
                         )]
                     )]
@@ -337,23 +348,23 @@ def vertical_strategy_with_prefilled_buffer_widget(
     width, height
 ):
     layout = LayoutNode(
-        partial(SingleRowRegisterRegion, width),
+        partial(SingleRowRegisterRegion, width, x=0, y=0),
         BaselineRegisterRouter,
         [LayoutNode(
-            partial(RouteBus, width),
+            partial(RouteBus, width, x=0, y=1),
             StandardBusRouter,
             [
                 LayoutNode(
-                    partial(BellRegion, height - 2),
+                    partial(BellRegion, height - 2, x=0, y=2),
                     BellRouter
                 ),
                 LayoutNode(
                     partial(PrefilledMagicStateRegion,
-                            width - 2, height - 2, 'default'),
+                            width - 2, height - 2, 'default', x=1, y=2),
                     VerticalFilledBufferRouter,
                 ),
                 LayoutNode(
-                    partial(BellRegion, height - 2),
+                    partial(BellRegion, height - 2, x=width-1, y=2),
                     BellRouter
                 )
 
@@ -368,23 +379,24 @@ def vertical_strategy_with_prefilled_comb_widget(
     width, height, comb_height, route_width: Literal[1,2]=2, incl_comb_top=True
 ):
     layout = LayoutNode(
-        partial(CombShapedRegisterRegion, width, comb_height, route_width=route_width, incl_top=incl_comb_top),
+        partial(CombShapedRegisterRegion, width, comb_height, route_width=route_width, incl_top=incl_comb_top,
+                x=0, y=0),
         CombRegisterRouter,
         [LayoutNode(
-            partial(RouteBus, width),
+            partial(RouteBus, width, x=0,y=comb_height),
             StandardBusRouter,
             [
                 LayoutNode(
-                    partial(BellRegion, height - 1 - comb_height),
+                    partial(BellRegion, height - 1 - comb_height, x=0,y=comb_height+1),
                     BellRouter
                 ),
                 LayoutNode(
                     partial(PrefilledMagicStateRegion,
-                            width - 2, height - 1 - comb_height, "default"),
+                            width - 2, height - 1 - comb_height, "default", x=1,y=comb_height+1),
                     VerticalFilledBufferRouter,
                 ),
                 LayoutNode(
-                    partial(BellRegion, height - 1 - comb_height),
+                    partial(BellRegion, height - 1 - comb_height, x=width-1, y=comb_height+1),
                     BellRouter
                 )
             ]
@@ -406,23 +418,23 @@ def tree_strategy_with_prefilled_buffer_widget(
         raise ValueError("Only multiples of 4 supported for width")
 
     layout = LayoutNode(
-        partial(SingleRowRegisterRegion, width),
+        partial(SingleRowRegisterRegion, width, x=0, y=0),
         BaselineRegisterRouter,
         [LayoutNode(
-            partial(RouteBus, width),
+            partial(RouteBus, width, x=0, y=1),
             StandardBusRouter,
             [
                 LayoutNode(
-                    partial(BellRegion, height - 2),
+                    partial(BellRegion, height - 2, x=0, y=2),
                     BellRouter
                 ),
                 LayoutNode(
                     partial(PrefilledMagicStateRegion,
-                            width - 2, height - 2, "chessboard"),
+                            width - 2, height - 2, "chessboard", x=1, y=2),
                     TreeFilledBufferRouter,
                 ),
                 LayoutNode(
-                    partial(BellRegion, height - 2),
+                    partial(BellRegion, height - 2, x=width-1, y=2),
                     BellRouter
                 )
 

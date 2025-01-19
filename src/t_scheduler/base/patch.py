@@ -67,7 +67,7 @@ class Patch:
     local_x: int
     local_y: int
     orientation: PatchOrientation
-    x: int
+    x: int # Global positions -- initialised by make_explicit
     y: int
 
     def __init__(

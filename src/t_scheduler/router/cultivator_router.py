@@ -42,6 +42,7 @@ class DenseTCultivatorBufferRouter(AbstractRouter):
         strict_output_col: if false, we can just output to any column in 
         the routing bus
         """
+        output_col = self.clamp(output_col, 0, self.region.width-1)
         queue = sorted(
             self.region.available_states, key=lambda p: (
                 abs(p.local_x - output_col), p.local_y)

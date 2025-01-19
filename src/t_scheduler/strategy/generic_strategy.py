@@ -24,11 +24,14 @@ class RotationStrategyOption(Enum):
     ADD_DELAY = 4
 
 class DummyMapper:
+    def __init__(self, reg_width = 1):
+        self.reg_width = reg_width
+
     def __getitem__(self, idx:int):
         return idx
     
     def position_xy(self, idx:int):
-        return (idx, 0)
+        return (idx * self.reg_width, 0)
 
 class GenericStrategy(Strategy):
     register_router: AbstractRouter
@@ -140,14 +143,14 @@ class GenericStrategy(Strategy):
             raise NotImplementedError()
 
 
-    def return_pass(self, gate, curr_trans, curr_router, upstream_connect): # type: ignore
+    def return_pass(self, gate, curr_trans, downstream_patch, curr_router, upstream_connect): # type: ignore
         transactions = TransactionList([curr_trans])
-        downstream_col = curr_trans.connect_col
-
+        initial = curr_router
         while curr_router in upstream_connect:
-            upstream_router, downstream_idx, upstream_col, *abs_pos = upstream_connect[curr_router]
-            # breakpoint()
-            translated_downstream = upstream_router.to_local_col(downstream_idx, downstream_col)
+            upstream_router, downstream_idx, upstream_patch, *abs_pos = upstream_connect[curr_router]
+            # translated_downstream = upstream_router.to_local_col(downstream_idx, downstream_col)
+            translated_downstream = downstream_patch.x - upstream_router.region.offset[1]
+            upstream_col = upstream_patch.x - upstream_router.region.offset[1]
             if abs_pos:
                 resp: Response = upstream_router.generic_transaction(translated_downstream, upstream_col, absolute_position=abs_pos)
             else:
@@ -157,14 +160,9 @@ class GenericStrategy(Strategy):
 
             transactions.append(resp.transaction)
             curr_router, downstream_col = upstream_router, upstream_col
+            downstream_patch = upstream_patch
 
-        # path = []
-        # for transaction in transactions:
-        #     path += transaction.move_patches
-        
-        # for i in range(len(path) - 1):
-        #     if abs(path[i]._r - path[i+1]._r) + abs(path[i]._c - path[i+1]._c) > 1:
-        #         breakpoint()
+        self.validate(transactions)
 
         ############################
         #  Process rotation logic
@@ -172,6 +170,16 @@ class GenericStrategy(Strategy):
         return self.validate_rotation(
             gate, transactions
         )
+
+    @staticmethod
+    def validate(transaction_list):
+        path = []
+        for transaction in transaction_list:
+            path += transaction.move_patches
+        print([(p.x, p.y) for p in path])
+        for i in range(len(path) - 1):
+            if abs(path[i].x - path[i+1].x) + abs(path[i].y - path[i+1].y) > 1:
+                assert False
 
 
 
@@ -189,38 +197,39 @@ class GenericStrategy(Strategy):
         if not resp.status:
             return None
         reg_transaction : Transaction = resp.transaction # type: ignore
-        dfs_stack = [(curr_router, 0, reg_transaction.connect_col, *target_pos)]
+        dfs_stack = [(curr_router, 0, resp.downstream_patch, *target_pos)]
 
         while dfs_stack:
-            curr_router, curr_downstream_idx, curr_request_col, *abs_pos = dfs_stack.pop()
+            curr_router, curr_downstream_idx, curr_patch, *abs_pos = dfs_stack.pop()
             if curr_downstream_idx >= len(curr_router.downstream):
                 continue
 
             # Save state to stack!
-            dfs_stack.append((curr_router, curr_downstream_idx + 1, curr_request_col))
+            dfs_stack.append((curr_router, curr_downstream_idx + 1, curr_patch))
 
             # Recurse!
             downstream_router = curr_router.downstream[curr_downstream_idx]
-            downstream_request_col = curr_router.to_downstream_col(curr_downstream_idx, curr_request_col)
+            # downstream_request_col = curr_router.to_downstream_col(curr_downstream_idx, curr_request_col)
+            downstream_request_col = curr_patch.x - downstream_router.region.offset[1]
             resp : Response = downstream_router.generic_transaction(downstream_request_col)
             if not resp.status:
                 # Downstream router rejected!
                 continue
             
-            upstream_connect[downstream_router] = (curr_router, curr_downstream_idx, curr_request_col, *abs_pos)
+            upstream_connect[downstream_router] = (curr_router, curr_downstream_idx, curr_patch, *abs_pos)
 
             
             if resp.status == ResponseStatus.SUCCESS:
                 # Resource found in downstream router!
                 # Now check if path available...
 
-                return_resp = self.return_pass(gate, resp.transaction, downstream_router, upstream_connect)
+                return_resp = self.return_pass(gate, resp.transaction, resp.upstream_patch, downstream_router, upstream_connect)
                 if return_resp:
                     return return_resp
                 
                 
             # Downstream router gives OK?
-            dfs_stack.append((downstream_router, 0, downstream_request_col))
+            dfs_stack.append((downstream_router, 0, resp.downstream_patch))
 
         return None
     
@@ -252,6 +261,9 @@ class GenericStrategy(Strategy):
                 curr_router = curr_router.upstream
             if not buffer_router:
                 continue
+            
+            if not factory_router.region.available_states:
+                continue
 
             slots = buffer_router.region.get_buffer_slots()
             for state in list(factory_router.region.available_states):
@@ -259,10 +271,13 @@ class GenericStrategy(Strategy):
                     continue
 
                 if not (
-                    factory_transaction := factory_router.request_transaction(
+                    (factory_resp := factory_router.generic_transaction(
                         state.local_x
-                    )
-                ) or not (free_slot := self._get_closest(slots, factory_transaction.connect_col)):
+                    )).status): continue
+                factory_transaction = factory_resp.transaction
+                local_col = factory_resp.upstream_patch.x - buffer_router.region.offset[1]
+
+                if not (free_slot := self._get_closest(slots, local_col)):
                     continue
 
                 if not (
@@ -273,28 +288,34 @@ class GenericStrategy(Strategy):
                 transactions = TransactionList([factory_transaction])
 
                 upstream_router = factory_router.upstream
-                upstream_col = upstream_router.to_local_col(upstream_router.downstream.index(factory_router), factory_transaction.connect_col)
+                upstream_patch = factory_resp.upstream_patch
                 status = ResponseStatus.SUCCESS
                 while upstream_router.upstream != buffer_router:
+                    upstream_col = upstream_patch.x - upstream_router.region.offset[1]
                     resp = upstream_router.generic_transaction(upstream_col, upstream_col)
                     if not resp.status:
                         status = resp.status
                         break
                     transactions.append(resp.transaction)
+                    upstream_patch = resp.upstream_patch
+                    upstream_router = upstream_router.upstream
                 if not status:
                     continue
                 
-                slot_col = buffer_router.to_downstream_col(buffer_router.downstream.index(upstream_router), buffer_transaction.connect_col)
+                # slot_col = buffer_router.to_downstream_col(buffer_router.downstream.index(upstream_router), buffer_transaction.connect_col)
 
                 if not (
-                    bus_transaction := upstream_router.request_transaction(
-                        upstream_col, slot_col # type: ignore
-                    )
+                    (bus_resp := upstream_router.generic_transaction(
+                        upstream_patch.x - upstream_router.region.offset[1], free_slot.x - upstream_router.region.offset[1] # type: ignore
+                    )).status
                 ):  # type: ignore
                     continue
+                bus_transaction = bus_resp.transaction
                 
                 transactions.append(bus_transaction)
                 transactions.append(buffer_transaction)
+
+                self.validate(transactions)
 
                 gate = MoveGate()
 

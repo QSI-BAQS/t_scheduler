@@ -13,3 +13,6 @@ class Response:
     def __init__(self, status=ResponseStatus.FAILED, transaction=None) -> None:
         self.status = status
         self.transaction = transaction
+        if transaction:
+            self.downstream_patch = transaction.move_patches[0]
+            self.upstream_patch = transaction.move_patches[-1]

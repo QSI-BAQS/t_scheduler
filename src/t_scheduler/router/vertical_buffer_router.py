@@ -181,12 +181,12 @@ class VerticalFilledBufferRouter(AbstractRouter):
 
     def generic_transaction(self, reg_col, *args, **kwargs):
         buffer_cols = []
-        if reg_col > 0:
-            buffer_cols.append(reg_col - 1)
+        reg_col = self.clamp(reg_col, 0, self.region.width - 1)
+        buffer_cols.append(reg_col)
         if (
-            reg_col < self.region.width - 2
+            reg_col < self.region.width - 1
         ):
-            buffer_cols.append(reg_col)
+            buffer_cols.append(reg_col + 1)
         trans = self.request_transaction(buffer_cols, **kwargs)
         if trans:
             return Response(ResponseStatus.SUCCESS, trans)
