@@ -4,93 +4,11 @@ from itertools import chain
 from t_scheduler.base import util
 from t_scheduler.base import gate
 from t_scheduler.schedule_orchestrator import ScheduleOrchestrator
-from t_scheduler.strategy.tree_strategy import TreeRoutingStrategy
-from t_scheduler.strategy.vertical_strategy import RotationStrategyOption, VerticalRoutingStrategy
-from t_scheduler.widget.factory_region import MagicStateFactoryRegion
-
 from t_scheduler.templates import *
 
 
 class StaticBufferTest(unittest.TestCase):
-    @unittest.skip('not implemented')
-    def test_end_to_end_lookback_vertical(self, tikz=False):
-        base_gate_layers = [
-            [*chain(*(([x] * 8) for x in [5, 0, 6, 8, 7]))],
-        ]
-        gate_layers = [[gate.T_Gate(t, 2, 3) for t in layer]
-                       for layer in base_gate_layers]
-
-        strat, wid = vertical_strategy_with_prefilled_buffer_widget(
-            20, 5, rot_strat=RotationStrategyOption.LOOKBACK)
-
-        orc = ScheduleOrchestrator(gate_layers[0], wid, strat, False, tikz)
-        orc.schedule()
-
-    @unittest.skip('not implemented')
-    def test_end_to_end_reject_vertical(self, tikz=False):
-        gate_layers = [
-            [*chain(*(([x] * 8) for x in [5, 0, 6, 8, 7]))],
-        ]
-        gate_layers = [[gate.T_Gate(t, 2, 3) for t in layer]
-                       for layer in gate_layers]
-
-        strat, wid = vertical_strategy_with_prefilled_buffer_widget(
-            20, 5, rot_strat=RotationStrategyOption.REJECT)
-
-        orc = ScheduleOrchestrator(gate_layers[0], wid, strat, False, tikz)
-
-        raise NotImplementedError("Infinite loop detection not implemented")
-
-        # try:
-        #     # This should fail
-        #     # TODO add infinite loop detection
-        #     raise Exception()
-        #     orc.schedule()
-        # except orc.SchedulerException:
-        #     pass`
-
-    def test_end_to_end_inject_vertical(self, tikz=False):
-        gate_layers = [
-            [*chain(*(([x] * 8) for x in [5, 0, 6, 8, 7]))],
-        ]
-        gate_layers = [[gate.T_Gate(t, 2, 3) for t in layer]
-                       for layer in gate_layers]
-
-        strat, wid = vertical_strategy_with_prefilled_buffer_widget(
-            20, 5, rot_strat=RotationStrategyOption.INJECT)
-
-        orc = ScheduleOrchestrator(gate_layers[0], wid, strat, False, tikz)
-
-        orc.schedule()
-
-    def test_end_to_end_backprop_vertical(self, tikz=False):
-        gate_layers = [
-            [*chain(*(([x] * 8) for x in [5, 0, 6, 8, 7]))],
-        ]
-        gate_layers = [[gate.T_Gate(t, 2, 3) for t in layer]
-                       for layer in gate_layers]
-
-        strat, wid = vertical_strategy_with_prefilled_buffer_widget(
-            20, 5, rot_strat=RotationStrategyOption.BACKPROP_INIT)
-
-        orc = ScheduleOrchestrator(gate_layers[0], wid, strat, False, tikz)
-
-        orc.schedule()
-    
-    def test_end_to_end_backprop_vertical_comb(self):
-        gate_layers = [
-            [*chain(*(([x] * 8) for x in [5, 0, 16, 8, 26]))],
-        ]
-        gate_layers = [[gate.T_Gate(t, 2, 3) for t in layer]
-                       for layer in gate_layers]
-
-        strat, wid = vertical_strategy_with_prefilled_comb_widget(
-            20, 10, rot_strat=RotationStrategyOption.BACKPROP_INIT, comb_height=5)
-
-        orc = ScheduleOrchestrator(gate_layers[0], wid, strat, True)
-
-        orc.schedule()
-
+   
     def test_end_to_end_2(self, tikz=False):
         gate_layers = [
             [*chain(*(([x] * 10) for x in [5, 0, 6, 8, 7]))],
@@ -118,16 +36,6 @@ class StaticBufferTest(unittest.TestCase):
 
         orc.schedule()
 
-    def test_vertical_toffoli(self, tikz=False):
-        strat, wid = vertical_strategy_with_prefilled_buffer_widget(26, 5, RotationStrategyOption.BACKPROP_INIT)
-        obj = util.toffoli_example_input()
-        gates = util.make_gates(obj)
-        dag_layers, all_gates = util.dag_create(obj, gates)
-        dag_roots = dag_layers[0]
-
-        orc = ScheduleOrchestrator(dag_roots, wid, strat, False, tikz)
-        orc.schedule()
-
     def test_tree_qft(self, tikz=False):
         with open('tests/qft_test_obj.json') as f:
             obj = json.load(f)
@@ -139,44 +47,6 @@ class StaticBufferTest(unittest.TestCase):
         orc = ScheduleOrchestrator(dag_roots, wid, strat, False, tikz)
         orc.schedule()
 
-
-    def test_comb_vertical(self, tikz=False):
-        gate_layers = [
-            [*chain(*(([x] * 8) for x in [5, 0, 16, 8, 26]))],
-        ]
-        gate_layers = [[gate.T_Gate(t, 2, 3) for t in layer]
-                       for layer in gate_layers]
-
-        strat, wid = vertical_strategy_with_prefilled_comb_widget(
-            20, 10, rot_strat=RotationStrategyOption.BACKPROP_INIT, comb_height=5)
-
-        orc = ScheduleOrchestrator(gate_layers[0], wid, strat, False, tikz)
-
-        orc.schedule()
-
-    def test_comb_vertical_qft(self, tikz=False):
-        with open('tests/qft_8_test_obj.json') as f:
-            obj = json.load(f)
-        strat, wid = vertical_strategy_with_prefilled_comb_widget(
-            20, 10, rot_strat=RotationStrategyOption.BACKPROP_INIT, comb_height=3)
-        gates = util.make_gates(obj, lambda x: int(x) * 13 % 11 + 12)
-        dag_layers, all_gates = util.dag_create(obj, gates)
-        dag_roots = dag_layers[0]
-
-        orc = ScheduleOrchestrator(dag_roots, wid, strat, False, tikz)
-        orc.schedule()
-    
-    def test_comb_vertical_qft_route_one(self, tikz=False):
-        with open('tests/qft_8_test_obj.json') as f:
-            obj = json.load(f)
-        strat, wid = vertical_strategy_with_prefilled_comb_widget(
-            20, 10, rot_strat=RotationStrategyOption.BACKPROP_INIT, comb_height=3, route_width=1)
-        gates = util.make_gates(obj, lambda x: int(x) * 13 % 11 + 12)
-        dag_layers, all_gates = util.dag_create(obj, gates)
-        dag_roots = dag_layers[0]
-
-        orc = ScheduleOrchestrator(dag_roots, wid, strat, False, tikz)
-        orc.schedule()
 
 
 if __name__ == '__main__':
