@@ -63,11 +63,13 @@ class GenericStrategy(Strategy):
                 T_patch.orientation == PatchOrientation.Z_TOP
             )
 
+        # Ignoring magic state patch, if any cell is a cultivator patch we must pay for a reset
         if any(any(isinstance(cell, TCultPatch) for cell in trans.move_patches) for trans in transaction_list[1:]) \
             or any(isinstance(cell, TCultPatch) for cell in buffer_transaction.move_patches[1:]):
             gate.duration += constants.RESET_PLUS_DELAY
 
         if matching_rotation:
+            # We're matching. All done!
             gate.activate(transaction_list)
             return gate
         
