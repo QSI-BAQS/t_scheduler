@@ -27,6 +27,26 @@ class RegionStats(dict):
     def num_bell_buffers(self):
         return self['num_bell_buffers']
 
+class WidgetRegionView:
+    def __init__(self, underlying):
+        self.underlying = underlying
+
+    def __getitem__(self, key: Tuple[int, int]) -> Patch:
+        if self.underlying.rotation == 0:
+            new_key = key
+        elif self.underlying.rotation == 180:
+            new_key = self.underlying.height - 1 - key[0], self.underlying.width - 1 - key[1]
+        elif self.underlying.rotation == 90:
+            new_key = key[1], self.underlying.height - 1 - key[0]
+        elif self.underlying.rotation == 270:
+            new_key = self.underlying.width - 1 - key[1], key[0]
+        else:
+            raise NotImplementedError()
+        return self.underlying[new_key]
+    
+    def __getattr__(self, name):
+        return self.underlying.__getattribute__(name)
+
 class WidgetRegion:
     width: int
     height: int
@@ -35,6 +55,7 @@ class WidgetRegion:
     downstream: List[WidgetRegion]
     stats: RegionStats = None # type: ignore
     offset: Tuple[int, int] # Position of top left cell in global coordinates
+    rotation = 0 # Bearing of top edge in [0, 90, 180, 270]
 
     def __init__(self, width: int, height: int, 
                  sc_patches: List[List[Patch]], 
@@ -55,6 +76,29 @@ class WidgetRegion:
         if self.stats == None:
             self.stats = RegionStats()
         self.offset = (y, x) # type: ignore
+
+        # Calculate rotation
+        if self.offset != (None, None) and self.upstream and self.upstream.offset != (None, None):
+            # Can calc rotation
+            self_row = self.offset[0]
+            self_col = self.offset[1]
+            upstream_row = self.upstream.offset[0]
+            upstream_col = self.upstream.offset[1]
+            if self_row >= upstream_row + self.upstream.height:
+                # We are below
+                self.rotation = 0
+            elif self_row + self.height <= upstream_row:
+                # We are above
+                self.rotation = 180
+            elif self_col >= upstream_col + self.upstream.width:
+                # We are right
+                self.rotation = 270
+            elif self_col + self.width <= upstream_col:
+                # We are left
+                self.rotation = 90
+
+        self.tl = WidgetRegionView(self)
+
         for key in kwargs:
             print(f'Ignoring unknown parameter: {key}')
 
