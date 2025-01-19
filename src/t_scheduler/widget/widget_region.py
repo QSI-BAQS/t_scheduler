@@ -31,18 +31,25 @@ class WidgetRegionView:
     def __init__(self, underlying):
         self.underlying = underlying
 
-    def __getitem__(self, key: Tuple[int, int]) -> Patch:
+
+    def tl(self, pos: Tuple[int, int]) -> Tuple[int, int]:
+        '''
+            Input: Row, col
+        '''
         if self.underlying.rotation == 0:
-            new_key = key
+            new_pos = pos
         elif self.underlying.rotation == 180:
-            new_key = self.underlying.height - 1 - key[0], self.underlying.width - 1 - key[1]
+            new_pos = self.underlying.height - 1 - pos[0], self.underlying.width - 1 - pos[1]
         elif self.underlying.rotation == 90:
-            new_key = key[1], self.underlying.height - 1 - key[0]
+            new_pos = pos[1], self.underlying.height - 1 - pos[0]
         elif self.underlying.rotation == 270:
-            new_key = self.underlying.width - 1 - key[1], key[0]
+            new_pos = self.underlying.width - 1 - pos[1], pos[0]
         else:
             raise NotImplementedError()
-        return self.underlying[new_key]
+        return new_pos
+        
+    def __getitem__(self, key: Tuple[int, int]) -> Patch:
+        return self.underlying[self.tl(key)]
     
     def __getattr__(self, name):
         return self.underlying.__getattribute__(name)
@@ -77,6 +84,8 @@ class WidgetRegion:
             self.stats = RegionStats()
         self.offset = (y, x) # type: ignore
 
+        print(self.offset, self.upstream)
+        if self.upstream: print("up:", self.upstream.offset)
         # Calculate rotation
         if self.offset != (None, None) and self.upstream and self.upstream.offset != (None, None):
             # Can calc rotation
@@ -96,8 +105,9 @@ class WidgetRegion:
             elif self_col + self.width <= upstream_col:
                 # We are left
                 self.rotation = 90
+            print("got rotation:", self.rotation)
 
-        self.tl = WidgetRegionView(self)
+        self.local_view = WidgetRegionView(self)
 
         for key in kwargs:
             print(f'Ignoring unknown parameter: {key}')
@@ -115,7 +125,10 @@ class WidgetRegion:
             return self.sc_patches[key]  # type: ignore
         else:
             raise TypeError('Invalid index type:', key)
-        
+    
+    def tl(self, pos):
+        return pos
+
     def to_str_output(self) -> str:
         """
         Prints current state of the region

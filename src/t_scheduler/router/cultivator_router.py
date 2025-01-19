@@ -30,7 +30,7 @@ class DenseTCultivatorBufferRouter(AbstractRouter):
     region: TCultivatorBufferRegion
 
     def __init__(self, buffer) -> None:
-        self.region = buffer
+        self.region = buffer.local_view
         self.magic_source = True
 
     def request_transaction(
@@ -43,35 +43,37 @@ class DenseTCultivatorBufferRouter(AbstractRouter):
         the routing bus
         """
         output_col = self.clamp(output_col, 0, self.region.width-1)
+        _, output_col = self.region.tl((0, output_col))
         queue = sorted(
             self.region.available_states, key=lambda p: (
-                abs(p.local_x - output_col), p.local_y)
+                abs(self.region.tl((p.local_y,p.local_x))[1] - output_col), self.region.tl((p.local_y,p.local_x))[0])
         )
 
         for i, T_patch in enumerate(queue):
-            if T_patch.local_x == output_col:
+            T_patch_y, T_patch_x = self.region.tl((T_patch.local_y, T_patch.local_x))
+            if T_patch_x == output_col:
                 vert = [
                     self.region[x, output_col]
-                    for x in self.range_directed(T_patch.local_y, 0)
+                    for x in self.range_directed(T_patch_y, 0)
                 ][1:]
             elif strict_output_col:
                 vert = [
                     self.region[x, output_col]
-                    for x in self.range_directed(T_patch.local_y, 0)
+                    for x in self.range_directed(T_patch_y, 0)
                 ]
             else:
                 vert = [
                     self.region[x, T_patch.local_x]
-                    for x in self.range_directed(T_patch.local_y, 0)
+                    for x in self.range_directed(T_patch_y, 0)
                 ]
 
             if all(p.route_available() for p in vert):
-                if T_patch.local_x == output_col:
+                if T_patch_x == output_col:
                     path = [T_patch] + vert
                 elif strict_output_col:
                     horizontal = [
-                        self.region[T_patch.local_y, i]
-                        for i in self.range_directed(T_patch.local_x, output_col)
+                        self.region[T_patch_y, i]
+                        for i in self.range_directed(T_patch_x, output_col)
                     ]
                     path = horizontal + vert
                 else:

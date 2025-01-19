@@ -25,10 +25,10 @@ class LayoutNode:
             node.upstream = self
 
     def create(self, upstream_region=None, upstream_router=None):
-        regions = [self.region_factory()]
+        regions = [self.region_factory(upstream=upstream_region)]
         routers = [self.router_factory(regions[0])]
 
-        regions[0].upstream = upstream_region
+        # regions[0].upstream = upstream_region
         routers[0].upstream = upstream_router
         if upstream_region:
             if not upstream_region.downstream:
