@@ -176,7 +176,7 @@ class GenericStrategy(Strategy):
         path = []
         for transaction in transaction_list:
             path += transaction.move_patches
-        print([(p.x, p.y) for p in path])
+        # print([(p.x, p.y) for p in path])
         for i in range(len(path) - 1):
             if abs(path[i].x - path[i+1].x) + abs(path[i].y - path[i+1].y) > 1:
                 assert False

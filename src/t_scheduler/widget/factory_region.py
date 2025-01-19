@@ -17,7 +17,6 @@ class AbstractFactoryRegion(WidgetRegion):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
 
-@region_init(FACTORY_REGION)
 class MagicStateFactoryRegion(WidgetRegion):
     available_states: Set[Patch]
     
@@ -83,11 +82,11 @@ class MagicStateFactoryRegion(WidgetRegion):
             cell.release(None)
 
     @staticmethod
-    def with_factory_factory(width, height, factory_width, factory_height, factory, x=None, y=None):
+    def with_factory_factory(width, height, factory_width, factory_height, factory, **kwargs):
         if height < factory_height:
             raise ValueError('Height too small for factory!')
 
-        msf_region = MagicStateFactoryRegion(width, height, x=x, y=y)
+        msf_region = MagicStateFactoryRegion(width, height, **kwargs)
         for col in range(0, width - factory_width + 1, factory_width):
             msf_region.add_factory(height - factory_height, col, factory())
 
@@ -98,12 +97,13 @@ class MagicStateFactoryRegion(WidgetRegion):
         return msf_region
 
     @staticmethod
-    def with_litinski_5x3(width, height, x=None, y=None):
-        return MagicStateFactoryRegion.with_factory_factory(width, height, 3, 5, TFactory_Litinski_5x3_15_to_1, x=x, y=y)
+    def with_litinski_5x3(width, height, **kwargs):
+        return MagicStateFactoryRegion.with_factory_factory(width, height, 3, 5, TFactory_Litinski_5x3_15_to_1, **kwargs)
 
+    @region_init(FACTORY_REGION, region_label='MagicStateFactoryRegion_auto_litinski_6x3_dense')
     @staticmethod
-    def with_litinski_6x3_dense(width, height, x=None, y=None):
-        return MagicStateFactoryRegion.with_factory_factory(width, height, 3, 6, TFactory_Litinski_6x3_20_to_4_dense, x=x, y=y)
+    def with_litinski_6x3_dense(width, height, **kwargs):
+        return MagicStateFactoryRegion.with_factory_factory(width, height, 3, 6, TFactory_Litinski_6x3_20_to_4_dense, **kwargs)
 
 
 
