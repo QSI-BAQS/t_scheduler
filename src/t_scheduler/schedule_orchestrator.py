@@ -158,3 +158,10 @@ class ScheduleOrchestrator:
 
     def get_total_cycles(self) -> int:
         return self.time
+
+    def json_debug(self):
+        import json
+        with open(f"../t_sched_vis/debug.json", 'w') as f:
+            json.dump(self.json, f)
+        from t_scheduler.debug import main
+        main()
