@@ -34,11 +34,6 @@ class ScheduleOrchestrator:
         self.ROTATION_DURATION = 3
         self.time = 0
 
-        self.hazard = {}
-
-        self.T_queue = []
-        self.next_T_queue = []
-
         self.tikz_output = tikz_output
         self.json_output = json
 
@@ -80,6 +75,22 @@ class ScheduleOrchestrator:
 
         while self.queued or self.active:
             self.schedule_pass()
+
+    def prepare_gs(self, gs_dag_roots, all_gs_gates=tuple(), time_limit=float('inf')):
+        # Process our gate queue
+
+        queue_backup = self.queued
+
+        self.queued = gs_dag_roots
+
+        while (self.queued or self.active) and self.time < time_limit:
+            self.schedule_pass()
+        
+        if set(all_gs_gates).difference(self.processed):
+            raise Exception(f"Graph state prep didn't finish in the time limit ({time_limit})")
+
+        self.queued = queue_backup
+        
 
     def schedule_pass(self, prewarm=False):
         if not prewarm:

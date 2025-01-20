@@ -19,6 +19,7 @@ class GateType(Enum):
     ANCILLA = 2
     T_STATE = 3
     IMPLEMENTATION_DEFINED = 4
+    GRAPH_STATE_PREP = 5
 
 
 class BaseGate(ABC):

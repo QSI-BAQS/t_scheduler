@@ -18,6 +18,9 @@ class BaseStrategy:
         Alloc a non-local gate
         '''
         raise NotImplementedError("Override this method in a subclass!")
+    
+    def alloc_gsprep_gate(self, gate):
+        raise NotImplementedError()
 
     def alloc_gate(self, gate: Gate) -> Gate | None:
         '''
@@ -74,6 +77,8 @@ class BaseStrategy:
             # transaction = TransactionList(route_transaction, register_transaction)
             # gate.activate(transaction)
             # return gate
+        elif gate.gate_type == GateType.GRAPH_STATE_PREP:
+            return self.alloc_gsprep_gate(gate)
 
     def upkeep(self) -> List[Gate]:
         raise NotImplementedError()

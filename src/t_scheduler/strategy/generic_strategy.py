@@ -8,7 +8,7 @@ from ..base import constants
 
 from ..base import *
 
-from ..router import AbstractRouter, AbstractFactoryRouter, RechargableBufferRouter
+from ..router import AbstractRouter, AbstractFactoryRouter, RechargableBufferRouter, StandardBusRouter
 from ..widget import *
 from .base_strategy import BaseStrategy
 
@@ -348,3 +348,38 @@ class GenericStrategy(BaseStrategy):
 
         return upkeep_gates
 
+
+    def alloc_gsprep_gate(self, gate):
+        # curr: tuple('curr_router', 'curr_downstream_idx', 'curr_request_col')
+        # upstream_connect: dict[router -> (upstream_router, downstream_idx, upstream_col)]
+
+        targ1_pos = self.mapper.position_xy(gate.targ1)[::-1] # (x, y) -> (row, col)
+        targ2_pos = self.mapper.position_xy(gate.targ2)[::-1]
+        targ1_patch = self.register_router.region[targ1_pos] # type: ignore
+        targ2_patch = self.register_router.region[targ2_pos] # type: ignore
+
+        resp1 : Response = self.register_router.generic_transaction(targ1_patch)
+        resp2 : Response = self.register_router.generic_transaction(targ2_patch)
+
+        if not (resp1.status and resp2.status):
+            return None
+
+        resp2.transaction.move_patches = resp2.transaction.move_patches[::-1] # type: ignore
+        
+        bus_source = resp1.downstream_patch
+        bus_dest = resp2.downstream_patch
+
+        bus_router = self.register_router.downstream[0]
+        assert isinstance(bus_router, StandardBusRouter)
+
+        bus_resp: Response = bus_router.generic_transaction(bus_source, bus_dest)
+
+        if not bus_resp.status:
+            return None
+
+        transactions = TransactionList([resp1.transaction, bus_resp.transaction, resp2.transaction])
+
+        self.validate(transactions)
+
+        gate.activate(transactions)
+        return gate
