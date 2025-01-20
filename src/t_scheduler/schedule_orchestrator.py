@@ -50,7 +50,8 @@ class ScheduleOrchestrator:
             self.json = {'regions': self.widget.save_json_regions(), 
                          'layers': [], 
                          'width': self.widget.width, 
-                         'height': self.widget.height}
+                         'height': self.widget.height,
+                         'base_layer': self.widget.save_json_patches_state()}
 
 
     def save_tikz_frame(self):

@@ -182,26 +182,26 @@ class Widget:
 
     @staticmethod
     def _patch_to_json(cell):
-        if cell.patch_type == PatchType.BELL:
+        if cell.T_available() or cell.patch_type == PatchType.T:
+            return "magic_state"
+        elif cell.patch_type == PatchType.BELL:
             return "bell"
-        elif cell.locked():
-            return "locked"
         elif cell.patch_type == PatchType.REG:
             return "reg"
-        elif cell.route_available():
-            return "route"
-        elif cell.T_available():
-            return "magic_state"
         elif cell.patch_type == PatchType.CULTIVATOR:
             return "cultivator"
+        elif cell.patch_type == PatchType.ROUTE_BUFFER:
+            return "route_buffer"
+        elif cell.patch_type == PatchType.ROUTE:
+            return "route"
         elif cell.patch_type == PatchType.RESERVED:
             return "reserved"
         elif cell.patch_type == PatchType.FACTORY_OUTPUT:
             return "factory_output"
-        elif cell.patch_type == PatchType.ROUTE_BUFFER:
-            return "route_buffer"
         elif cell.patch_type == PatchType.UNUSED:
             return "unused"
+        elif cell.locked():
+            return "locked"
         else:
             return "other"
 

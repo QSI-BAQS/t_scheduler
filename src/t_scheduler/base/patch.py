@@ -156,7 +156,7 @@ class BufferPatch(Patch):
         Overrides parent to set patch_type to ROUTE_BUFFER
         '''
         super().release(time)
-        self.patch_type = PatchType.ROUTE
+        self.patch_type = PatchType.ROUTE_BUFFER
 
 
 class TFactoryOutputPatch(Patch):
