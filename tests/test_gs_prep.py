@@ -19,8 +19,8 @@ class GraphStatePrepTest(unittest.TestCase):
         dag_roots = dag_layers[0]
 
         gsprep_layers = [
-            [(0, 1), (2, 3),],
-            [(1, 2), (3, 4),],
+            [(0, 1, 2, 3),],
+            [(1, 2, 3, 4),],
             [(0, 2)],
             [(1, 3)],
             [(2, 4)],
@@ -30,7 +30,7 @@ class GraphStatePrepTest(unittest.TestCase):
         ]
         gsprep_layers = util_additional.make_gsprep_layers(gsprep_layers)
 
-        prewarm_cycles: int = len(gsprep_layers) * 6
+        prewarm_cycles: int = len(gsprep_layers) * 4
 
 
         orc = ScheduleOrchestrator(dag_roots, wid, strat, False, False, json=True)

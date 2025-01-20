@@ -6,7 +6,7 @@ from .gate_additional import GSPrepGate
 
 def make_gsprep_layers(gs_prep_layers: List[List[Tuple[int, int]]]):
     gs_gate_layers = [
-        [GSPrepGate(*targs) for targs in layer] for layer in gs_prep_layers
+        [GSPrepGate(targs) for targs in layer] for layer in gs_prep_layers
     ]
     for i in range(len(gs_gate_layers)):
         for gate in gs_gate_layers[i]:

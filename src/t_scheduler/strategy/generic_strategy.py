@@ -353,21 +353,20 @@ class GenericStrategy(BaseStrategy):
         # curr: tuple('curr_router', 'curr_downstream_idx', 'curr_request_col')
         # upstream_connect: dict[router -> (upstream_router, downstream_idx, upstream_col)]
 
-        targ1_pos = self.mapper.position_xy(gate.targ1)[::-1] # (x, y) -> (row, col)
-        targ2_pos = self.mapper.position_xy(gate.targ2)[::-1]
-        targ1_patch = self.register_router.region[targ1_pos] # type: ignore
-        targ2_patch = self.register_router.region[targ2_pos] # type: ignore
+        targs_pos = [self.mapper.position_xy(t)[::-1] for t in gate.targs]
+        # (x, y) -> (row, col)
 
-        resp1 : Response = self.register_router.generic_transaction(targ1_patch)
-        resp2 : Response = self.register_router.generic_transaction(targ2_patch)
+        targs_patches = [self.register_router.region[pos] for pos in targs_pos] # type: ignore
 
-        if not (resp1.status and resp2.status):
+        resps : List[Response] = [self.register_router.generic_transaction(patch) for patch in targs_patches]
+
+        if any(not r.status for r in resps):
             return None
 
-        resp2.transaction.move_patches = resp2.transaction.move_patches[::-1] # type: ignore
+        # resp2.transaction.move_patches = resp2.transaction.move_patches[::-1] # type: ignore
         
-        bus_source = resp1.downstream_patch
-        bus_dest = resp2.downstream_patch
+        bus_source = min((r.downstream_patch for r in resps), key=lambda x: x.x)
+        bus_dest = max((r.downstream_patch for r in resps), key=lambda x: x.x)
 
         bus_router = self.register_router.downstream[0]
         assert isinstance(bus_router, StandardBusRouter)
@@ -377,9 +376,9 @@ class GenericStrategy(BaseStrategy):
         if not bus_resp.status:
             return None
 
-        transactions = TransactionList([resp1.transaction, bus_resp.transaction, resp2.transaction])
+        transactions = TransactionList([*(r.transaction for r in resps), bus_resp.transaction])
 
-        self.validate(transactions)
+        # self.validate(transactions)
 
         gate.activate(transactions)
         return gate

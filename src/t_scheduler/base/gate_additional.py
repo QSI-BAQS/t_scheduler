@@ -1,9 +1,9 @@
 from __future__ import annotations
+from typing import Tuple
 from .gate import *
 
 class GSPrepGate(BaseGate):
-    targ1: int
-    targ2: int
+    targs: Tuple[int, ...]
     timer: int = 0
     duration: int = 0
 
@@ -12,16 +12,14 @@ class GSPrepGate(BaseGate):
 
     def __init__(
         self,
-        targ1: int,
-        targ2: int,
-        move_duration: int = MOVE_T_NONLOCAL_DELAY,
-        corr_duration: int = MEASURE_AND_CORR_DELAY,
+        targs: Tuple[int, ...],
+        move_duration: int = 2,
+        corr_duration: int = 2,
     ):
         """
             Note: targ_orig is only used for repr().
         """
-        self.targ1: int = targ1
-        self.targ2: int = targ2
+        self.targs = targs
 
         self.gate_type: GateType = GateType.GRAPH_STATE_PREP
         self.duration = move_duration
