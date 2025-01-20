@@ -30,13 +30,16 @@ class BaseStrategy:
 
         If nonlocal, then we dispatch to alloc_nonlocal.
         '''
-        target_pos: Tuple[int, int] = self.mapper.position_xy(gate.targ)[::-1] # type: ignore 
-        # (x, y) -> (row, col)
 
         if gate.gate_type == GateType.T_STATE:
             return self.alloc_nonlocal(gate)
+        elif gate.gate_type == GateType.GRAPH_STATE_PREP:
+            return self.alloc_gsprep_gate(gate)
+        
+        target_pos: Tuple[int, int] = self.mapper.position_xy(gate.targ)[::-1] # type: ignore 
+        # (x, y) -> (row, col)
 
-        elif gate.gate_type == GateType.LOCAL_GATE:
+        if gate.gate_type == GateType.LOCAL_GATE:
             if not (
                 register_transaction := self.register_router.request_explicit(
                     target_pos, request_type="local"
@@ -77,8 +80,7 @@ class BaseStrategy:
             # transaction = TransactionList(route_transaction, register_transaction)
             # gate.activate(transaction)
             # return gate
-        elif gate.gate_type == GateType.GRAPH_STATE_PREP:
-            return self.alloc_gsprep_gate(gate)
+
 
     def upkeep(self) -> List[Gate]:
         raise NotImplementedError()
