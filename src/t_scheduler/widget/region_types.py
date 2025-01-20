@@ -17,20 +17,31 @@ region_types = {
     BELL_REGION: {}
 }
 
+region_args = {}
+
+
+def export_option(cls):
+    obj = {}
+    obj['default'] = cls.get_default()
+    obj['option_type'] = 'option'
+    obj['options'] = list(set(cls)) # type: ignore
+    obj['name'] = cls.get_name()
+
 # Class decorator for injecting into the region 
 # type table
-def export_region(region_type: RegionType, region_label=None):
+def export_region(region_type: RegionType, region_label=None, args=tuple()):
     if region_label is None:
         # Autodetect from obj __qualname__
         def _init(obj):
             name = obj.__qualname__
             region_types[region_type][name] = obj
             return obj
-        return _init
     else:
         def _init(obj):
             region_types[region_type][region_label] = obj
             return obj
-        return _init
 
+    region_args[region_label] = [export_option(a) for a in args]
+
+    return _init
 

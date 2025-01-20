@@ -108,7 +108,7 @@ class MagicStateFactoryRegion(WidgetRegion):
 
 
 
-class TCultivatorBufferRegion(WidgetRegion):
+class TCultivatorBufferRegion(AbstractFactoryRegion):
     available_states: Set[TCultPatch]
     update_cells: List[TCultPatch]
 

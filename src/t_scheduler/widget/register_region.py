@@ -1,3 +1,4 @@
+from enum import IntEnum
 from typing import Dict, List, Literal, Tuple
 
 from .region_types import export_region, REGISTER_REGION 
@@ -41,7 +42,32 @@ class SingleRowRegisterRegion(RegisterRegion):
             )
         return (0, pos)
 
-@export_region(REGISTER_REGION)
+class CombRouteWidth(IntEnum):
+    ONE = 1
+    TWO = 2
+
+    @classmethod
+    def get_name(cls):
+        return 'route_width'
+    
+    @classmethod
+    def get_default(cls):
+        return cls.TWO
+
+class CombIncludeTop(IntEnum):
+    INCLUDE_TOP = True
+    EXCLUDE_TOP = False
+
+    @classmethod
+    def get_name(cls):
+        return 'incl_top'
+    
+    @classmethod
+    def get_default(cls):
+        return cls.EXCLUDE_TOP
+
+
+@export_region(REGISTER_REGION, args=[CombRouteWidth, CombIncludeTop])
 class CombShapedRegisterRegion(RegisterRegion):
     """
     Comb shaped register region.
