@@ -1,6 +1,6 @@
 from ..base import Transaction, Response, ResponseStatus
 from ..widget import TCultivatorBufferRegion
-from .abstract_router import AbstractRouter
+from .abstract_router import AbstractRouter, export_router
 
 def _make_transaction(buffer: TCultivatorBufferRegion, path, connect=None):
     '''
@@ -21,6 +21,7 @@ def _make_transaction(buffer: TCultivatorBufferRegion, path, connect=None):
         on_unlock_callback=on_unlock_callback,
     )
 
+@export_router(TCultivatorBufferRegion.with_dense_layout)
 class DenseTCultivatorBufferRouter(AbstractRouter):
     """
     Note: Works only with passthrough bus router

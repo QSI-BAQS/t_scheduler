@@ -108,10 +108,20 @@ class MagicStateFactoryRegion(WidgetRegion):
 
 
 
-@export_region(FACTORY_REGION)
 class TCultivatorBufferRegion(WidgetRegion):
     available_states: Set[TCultPatch]
     update_cells: List[TCultPatch]
+
+    @export_region(FACTORY_REGION)
+    @staticmethod
+    def with_dense_layout(*args, buffer_type = 'dense', **kwargs):
+        assert buffer_type == 'dense'
+        return TCultivatorBufferRegion(*args, buffer_type = 'dense', **kwargs)
+
+    @staticmethod
+    def with_sparse_layout(*args, buffer_type = 'sparse', **kwargs):
+        assert buffer_type == 'sparse'
+        return TCultivatorBufferRegion(*args, buffer_type = 'sparse', **kwargs)
 
     def __init__(self, width, height, buffer_type: Literal["dense", "sparse"] = 'dense', **kwargs) -> None:
         self.available_states = set()

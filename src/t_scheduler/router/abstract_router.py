@@ -5,6 +5,39 @@ from typing import List
 from ..base.response import Response, ResponseStatus
 from ..widget import WidgetRegion, AbstractFactoryRegion
 
+region_router_exports = {}
+router_constructors = {}
+
+
+def export_router(region_constructor, is_default=True, region_name = None):
+    '''
+    Exports router to region_router_exports and router_constructors
+
+    Set either region_constructor for auto-detection or region_name to override
+
+    region_name takes priority
+
+    Last invocation with is_default=True takes priority
+    '''
+    if region_name is None:
+        region_name = region_constructor.__qualname__
+
+    if region_name not in region_router_exports:
+        region_router_exports[region_name] = {'options': [], 'default': None}
+
+    def _init(router_constructor):
+        router_name = router_constructor.__qualname__
+
+        router_constructors[router_name] = router_constructor 
+        region_router_exports[region_name]['options'].append(router_name)
+        if is_default:
+            region_router_exports[region_name]['default'] = router_name
+
+
+        return router_constructor
+    return _init
+
+
 class AbstractRouter(ABC):
     upstream: AbstractRouter | None = None
     downstream: List[AbstractRouter] = tuple() # type: ignore

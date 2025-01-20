@@ -1,10 +1,10 @@
 from typing import List
 
-from .abstract_router import AbstractRouter
+from .abstract_router import AbstractRouter, export_router
 from ..base import Transaction, Response, ResponseStatus, Patch
 from ..widget import MagicStateBufferRegion
 
-
+@export_router(MagicStateBufferRegion)
 class RechargableBufferRouter(AbstractRouter):
     """
     Note: Works only with passthrough bus router

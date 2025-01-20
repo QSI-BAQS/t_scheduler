@@ -2,8 +2,9 @@ from typing import List
 
 from ..base import Patch, Transaction, Response, ResponseStatus
 from ..widget import PrefilledMagicStateRegion, WidgetRegion
-from .abstract_router import AbstractRouter
+from .abstract_router import AbstractRouter, export_router
 
+@export_router(PrefilledMagicStateRegion.with_default_rotation)
 class VerticalFilledBufferRouter(AbstractRouter):
     """
     Note: Works only with passthrough bus router

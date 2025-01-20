@@ -8,6 +8,8 @@ from .tree_buffer_router import TreeFilledBufferRouter
 from .vertical_buffer_router import VerticalFilledBufferRouter
 from .bell_router import BellRouter
 
+from .abstract_router import region_router_exports, router_constructors
+
 __all__ = [
     'AbstractRouter',
     'StandardBusRouter',

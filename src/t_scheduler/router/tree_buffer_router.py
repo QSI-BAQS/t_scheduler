@@ -10,7 +10,7 @@ from ..base import (Patch,
                     Response, 
                     ResponseStatus)
 from ..widget import PrefilledMagicStateRegion
-from .abstract_router import AbstractRouter
+from .abstract_router import AbstractRouter, export_router
 
 class TreeNode:
     parent: TreeNode | None
@@ -45,7 +45,7 @@ class TreeNode:
     def __repr__(self):
         return f"{{ {self.path} ({self.debug_source}): {{ 'frag': {self.path_fragment}, 'children': {self.children} }} }}"
 
-
+@export_router(PrefilledMagicStateRegion.with_chessboard_rotation)
 class TreeFilledBufferRouter(AbstractRouter):
     """
     Note: Works only with passthrough bus router

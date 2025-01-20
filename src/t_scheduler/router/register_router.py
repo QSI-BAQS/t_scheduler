@@ -5,8 +5,9 @@ from ..widget.widget_region import TopEdgePosition
 
 from ..base import Transaction, Response, ResponseStatus, Patch
 from ..widget import CombShapedRegisterRegion, SingleRowRegisterRegion
-from .abstract_router import AbstractRouter
+from .abstract_router import AbstractRouter, export_router
 
+@export_router(SingleRowRegisterRegion)
 class BaselineRegisterRouter(AbstractRouter):
     region: SingleRowRegisterRegion
 
@@ -38,6 +39,7 @@ class BaselineRegisterRouter(AbstractRouter):
             [reg_patch], [reg_patch], connect_col=reg_patch.local_x
         ))
 
+@export_router(CombShapedRegisterRegion)
 class CombRegisterRouter(AbstractRouter):
     region: CombShapedRegisterRegion
 

@@ -3,8 +3,9 @@ from collections import deque
 from ..base import Transaction, Response, ResponseStatus, Patch
 from ..widget import MagicStateFactoryRegion
 
-from .abstract_router import AbstractRouter
+from .abstract_router import AbstractRouter, export_router
 
+@export_router(MagicStateFactoryRegion.with_litinski_6x3_dense)
 class MagicStateFactoryRouter(AbstractRouter):
     """
     Note: Works only with passthrough bus router
@@ -24,7 +25,7 @@ class MagicStateFactoryRouter(AbstractRouter):
         def on_unlock_callback(trans: Transaction):
             # self.region.release_cells(trans.lock.holds)  # type: ignore
             if trans.magic_state_patch.t_count > 0:  # type: ignore
-                self.region.available_states.add(trans.magic_state_patch)
+                self.region.available_states.add(trans.magic_state_patch) # type: ignore
 
         return Transaction(
             path,

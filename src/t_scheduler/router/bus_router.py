@@ -1,7 +1,8 @@
 from ..base import Transaction, Response, ResponseStatus
 from ..widget import RouteBus
-from .abstract_router import AbstractRouter
+from .abstract_router import AbstractRouter, export_router
 
+@export_router(RouteBus)
 class StandardBusRouter(AbstractRouter):
     region: RouteBus
 

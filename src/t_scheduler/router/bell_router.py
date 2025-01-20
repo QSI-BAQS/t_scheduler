@@ -1,7 +1,8 @@
 from ..widget.bell_region import BellRegion
-from .abstract_router import AbstractRouter
+from .abstract_router import AbstractRouter, export_router
 
 
+@export_router(BellRegion)
 class BellRouter(AbstractRouter):
     region: BellRegion
 
