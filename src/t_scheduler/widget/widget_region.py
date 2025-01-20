@@ -91,8 +91,9 @@ class WidgetRegion:
             self.stats = RegionStats()
         self.offset = (y, x) # type: ignore
 
-        print(self.offset, self.upstream)
-        if self.upstream: print("up:", self.upstream.offset)
+        # print(self.offset, self.upstream)
+        # if self.upstream: print("up:", self.upstream.offset)
+
         # Calculate rotation
         if self.offset != (None, None) and self.upstream and self.upstream.offset != (None, None):
             # Can calc rotation
@@ -112,7 +113,7 @@ class WidgetRegion:
             elif self_col + self.width <= upstream_col:
                 # We are left
                 self.rotation = TopEdgePosition.RIGHT
-            print("got rotation:", self.rotation)
+            # print("got rotation:", self.rotation)
 
         self.local_view = WidgetRegionView(self)
 

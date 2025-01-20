@@ -70,10 +70,12 @@ class ScheduleOrchestrator:
             json.dump(self.json, f)
 
     def prewarm(self, num_cycles):
+        print("prewarm", num_cycles)
         for _ in range(num_cycles):
             self.schedule_pass(prewarm=True)
 
     def schedule(self):
+        print("schedule")
         self.queued.extend(self.waiting)
 
         while self.queued or self.active:
