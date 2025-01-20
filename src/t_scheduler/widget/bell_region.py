@@ -10,8 +10,8 @@ class BellRegion(WidgetRegion):
     ) -> None:
 
         sc_patches = [
-            [Patch(PatchType.BELL, r, 0)] for r in range(height)
+            [Patch(PatchType.BELL, r, c) for c in range(width)] for r in range(height)
         ]
 
-        super().__init__(1, height, sc_patches, **kwargs)
-        self.stats['num_bell_buffers'] = height
+        super().__init__(width, height, sc_patches, **kwargs)
+        self.stats['num_bell_buffers'] = height * width
