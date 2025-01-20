@@ -15,7 +15,11 @@ class MagicStateFactoryRouter(AbstractRouter):
     region: MagicStateFactoryRegion
 
     def __init__(self, region) -> None:
-        self.region = region
+        self.region = region.local_view
+        for r in range(self.region.height):
+            for c in range(self.region.width):
+                self.region[r, c].local_y = r
+                self.region[r, c].local_x = c
         self.magic_source = True
 
     def _make_transaction(self, path, connect=None):
@@ -45,6 +49,7 @@ class MagicStateFactoryRouter(AbstractRouter):
         strict_output_col: whether we can just output to any column in 
         the routing bus
         """
+        output_col = self.clamp(output_col, 0, self.region.width-1)
         queue = sorted(
             self.region.available_states, key=lambda p: (abs(p.local_x - output_col), p.local_y)
         )
@@ -96,7 +101,8 @@ class MagicStateFactoryRouter(AbstractRouter):
 
 
     def generic_transaction(self, source_patch, *args, target_orientation=None, **kwargs):
-        trans = self._request_transaction(source_patch.x - self.region.offset[1], *args, **kwargs)
+        local_y, local_x = self.region.tl((source_patch.y - self.region.offset[0], source_patch.x - self.region.offset[1]))
+        trans = self._request_transaction(local_x, *args, **kwargs)
         if trans:
             return Response(ResponseStatus.SUCCESS, trans)
         else:

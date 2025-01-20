@@ -7,7 +7,7 @@ from ..t_generation.t_factories import (
 
 from .region_types import export_region, FACTORY_REGION 
 
-from .widget_region import WidgetRegion
+from .widget_region import TopEdgePosition, WidgetRegion
 from ..base.patch import Patch, PatchType, TCultPatch, TFactoryOutputPatch
 
 import itertools
@@ -30,6 +30,16 @@ class MagicStateFactoryRegion(WidgetRegion):
         self.available_states = set()
         self.waiting_factories = set()
 
+    def _set_local(self, row, col, new_patch):
+        assert self.rotation in [TopEdgePosition.TOP, TopEdgePosition.BOTTOM]
+        row, col = self.local_view.tl((row, col))
+        self.sc_patches[row][col] = new_patch
+
+    def _get_local(self, row, col):
+        assert self.rotation in [TopEdgePosition.TOP, TopEdgePosition.BOTTOM]
+        row, col = self.local_view.tl((row, col))
+        return self.sc_patches[row][col]
+
     def add_factory(self, row, col, factory):
         if not (
             0 <= row
@@ -41,18 +51,24 @@ class MagicStateFactoryRegion(WidgetRegion):
 
         for r in range(row, row + factory.height):
             for c in range(col, col + factory.width):
-                assert self.sc_patches[r][c].patch_type == PatchType.ROUTE
+                assert self._get_local(r,c).patch_type == PatchType.ROUTE
 
-                self.sc_patches[r][c].patch_type = PatchType.RESERVED
+                self._get_local(r,c).patch_type = PatchType.RESERVED
 
         factory.outputs = []
-        factory.layout_position = (row, col)
+
+        factory_corners = [
+            (row, col), (row, col + factory.width - 1),
+            (row + factory.height - 1, col), (row + factory.height - 1, col + factory.width - 1)
+        ]
+        factory_corners = list(map(self.local_view.tl, factory_corners))
+        factory.layout_position = min(factory_corners)
 
         for r_off, c_off in factory.positions:
             r, c = row + r_off, col + c_off
-            if self.sc_patches[r][c].patch_type == PatchType.RESERVED:
-                self.sc_patches[r][c] = TFactoryOutputPatch(r, c, factory)
-            factory.outputs.append(self.sc_patches[r][c])
+            if self._get_local(r,c).patch_type == PatchType.RESERVED:
+                self._set_local(r, c, TFactoryOutputPatch(r, c, factory))
+            factory.outputs.append(self._get_local(r,c))
         self.factories.append(factory)
         self.active_factories.add(factory)
 
