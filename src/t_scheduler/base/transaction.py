@@ -75,6 +75,7 @@ class Transaction(BaseTransaction):
 
         self.on_unlock_callback = on_unlock_callback
         self.on_activate_callback = on_activate_callback
+        self.on_release_callback = None
 
         self.layout_override = []
 
@@ -91,6 +92,10 @@ class Transaction(BaseTransaction):
     def release(self, time):
         if self.magic_state_patch:
             self.magic_state_patch.release(time)
+
+        if self.on_release_callback is not None:
+            self.on_release_callback(self)
+            del self.on_release_callback
 
     def lock_move(self, gate):
         assert self.lock is None
@@ -119,6 +124,8 @@ class Transaction(BaseTransaction):
     def check_unlocked(self):
         return all(not p.locked() for p in self.measure_patches)
 
+    def route_count(self):
+        return len(self.move_patches) - len(self.measure_patches)
 
 class TransactionList(list, BaseTransaction):
     '''
@@ -167,3 +174,6 @@ class TransactionList(list, BaseTransaction):
 
     def check_unlocked(self):
         return all(t.check_unlocked() for t in self)
+
+    def route_count(self):
+        return sum(t.route_count() for t in self)

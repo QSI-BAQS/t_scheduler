@@ -2,6 +2,8 @@ from __future__ import annotations
 from enum import Enum, IntEnum
 from typing import List
 
+from ..tracker import *
+
 from ..t_generation import TCultivator
 from ..t_generation import TFactory
 
@@ -69,6 +71,8 @@ class Patch:
     orientation: PatchOrientation
     x: int # Global positions -- initialised by make_explicit
     y: int
+
+    reg_vol_tag: SpaceTimeVolumeTrackingTag | None = None
 
     def __init__(
         self,
@@ -140,6 +144,7 @@ class BufferPatch(Patch):
     Mutable patch that can be transformed into a T patch.
     '''
     def __init__(self, row: int, col: int, starting_orientation=PatchOrientation.Z_TOP):
+        self.curr_t_tag = None
         super().__init__(PatchType.ROUTE_BUFFER, row, col, starting_orientation)
 
     def store(self):
@@ -181,6 +186,7 @@ class TFactoryOutputPatch(Patch):
 
         self.t_count = 0
         self.factory = factory
+        self.curr_t_tag = None
 
     def T_available(self):
         return (self.t_count > 0) and not self.locked()
@@ -220,6 +226,8 @@ class TCultPatch(Patch):
         self.has_T = False
         # TODO take this as an argument?
         self.cultivator = TCultivator()
+        self.vol_tracker = None
+        self.curr_t_tag = None
 
     def T_available(self):
         return self.has_T and not self.locked()
@@ -238,6 +246,8 @@ class TCultPatch(Patch):
         if not self.has_T and not self.locked():
             self.has_T = self.cultivator() > 0
             if self.has_T:
+                self.curr_t_tag = SpaceTimeVolumeTrackingContext(self.vol_tracker)
+                self.curr_t_tag.factory_tag = TFactorySpaceTimeVolumeTrackingTag(self.vol_tracker, self.cultivator)
                 return True
         return False
 

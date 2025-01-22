@@ -10,7 +10,7 @@ class TFactory(TGenerator):
 
         self.positions = positions
         self.layout_position = (0, 0)
-
+        self.vol_tracker = None
         super().__init__(*args, **kwargs)
 
     def __init_subclass__(cls, factory_label=None, **kwargs) -> None:

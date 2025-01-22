@@ -5,6 +5,7 @@ from ..t_generation.t_factories import (
     TFactory_Litinski_6x3_20_to_4_dense,
 )
 
+from ..tracker import *
 from .region_types import export_region, FACTORY_REGION 
 
 from .widget_region import TopEdgePosition, WidgetRegion
@@ -88,8 +89,16 @@ class MagicStateFactoryRegion(WidgetRegion):
         self.active_factories.difference_update(completed)
         self.waiting_factories.update(completed)
         for factory in completed:
+            tag = TFactorySpaceTimeVolumeTrackingTag(factory.vol_tracker, factory)
             for output in factory.outputs:
                 output.t_count += 1
+                output.curr_t_tag = SpaceTimeVolumeTrackingContext(factory.vol_tracker)
+                output.curr_t_tag.factory_tag = tag
+                
+                idle_tag = output.curr_t_tag.tracker.make_tag(SpaceTimeVolumeType.T_IDLE_VOLUME)
+                idle_tag.start(offset=2)
+                output.curr_t_tag.transition(idle_tag)
+
                 self.available_states.add(output)
 
     def release_cells(self, sc_patches: List[Patch]):
@@ -157,6 +166,8 @@ class TCultivatorBufferRegion(AbstractFactoryRegion):
                     row = [TCultPatch(r, c) for c in range(width)]
                     self.update_cells.extend(row)
                 sc_patches.append(row)
+
+        self.factories = self.update_cells
 
         super().__init__(width, height, sc_patches, **kwargs)  # type: ignore
 

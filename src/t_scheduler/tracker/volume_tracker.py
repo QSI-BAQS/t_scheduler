@@ -1,0 +1,89 @@
+from enum import Enum
+
+class SpaceTimeVolumeTrackingContext(list):
+    def __init__(self, tracker):
+        self.tracker = tracker
+        self.factory_tag: TFactorySpaceTimeVolumeTrackingTag | None = None
+        self.curr_active = None
+
+    def transition(self, new_tag):
+        if self.curr_active is not None:
+            self.curr_active.end(offset=1)
+            self.append(self.curr_active)
+        self.curr_active = new_tag
+
+    def apply(self):
+        if self.factory_tag is not None:
+            self.factory_tag.apply()
+        self.factory_tag = None
+        while self:
+            tag = self.pop()
+            print("adding:", tag.tag_type, tag.duration)
+            tag.apply()
+
+    def shallow_copy(self):
+        ctx = SpaceTimeVolumeTrackingContext(self.tracker)
+        ctx.factory_tag = self.factory_tag
+        return self
+
+class SpaceTimeVolumeType(Enum):
+    REGISTER_VOLUME = 0
+    FACTORY_VOLUME = 1
+    ROUTING_VOLUME = 2
+    T_IDLE_VOLUME = 3
+
+class SpaceTimeVolumeTrackingTag:
+    def __init__(self, timer_source, tracker, tag_type, mult=1):
+        self.timer_source = timer_source
+        self.start_time = None
+        self.tracker = tracker
+        self.tag_type = tag_type
+        self.duration = None
+        self.mult = mult
+
+    def start(self, debug=None, offset=0):
+        assert self.start_time is None
+        self.start_time = self.timer_source.time + offset
+        self.debug = debug
+
+    def end(self, offset = 0):
+        assert self.start_time is not None
+        self.duration = (self.timer_source.time - self.start_time + offset) * self.mult
+        if self.debug:
+            print("ended with", self.duration)
+    
+    def apply(self, space = 1):
+        assert self.duration is not None
+        self.tracker.track(self.tag_type, self.duration * space)
+
+    def copy(self):
+        tag = SpaceTimeVolumeTrackingTag(self.timer_source, self.tracker, self.tag_type, mult=self.mult)
+        tag.start_time = self.start_time
+        tag.debug = self.debug
+        return tag
+
+class TFactorySpaceTimeVolumeTrackingTag:
+    def __init__(self, tracker, factory = None):
+        if factory is not None:
+            self.duration = factory.n_cycles * factory.height * factory.width
+        else:
+            self.duration = 0
+        self.tracker = tracker
+
+    def apply(self):
+        self.tracker.track(SpaceTimeVolumeType.FACTORY_VOLUME, self.duration)
+        self.duration = 0
+
+class SpaceTimeVolumeTracker:
+    def __init__(self, timer_source):
+        self.timer_source = timer_source
+        self.total_volume = 0
+        self.duration = {
+            tag_type: 0 for tag_type in SpaceTimeVolumeType
+        }
+
+    def make_tag(self, tag_type: SpaceTimeVolumeType, mult=1):
+        return SpaceTimeVolumeTrackingTag(self.timer_source, self, tag_type, mult=mult)
+
+    def track(self, tag_type, duration):
+        self.duration[tag_type] += duration

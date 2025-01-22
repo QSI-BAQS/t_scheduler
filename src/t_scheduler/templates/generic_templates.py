@@ -283,7 +283,7 @@ def buffered_naive_buffered_widget(
     width,
     height,
     buffer_height,
-    factory_factory: Callable[[int, int], MagicStateFactoryRegion],
+    factory_factory: Callable[..., MagicStateFactoryRegion],
     include_bell: bool = True
 ):
     if include_bell:

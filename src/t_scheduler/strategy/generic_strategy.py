@@ -2,6 +2,8 @@ from __future__ import annotations
 from enum import Enum
 from typing import List
 
+from ..tracker import *
+
 from ..base.patch import TCultPatch
 from ..base.gate import MoveGate, RotateGate
 from ..base import constants
@@ -42,9 +44,22 @@ class GenericStrategy(BaseStrategy):
 
         self.mapper = mapper
 
+        self.routers = routers
+
+        self.vol_tracker: SpaceTimeVolumeTracker | None = None
+
+    def register_vol_tracker(self, vol_tracker):
+        for r in self.routers:
+            r.vol_tracker = vol_tracker
+        self.vol_tracker = vol_tracker
+        for r in self.factory_routers:
+            for f in r.region.factories:
+                f.vol_tracker = vol_tracker
+
     def validate_rotation(
         self, gate, transaction_list
     ) -> Gate | None:
+        print([(p.y,p.x) for p in transaction_list[0].move_patches])
         buffer_transaction, bus_transaction = transaction_list[:2]
         if len(buffer_transaction.move_patches) == 1:
             # Assume all patches in row below routing layer are Z_TOP orientation
@@ -171,12 +186,7 @@ class GenericStrategy(BaseStrategy):
         while dfs_stack:
             curr_router, curr_downstream_idx, source_patch = dfs_stack.pop()
             if len(curr_router.downstream) == 0:
-                if curr_router != self.register_router:
-                    request_arg = resp.downstream_patch # .x - curr_router.region.offset[1]
-                else:
-                    request_arg = source_patch
-
-                resp : Response = curr_router.generic_transaction(request_arg)
+                resp : Response = curr_router.generic_transaction(source_patch)
 
                 if resp.status == ResponseStatus.SUCCESS:
                     # Resource found in curr router!
@@ -195,13 +205,16 @@ class GenericStrategy(BaseStrategy):
             # Recurse!
             downstream_router = curr_router.downstream[curr_downstream_idx]
 
-            if curr_router != self.register_router:
-                request_arg = source_patch
-            else:
-                request_arg = source_patch
+            resp : Response = curr_router.generic_transaction(source_patch, target_orientation=downstream_router.region.rotation) # type: ignore
+            if resp.status == ResponseStatus.SUCCESS:
+                # Resource found in curr router!
+                # Now check if path available...
 
-            resp : Response = curr_router.generic_transaction(request_arg, target_orientation=downstream_router.region.rotation) # type: ignore
-            if not resp.status:
+                return_resp = self.return_pass(gate, resp.transaction, resp.upstream_patch, curr_router, upstream_connect)
+                if return_resp:
+                    return return_resp
+
+            elif not resp.status:
                 continue
 
             dfs_stack.append((downstream_router, 0, resp.downstream_patch))
@@ -242,9 +255,27 @@ class GenericStrategy(BaseStrategy):
         ############################
         #  Process rotation logic
         ############################
-        return self.validate_rotation(
+        result = self.validate_rotation(
             gate, transactions
         )
+        if result:
+            reg_trans = transactions[-1]
+            def _reg_callback(trans):
+                if trans.measure_patches[0].reg_vol_tag is not None:
+                    trans.measure_patches[0].reg_vol_tag.end(offset=1)
+                    trans.measure_patches[0].reg_vol_tag.apply()
+                    trans.measure_patches[0].reg_vol_tag = None
+            reg_trans.on_release_callback = _reg_callback
+
+            
+            fact_trans = transactions[0]
+            if getattr(fact_trans.measure_patches[0], "curr_t_tag", None) is not None:
+                # TODO impl for prefilled buffer T
+                def _t_callback(trans):
+                    fact_trans.measure_patches[0].curr_t_tag.apply()
+                fact_trans.on_release_callback = _t_callback
+                fact_trans.measure_patches[0].curr_t_tag.transition(None)
+        return result
 
 
     @staticmethod
@@ -413,5 +444,10 @@ class GenericStrategy(BaseStrategy):
 
         # self.validate(transactions)
 
+        for reg_patch in targs_patches:
+            if reg_patch.reg_vol_tag is None:
+                assert self.vol_tracker
+                reg_patch.reg_vol_tag = self.vol_tracker.make_tag(SpaceTimeVolumeType.REGISTER_VOLUME)
+                reg_patch.reg_vol_tag.start()
         gate.activate(transactions)
         return gate

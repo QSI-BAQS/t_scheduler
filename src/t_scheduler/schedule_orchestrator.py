@@ -2,7 +2,9 @@ from collections import deque
 
 from .strategy import BaseStrategy
 from .widget import Widget
-
+from .tracker import *
+from .base import *
+from .base.gate import RotateGate
 
 class ScheduleOrchestrator:
     def __init__(
@@ -48,6 +50,8 @@ class ScheduleOrchestrator:
                          'height': self.widget.height,
                          'base_layer': self.widget.save_json_patches_state()}
 
+        self.vol_tracker = SpaceTimeVolumeTracker(self)
+        self.strategy.register_vol_tracker(self.vol_tracker) # type: ignore
 
     def save_tikz_frame(self):
         from lattice_surgery_draw.primitives.composers import TexFile
@@ -76,6 +80,13 @@ class ScheduleOrchestrator:
         while self.queued or self.active:
             self.schedule_pass()
 
+        for row in self.strategy.register_router.region.sc_patches:
+            for cell in row:
+                cell: Patch
+                if cell.patch_type == PatchType.REG and cell.reg_vol_tag is not None:
+                    cell.reg_vol_tag.end()
+                    cell.reg_vol_tag.apply()
+
     def prepare_gs(self, gs_dag_roots, all_gs_gates=tuple(), time_limit=float('inf')):
         # Process our gate queue
 
@@ -103,6 +114,11 @@ class ScheduleOrchestrator:
                 if gate in self.processed:
                     continue
                 elif gate.available() and (active_gate := self.strategy.alloc_gate(gate)):
+                    if not isinstance(active_gate, RotateGate):
+                        # TODO don't check like this: ugly
+                        active_gate.vol_tag = self.vol_tracker.make_tag(SpaceTimeVolumeType.ROUTING_VOLUME)
+                        active_gate.vol_tag.start()
+
                     self.active.append(active_gate)
                     self.processed.add(active_gate)
                 else:
@@ -158,17 +174,22 @@ class ScheduleOrchestrator:
                 for child in gate.post:
                     if all(g.completed() for g in child.pre):
                         self.queued.append(child)
+                if gate.vol_tag:
+                    gate.vol_tag.apply(space = gate.transaction.route_count())
+
         self.active = self.next_active
         self.next_active = deque()
 
         self.time += 1
 
-    def get_space_time_volume(self) -> int:
-        volume = 0
-        for layer in self.output_layers:
-            for gate_cells in layer:
-                volume += len(gate_cells)
-        return volume
+    def get_space_time_volume(self):
+        # volume = 0
+        # for layer in self.output_layers:
+        #     for gate_cells in layer:
+        #         volume += len(gate_cells)
+        # return volume
+        return self.vol_tracker.duration
+
 
     def get_total_cycles(self) -> int:
         return self.time

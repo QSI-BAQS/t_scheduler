@@ -4,6 +4,7 @@ from typing import List
 
 from ..base.response import Response, ResponseStatus
 from ..region import WidgetRegion, AbstractFactoryRegion
+from ..tracker import *
 
 region_router_exports = {}
 router_constructors = {}
@@ -44,6 +45,7 @@ class AbstractRouter(ABC):
     region: WidgetRegion
     upkeep_accept = False
     magic_source = False
+    vol_tracker: SpaceTimeVolumeTracker
 
     def _request_transaction(self, *args, **kwargs):
         '''

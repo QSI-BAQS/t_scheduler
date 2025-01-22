@@ -3,6 +3,8 @@ from abc import ABC
 from enum import Enum
 from typing import Any, List
 
+from ..tracker import *
+
 from .patch import BufferPatch, Patch, PatchType
 from .transaction import BaseTransaction, Transaction
 from .constants import MEASURE_AND_CORR_DELAY, MOVE_T_NONLOCAL_DELAY
@@ -39,6 +41,8 @@ class BaseGate(ABC):
     weight: float = 1
     schedule_weight: float = 0
     flag: Any = None
+
+    vol_tag: SpaceTimeVolumeTrackingTag | None = None
 
     def __init__(self):
         self.pre = []
@@ -146,6 +150,8 @@ class T_Gate(BaseGate):
                 self.state = "CORRECTION"
                 self.duration = self.correction_duration
                 self.transaction.lock_measure(self)  # type: ignore
+                if self.vol_tag:
+                    self.vol_tag.end(offset=1)
             else:
                 self.transaction.release(scheduler.time)  # type: ignore
 
@@ -182,6 +188,22 @@ class MoveGate(BaseGate):
         transaction.lock_move(self)
         self.transaction = transaction  # type: ignore
         self.move_target = move_target
+        if isinstance(transaction, list):
+            t_trans = transaction[0]
+        else:
+            t_trans = transaction
+        t_patch = t_trans.measure_patches[0] # type: ignore
+
+        self.curr_t_tag = t_patch.curr_t_tag
+        t_patch.curr_t_tag = None
+
+        if (count := getattr(t_patch, "t_count", None)) is not None and count > 0:
+            t_patch.curr_t_tag = self.curr_t_tag.shallow_copy()
+            t_patch.curr_t_tag.curr_active = self.curr_t_tag.curr_active.copy()
+
+        route_tag = self.curr_t_tag.tracker.make_tag(SpaceTimeVolumeType.ROUTING_VOLUME, mult=transaction.route_count())
+        route_tag.start()
+        self.curr_t_tag.transition(route_tag)
 
     def cleanup(self, scheduler):
         '''
@@ -191,7 +213,11 @@ class MoveGate(BaseGate):
             self.transaction.unlock()  # type: ignore
             self.transaction.release(scheduler.time)  # type: ignore
             self.move_target.store()  # type: ignore
+            self.move_target.curr_t_tag = self.curr_t_tag # type: ignore
 
+            idle_tag = self.curr_t_tag.tracker.make_tag(SpaceTimeVolumeType.T_IDLE_VOLUME)
+            idle_tag.start(offset=2)
+            self.curr_t_tag.transition(idle_tag)
     def next(self, scheduler):
         pass
 
