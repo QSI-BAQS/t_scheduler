@@ -76,6 +76,8 @@ class Transaction(BaseTransaction):
         self.on_unlock_callback = on_unlock_callback
         self.on_activate_callback = on_activate_callback
 
+        self.layout_override = []
+
         self.active_cells = []
 
     def activate(self):
@@ -103,6 +105,7 @@ class Transaction(BaseTransaction):
         self.lock = PatchLock(gate, self.measure_patches)  # type: ignore
         self.lock.lock()
         self.active_cells = self.measure_patches
+        self.layout_override = []
 
     def unlock(self):
         assert self.lock is not None
@@ -129,17 +132,26 @@ class TransactionList(list, BaseTransaction):
         super().__init__(*args, **kwargs)
         self.active_cells = []
 
+        # TODO hack
+        self.layout_override = []
+
     def lock_move(self: List[Transaction], gate):
+        self.layout_override = []
+
         self.active_cells = []  # type: ignore
         for t in self:
             t.lock_move(gate)
             self.active_cells.extend(t.active_cells)  # type: ignore
+            self.layout_override.extend(t.layout_override)
 
     def lock_measure(self: List[Transaction], gate):
+        self.layout_override = []
+
         self.active_cells = []  # type: ignore
         for t in self:
             t.lock_measure(gate)
             self.active_cells.extend(t.active_cells)  # type: ignore
+            self.layout_override.extend(t.layout_override)
 
     def unlock(self: List[Transaction]):
         for t in self:

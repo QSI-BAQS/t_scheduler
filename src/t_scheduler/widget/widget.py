@@ -280,9 +280,13 @@ class Widget:
             output_board.append(output_row)
         output_gates = []
         for gate in active_gates:
+            if gate.transaction.layout_override:
+                holds = gate.transaction.layout_override
+            else:
+                holds = list(map(self.adapter.get, gate.transaction.active_cells))
             gate_json = {
                 'type': gate.__class__.__name__,
-                'holds': list(map(self.adapter.get, gate.transaction.active_cells)),
+                'holds': holds,
                 'active_time': gate.timer,
                 'id': id(gate)
             }

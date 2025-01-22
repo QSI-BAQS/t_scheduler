@@ -376,7 +376,40 @@ class GenericStrategy(BaseStrategy):
         if not bus_resp.status:
             return None
 
-        transactions = TransactionList([*(r.transaction for r in resps), bus_resp.transaction])
+        new_move_patches = []
+        seen_patches = set()
+        new_measure_patches = []
+        for r in resps:
+            new_measure_patches += r.transaction.measure_patches  # type: ignore
+            for p in r.transaction.move_patches: # type: ignore
+                if p in seen_patches: continue
+                seen_patches.add(p)
+                new_move_patches.append(p)
+
+        # Hack in a display override
+        new_move_patches.extend(bus_resp.transaction.move_patches)
+        new_measure_patches.extend(bus_resp.transaction.measure_patches)
+
+        pseudo_transaction = Transaction(new_move_patches, new_measure_patches)
+
+        for r in resps:
+            for p in r.transaction.move_patches[::-1]:
+                pseudo_transaction.layout_override.append((p.y, p.x))
+
+            # Calculate layout for bus transaction
+            if r.downstream_patch.y == self.register_router.region.offset[0]:
+                # routing up
+                pseudo_transaction.layout_override.append((r.downstream_patch.y - 1, r.downstream_patch.x))
+            elif r.downstream_patch.y == self.register_router.region.offset[0] + self.register_router.region.height - 1:
+                # routing down
+                pseudo_transaction.layout_override.append((r.downstream_patch.y + 1, r.downstream_patch.x))
+            pseudo_transaction.layout_override.append((None, None))
+
+        for p in bus_resp.transaction.move_patches:
+            pseudo_transaction.layout_override.append((p.y, p.x))
+
+
+        transactions = TransactionList([pseudo_transaction])
 
         # self.validate(transactions)
 
