@@ -31,6 +31,9 @@ class GSPrepGate(BaseGate):
     def available(self) -> bool:
         return all(g.completed() for g in self.pre)
 
+    def __repr__(self):
+        return (f"Prep{self.targs}")
+
     def activate(self, transaction: BaseTransaction):
         '''
         Activate this gate with the provided transaction
