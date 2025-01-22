@@ -2,7 +2,7 @@ from typing import List
 
 from .abstract_router import AbstractRouter, export_router
 from ..base import Transaction, Response, ResponseStatus, Patch
-from ..widget import MagicStateBufferRegion
+from ..region import MagicStateBufferRegion
 
 @export_router(MagicStateBufferRegion)
 class RechargableBufferRouter(AbstractRouter):

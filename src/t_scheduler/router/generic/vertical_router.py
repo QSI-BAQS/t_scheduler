@@ -1,6 +1,6 @@
 from typing import List
 from ...base import Transaction
-from ...widget import WidgetRegion
+from ...region import WidgetRegion
 from ..abstract_router import AbstractRouter
 
 class GenericVerticalRouter(AbstractRouter):

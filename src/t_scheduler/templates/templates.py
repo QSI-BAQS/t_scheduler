@@ -3,7 +3,7 @@ from typing import Callable, Literal, Tuple
 from ..base import *
 from ..router import *
 from ..strategy import *
-from ..widget import *
+from ..region import *
 
 def _squash_and_add_bell_regions(*regions):
     output = []

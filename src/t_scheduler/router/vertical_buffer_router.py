@@ -1,7 +1,7 @@
 from typing import List
 
 from ..base import Patch, Transaction, Response, ResponseStatus
-from ..widget import PrefilledMagicStateRegion, WidgetRegion
+from ..region import PrefilledMagicStateRegion, WidgetRegion
 from .abstract_router import AbstractRouter, export_router
 
 @export_router(PrefilledMagicStateRegion.with_default_rotation)

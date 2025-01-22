@@ -9,7 +9,7 @@ from ..base import constants
 from ..base import *
 
 from ..router import AbstractRouter, AbstractFactoryRouter, RechargableBufferRouter, StandardBusRouter
-from ..widget import *
+from ..region import *
 from .base_strategy import BaseStrategy
 
 class RotationStrategyOption(Enum):

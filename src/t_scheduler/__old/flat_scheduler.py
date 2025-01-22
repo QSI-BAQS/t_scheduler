@@ -4,7 +4,7 @@ from t_scheduler.base import gate
 from t_scheduler.base.gate import BaseGate, GateType, T_Gate
 from t_scheduler.base.patch import Patch, PatchOrientation, PatchType, TCultPatch
 from t_scheduler.scheduler import RotationStrategy
-from t_scheduler.widget import Widget
+from t_scheduler.region import Widget
 from .util import *
 
 

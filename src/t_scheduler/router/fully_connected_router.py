@@ -1,5 +1,5 @@
 from ..router.transaction import Transaction
-from ..widget.route_bus import RouteBus
+from ..region.route_bus import RouteBus
 
 class FullyConnectedRouter:
     '''

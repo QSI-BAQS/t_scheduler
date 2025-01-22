@@ -1,4 +1,4 @@
-from ..widget.bell_region import BellRegion
+from ..region.bell_region import BellRegion
 from .abstract_router import AbstractRouter, export_router
 
 

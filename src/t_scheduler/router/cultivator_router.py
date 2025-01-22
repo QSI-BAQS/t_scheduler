@@ -1,5 +1,5 @@
 from ..base import Transaction, Response, ResponseStatus
-from ..widget import TCultivatorBufferRegion
+from ..region import TCultivatorBufferRegion
 from .abstract_router import AbstractRouter, export_router
 
 def _make_transaction(buffer: TCultivatorBufferRegion, path, connect=None):

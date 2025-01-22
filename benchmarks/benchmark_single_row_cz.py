@@ -8,7 +8,7 @@ import timeit
 
 from t_scheduler.base import * 
 from t_scheduler.router import * 
-from t_scheduler.widget import * 
+from t_scheduler.region import * 
 
 
 def rng_generator(fn):

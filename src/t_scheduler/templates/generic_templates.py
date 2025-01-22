@@ -9,6 +9,7 @@ from ..strategy.generic_strategy import GenericStrategy, RotationStrategyOption
 from ..base import *
 from ..router import *
 from ..strategy import *
+from ..region import *
 from ..widget import *
 
 class LayoutNode:

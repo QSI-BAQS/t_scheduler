@@ -1,10 +1,10 @@
 from typing import Literal, Tuple
 from collections import deque
 
-from ..widget.widget_region import TopEdgePosition
+from ..region.widget_region import TopEdgePosition
 
 from ..base import Transaction, Response, ResponseStatus, Patch
-from ..widget import CombShapedRegisterRegion, SingleRowRegisterRegion
+from ..region import CombShapedRegisterRegion, SingleRowRegisterRegion
 from .abstract_router import AbstractRouter, export_router
 
 @export_router(SingleRowRegisterRegion)

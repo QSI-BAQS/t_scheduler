@@ -3,7 +3,7 @@ from abc import ABC
 from typing import List
 
 from ..base.response import Response, ResponseStatus
-from ..widget import WidgetRegion, AbstractFactoryRegion
+from ..region import WidgetRegion, AbstractFactoryRegion
 
 region_router_exports = {}
 router_constructors = {}

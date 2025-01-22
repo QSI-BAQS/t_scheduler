@@ -9,7 +9,7 @@ from ..base import (Patch,
                     Transaction,
                     Response, 
                     ResponseStatus)
-from ..widget import PrefilledMagicStateRegion
+from ..region import PrefilledMagicStateRegion
 from .abstract_router import AbstractRouter, export_router
 
 class TreeNode:

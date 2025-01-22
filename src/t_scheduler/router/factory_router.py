@@ -1,7 +1,7 @@
 from collections import deque
 
 from ..base import Transaction, Response, ResponseStatus, Patch
-from ..widget import MagicStateFactoryRegion
+from ..region import MagicStateFactoryRegion
 
 from .abstract_router import AbstractRouter, export_router
 
