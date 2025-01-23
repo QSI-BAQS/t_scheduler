@@ -1,10 +1,25 @@
 from enum import Enum
+from typing import Dict
+
+class TSourceTrackingTag:
+    def __init__(self, tracker, source: str):
+        self.source = source
+        self.tracker = tracker
+    
+    def apply(self):
+        self.tracker.t_usage[self.source] = self.tracker.t_usage.get(self.source, 0) + 1
+        self.source = None
+
+    def copy(self):
+        return TSourceTrackingTag(self.tracker, self.source)
 
 class SpaceTimeVolumeTrackingContext(list):
     def __init__(self, tracker):
         self.tracker = tracker
         self.factory_tag: TFactorySpaceTimeVolumeTrackingTag | None = None
+        self.source_tag: TSourceTrackingTag | None = None
         self.curr_active = None
+        self.applied = False
 
     def transition(self, new_tag):
         if self.curr_active is not None:
@@ -13,18 +28,24 @@ class SpaceTimeVolumeTrackingContext(list):
         self.curr_active = new_tag
 
     def apply(self):
+        assert not self.applied
+        self.applied = True
         if self.factory_tag is not None:
             self.factory_tag.apply()
         self.factory_tag = None
+        print("apply", id(self))
+        print("source", self.source_tag.source)
+        self.source_tag.apply()
         while self:
             tag = self.pop()
-            print("adding:", tag.tag_type, tag.duration)
             tag.apply()
 
     def shallow_copy(self):
         ctx = SpaceTimeVolumeTrackingContext(self.tracker)
+        print("create in shallow_copy:", id(self), '->', id(ctx))
         ctx.factory_tag = self.factory_tag
-        return self
+        ctx.source_tag = self.source_tag.copy()
+        return ctx
 
 class SpaceTimeVolumeType(Enum):
     REGISTER_VOLUME = 0
@@ -55,6 +76,8 @@ class SpaceTimeVolumeTrackingTag:
     def apply(self, space = 1):
         assert self.duration is not None
         self.tracker.track(self.tag_type, self.duration * space)
+        print("adding:", self.tag_type, self.duration, "start", self.start_time)
+
 
     def copy(self):
         tag = SpaceTimeVolumeTrackingTag(self.timer_source, self.tracker, self.tag_type, mult=self.mult)
@@ -82,8 +105,13 @@ class SpaceTimeVolumeTracker:
             tag_type: 0 for tag_type in SpaceTimeVolumeType
         }
 
+        self.t_usage: Dict[str, int] = {}
+
     def make_tag(self, tag_type: SpaceTimeVolumeType, mult=1):
         return SpaceTimeVolumeTrackingTag(self.timer_source, self, tag_type, mult=mult)
 
     def track(self, tag_type, duration):
         self.duration[tag_type] += duration
+    
+    def dump_duration_state(self):
+        return self.duration.copy()

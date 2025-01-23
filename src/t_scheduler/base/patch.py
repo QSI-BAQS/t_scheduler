@@ -248,6 +248,7 @@ class TCultPatch(Patch):
             if self.has_T:
                 self.curr_t_tag = SpaceTimeVolumeTrackingContext(self.vol_tracker)
                 self.curr_t_tag.factory_tag = TFactorySpaceTimeVolumeTrackingTag(self.vol_tracker, self.cultivator)
+                self.curr_t_tag.source_tag = TSourceTrackingTag(self.vol_tracker, type(self).__qualname__)
                 return True
         return False
 

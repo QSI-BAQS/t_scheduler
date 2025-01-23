@@ -265,14 +265,6 @@ class GenericStrategy(BaseStrategy):
                     trans.measure_patches[0].reg_vol_tag.end(offset=1)
             reg_trans.on_release_callback = _reg_callback
 
-            
-            fact_trans = transactions[0]
-            if getattr(fact_trans.measure_patches[0], "curr_t_tag", None) is not None:
-                # TODO impl for prefilled buffer T
-                def _t_callback(trans):
-                    fact_trans.measure_patches[0].curr_t_tag.apply()
-                fact_trans.on_release_callback = _t_callback
-                fact_trans.measure_patches[0].curr_t_tag.transition(None)
         return result
 
 
@@ -441,7 +433,7 @@ class GenericStrategy(BaseStrategy):
         transactions = TransactionList([pseudo_transaction])
 
         # self.validate(transactions)
-
+        print("Prep at", self.vol_tracker.timer_source.time, gate)
         for reg_patch in targs_patches:
             if reg_patch.reg_vol_tag is None:
                 assert self.vol_tracker

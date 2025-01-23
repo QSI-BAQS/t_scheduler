@@ -3,7 +3,8 @@ from .volume_tracker import (
     SpaceTimeVolumeTrackingTag,
     SpaceTimeVolumeTracker,
     SpaceTimeVolumeTrackingContext,
-    TFactorySpaceTimeVolumeTrackingTag
+    TFactorySpaceTimeVolumeTrackingTag,
+    TSourceTrackingTag,
 )
 
 __all__ = [
@@ -12,4 +13,5 @@ __all__ = [
     "SpaceTimeVolumeTracker",
     "SpaceTimeVolumeTrackingContext",
     "TFactorySpaceTimeVolumeTrackingTag",
+    "TSourceTrackingTag",
 ]

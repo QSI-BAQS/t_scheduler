@@ -93,8 +93,9 @@ class MagicStateFactoryRegion(WidgetRegion):
             for output in factory.outputs:
                 output.t_count += 1
                 output.curr_t_tag = SpaceTimeVolumeTrackingContext(factory.vol_tracker)
+                print("create in factory:", id(output.curr_t_tag))
                 output.curr_t_tag.factory_tag = tag
-                
+                output.curr_t_tag.source_tag = TSourceTrackingTag(factory.vol_tracker, type(factory).__qualname__)
                 idle_tag = output.curr_t_tag.tracker.make_tag(SpaceTimeVolumeType.T_IDLE_VOLUME)
                 idle_tag.start(offset=2)
                 output.curr_t_tag.transition(idle_tag)

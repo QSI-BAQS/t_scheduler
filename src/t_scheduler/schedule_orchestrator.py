@@ -103,6 +103,7 @@ class ScheduleOrchestrator:
 
         self.queued = queue_backup
         
+        print("prepare done", self.time)
 
     def schedule_pass(self, prewarm=False):
         if not prewarm:
@@ -174,13 +175,15 @@ class ScheduleOrchestrator:
             else:
                 for child in gate.post:
                     if all(g.completed() for g in child.pre):
+                        print("queuing", child)
                         self.queued.append(child)
                 if gate.vol_tag:
                     gate.vol_tag.apply(space = gate.transaction.route_count())
 
+        print(self.time, self.active)
+
         self.active = self.next_active
         self.next_active = deque()
-
         self.time += 1
 
     def get_space_time_volume(self):
@@ -191,6 +194,8 @@ class ScheduleOrchestrator:
         # return volume
         return self.vol_tracker.duration
 
+    def get_T_stats(self):
+        return self.vol_tracker.t_usage
 
     def get_total_cycles(self) -> int:
         return self.time

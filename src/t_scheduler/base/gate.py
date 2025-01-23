@@ -139,6 +139,30 @@ class T_Gate(BaseGate):
         transaction.lock_move(self)
         self.transaction = transaction  # type: ignore
 
+        if isinstance(transaction, list):
+            t_trans = transaction[0]
+        else:
+            t_trans = transaction
+        t_patch = t_trans.magic_state_patch # type: ignore
+
+
+    
+        if getattr(t_trans.magic_state_patch, "curr_t_tag", None) is not None:
+            # TODO impl for prefilled buffer T
+            print("trigger apply for", self)
+            old_t_tag = t_patch.curr_t_tag
+
+            print("check if copy (direct)", type(t_patch), t_patch.y, t_patch.x)
+            if (count := getattr(t_patch, "t_count", None)) is not None and count > 0:
+                t_patch.curr_t_tag = old_t_tag.shallow_copy()
+                t_patch.curr_t_tag.curr_active = old_t_tag.curr_active.copy()
+            else:
+                t_patch.curr_t_tag = None
+            
+            old_t_tag.transition(None)
+            old_t_tag.apply()
+
+
     def cleanup(self, scheduler):
         '''
         Update our state --> setting us to be incomplete if necessary
@@ -192,11 +216,12 @@ class MoveGate(BaseGate):
             t_trans = transaction[0]
         else:
             t_trans = transaction
-        t_patch = t_trans.measure_patches[0] # type: ignore
+        t_patch = t_trans.magic_state_patch # type: ignore
 
         self.curr_t_tag = t_patch.curr_t_tag
         t_patch.curr_t_tag = None
 
+        print("check if copy", type(t_patch), t_patch.y, t_patch.x)
         if (count := getattr(t_patch, "t_count", None)) is not None and count > 0:
             t_patch.curr_t_tag = self.curr_t_tag.shallow_copy()
             t_patch.curr_t_tag.curr_active = self.curr_t_tag.curr_active.copy()
@@ -218,6 +243,7 @@ class MoveGate(BaseGate):
             idle_tag = self.curr_t_tag.tracker.make_tag(SpaceTimeVolumeType.T_IDLE_VOLUME)
             idle_tag.start(offset=2)
             self.curr_t_tag.transition(idle_tag)
+            self.curr_t_tag = None
     def next(self, scheduler):
         pass
 
