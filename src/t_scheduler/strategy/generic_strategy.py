@@ -263,8 +263,6 @@ class GenericStrategy(BaseStrategy):
             def _reg_callback(trans):
                 if trans.measure_patches[0].reg_vol_tag is not None:
                     trans.measure_patches[0].reg_vol_tag.end(offset=1)
-                    trans.measure_patches[0].reg_vol_tag.apply()
-                    trans.measure_patches[0].reg_vol_tag = None
             reg_trans.on_release_callback = _reg_callback
 
             

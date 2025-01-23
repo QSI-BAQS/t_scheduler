@@ -84,7 +84,8 @@ class ScheduleOrchestrator:
             for cell in row:
                 cell: Patch
                 if cell.patch_type == PatchType.REG and cell.reg_vol_tag is not None:
-                    cell.reg_vol_tag.end()
+                    if cell.reg_vol_tag.duration is None:
+                        cell.reg_vol_tag.end()
                     cell.reg_vol_tag.apply()
 
     def prepare_gs(self, gs_dag_roots, all_gs_gates=tuple(), time_limit=float('inf')):
