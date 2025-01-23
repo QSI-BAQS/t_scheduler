@@ -192,7 +192,11 @@ class ScheduleOrchestrator:
         #     for gate_cells in layer:
         #         volume += len(gate_cells)
         # return volume
-        return self.vol_tracker.duration
+        return {
+            tag_type.name: value
+            for tag_type, value in 
+            self.vol_tracker.duration.items()
+        }
 
     def get_T_stats(self):
         return self.vol_tracker.t_usage
