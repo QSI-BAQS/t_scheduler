@@ -379,7 +379,11 @@ class GenericStrategy(BaseStrategy):
 
         targs_patches = [self.register_router.region[pos] for pos in targs_pos] # type: ignore
 
-        resps : List[Response] = [self.register_router.generic_transaction(patch) for patch in targs_patches]
+        bus_router = self.register_router.downstream[0]
+        assert isinstance(bus_router, StandardBusRouter)
+
+        resps : List[Response] = [self.register_router.generic_transaction(patch, target_orientation=bus_router.region.rotation) 
+                                  for patch in targs_patches]
 
         if any(not r.status for r in resps):
             return None
@@ -388,9 +392,6 @@ class GenericStrategy(BaseStrategy):
         
         bus_source = min((r.downstream_patch for r in resps), key=lambda x: x.x)
         bus_dest = max((r.downstream_patch for r in resps), key=lambda x: x.x)
-
-        bus_router = self.register_router.downstream[0]
-        assert isinstance(bus_router, StandardBusRouter)
 
         bus_resp: Response = bus_router.generic_transaction(bus_source, bus_dest)
 
