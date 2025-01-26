@@ -117,8 +117,8 @@ class WidgetRegion:
 
         self.local_view = WidgetRegionView(self)
 
-        for key in kwargs:
-            print(f'Ignoring unknown parameter: {key}')
+        # for key in kwargs:
+        #     print(f'Ignoring unknown parameter: {key}')
 
     def update(self) -> None:
         """

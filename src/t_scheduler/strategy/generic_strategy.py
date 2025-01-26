@@ -59,7 +59,7 @@ class GenericStrategy(BaseStrategy):
     def validate_rotation(
         self, gate, transaction_list
     ) -> Gate | None:
-        print([(p.y,p.x) for p in transaction_list[0].move_patches])
+        # print([(p.y,p.x) for p in transaction_list[0].move_patches])
         buffer_transaction, bus_transaction = transaction_list[:2]
         if len(buffer_transaction.move_patches) == 1:
             # Assume all patches in row below routing layer are Z_TOP orientation
@@ -434,7 +434,7 @@ class GenericStrategy(BaseStrategy):
         transactions = TransactionList([pseudo_transaction])
 
         # self.validate(transactions)
-        print("Prep at", self.vol_tracker.timer_source.time, gate)
+        # print("Prep at", self.vol_tracker.timer_source.time, gate)
         for reg_patch in targs_patches:
             if reg_patch.reg_vol_tag is None:
                 assert self.vol_tracker

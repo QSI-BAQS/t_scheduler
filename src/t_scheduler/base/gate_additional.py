@@ -55,7 +55,7 @@ class GSPrepGate(BaseGate):
                 self.transaction.lock_measure(self)  # type: ignore
                 if self.vol_tag:
                     self.vol_tag.end(offset=1)
-                    print(self, self.vol_tag.duration)
+                    # print(self, self.vol_tag.duration)
             else:
                 self.transaction.release(scheduler.time)  # type: ignore
 

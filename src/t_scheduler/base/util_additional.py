@@ -14,7 +14,7 @@ def make_gsprep_layers(gs_prep_layers: List[List[Tuple[int, int]]]):
                 gate.pre = gs_gate_layers[i - 1]
             if i < len(gs_gate_layers) - 1:
                 gate.post = gs_gate_layers[i + 1]
-    print(gs_gate_layers)
+    # print(gs_gate_layers)
     return gs_gate_layers
 
 # # Example

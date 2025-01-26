@@ -160,10 +160,10 @@ class T_Gate(BaseGate):
     
         if getattr(t_trans.magic_state_patch, "curr_t_tag", None) is not None:
             # TODO impl for prefilled buffer T
-            print("trigger apply for", self)
+            # print("trigger apply for", self)
             old_t_tag = t_patch.curr_t_tag
 
-            print("check if copy (direct)", type(t_patch), t_patch.y, t_patch.x)
+            # print("check if copy (direct)", type(t_patch), t_patch.y, t_patch.x)
             if (count := getattr(t_patch, "t_count", None)) is not None and count > 0:
                 t_patch.curr_t_tag = old_t_tag.shallow_copy()
                 t_patch.curr_t_tag.curr_active = old_t_tag.curr_active.copy()
@@ -232,7 +232,7 @@ class MoveGate(BaseGate):
         self.curr_t_tag = t_patch.curr_t_tag
         t_patch.curr_t_tag = None
 
-        print("check if copy", type(t_patch), t_patch.y, t_patch.x)
+        # print("check if copy", type(t_patch), t_patch.y, t_patch.x)
         if (count := getattr(t_patch, "t_count", None)) is not None and count > 0:
             t_patch.curr_t_tag = self.curr_t_tag.shallow_copy()
             t_patch.curr_t_tag.curr_active = self.curr_t_tag.curr_active.copy()

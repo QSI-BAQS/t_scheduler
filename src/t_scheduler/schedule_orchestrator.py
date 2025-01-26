@@ -175,12 +175,13 @@ class ScheduleOrchestrator:
             else:
                 for child in gate.post:
                     if all(g.completed() for g in child.pre):
-                        print("queuing", child)
+                        if self.debug:
+                            print("queuing", child)
                         self.queued.append(child)
                 if gate.vol_tag:
                     gate.vol_tag.apply(space = gate.transaction.route_count())
 
-        print(self.time, self.active)
+        # print(self.time, self.active)
 
         self.active = self.next_active
         self.next_active = deque()

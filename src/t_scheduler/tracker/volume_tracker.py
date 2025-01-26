@@ -33,8 +33,8 @@ class SpaceTimeVolumeTrackingContext(list):
         if self.factory_tag is not None:
             self.factory_tag.apply()
         self.factory_tag = None
-        print("apply", id(self))
-        print("source", self.source_tag.source)
+        # print("apply", id(self))
+        # print("source", self.source_tag.source)
         self.source_tag.apply()
         while self:
             tag = self.pop()
@@ -42,7 +42,7 @@ class SpaceTimeVolumeTrackingContext(list):
 
     def shallow_copy(self):
         ctx = SpaceTimeVolumeTrackingContext(self.tracker)
-        print("create in shallow_copy:", id(self), '->', id(ctx))
+        # print("create in shallow_copy:", id(self), '->', id(ctx))
         ctx.factory_tag = self.factory_tag
         ctx.source_tag = self.source_tag.copy()
         return ctx
@@ -76,7 +76,8 @@ class SpaceTimeVolumeTrackingTag:
     def apply(self, space = 1):
         assert self.duration is not None
         self.tracker.track(self.tag_type, self.duration * space)
-        print("adding:", self.tag_type, self.duration, "start", self.start_time)
+        if self.debug:
+            print("adding:", self.tag_type, self.duration, "start", self.start_time)
 
 
     def copy(self):
