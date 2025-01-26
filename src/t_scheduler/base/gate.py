@@ -83,15 +83,26 @@ class BaseGate(ABC):
 
 
 class Gate(BaseGate):
-    def available(self):
-        """
-        Basic gate is always available
-        """
-        return True
+    def __init__(self, targ, gate_type, duration: int):
+        self.targ = targ
+        self.targ_orig = targ
+        self.gate_type = gate_type
+        self.duration = duration
 
-    def activate(self, *args, **kwargs):
-        # TODO impl ancilla/single qubit gates
-        return super().activate(*args, **kwargs)
+    def available(self):
+        return all(g.completed() for g in self.pre)
+
+    def activate(self, transaction: BaseTransaction):
+        transaction.activate()
+        transaction.lock_move(self)
+        self.transaction = transaction
+
+    def cleanup(self, scheduler):
+        if self.completed():
+            self.transaction.unlock() # type: ignore
+            self.transaction.release(scheduler.time) # type: ignore
+            if hasattr(self, "vol_tag") and self.vol_tag:
+                    self.vol_tag.end(offset=1)
 
 
 class T_Gate(BaseGate):
