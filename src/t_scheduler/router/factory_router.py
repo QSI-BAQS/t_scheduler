@@ -6,6 +6,7 @@ from ..region import MagicStateFactoryRegion
 from .abstract_router import AbstractRouter, export_router
 
 @export_router(MagicStateFactoryRegion.with_litinski_6x3_dense)
+@export_router(MagicStateFactoryRegion.with_litinski_5x3)
 class MagicStateFactoryRouter(AbstractRouter):
     """
     Note: Works only with passthrough bus router
