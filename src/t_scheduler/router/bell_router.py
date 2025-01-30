@@ -4,7 +4,7 @@ from ..base.response import Response, ResponseStatus
 from ..base.gate import GateType
 from ..region.bell_region import BellRegion
 from .abstract_router import AbstractRouter, export_router
-
+import sys
 
 @export_router(BellRegion.input_region)
 @export_router(BellRegion.output_region)
@@ -14,9 +14,14 @@ class BellRouter(AbstractRouter):
     def __init__(self, region) -> None:
         self.region = region.local_view
         self.bell_idle_tag = None
+        self.bell_remaining = self.region.stats["num_bell_buffers"]
 
     def _make_transaction(self):
         buffer_patch = self.region[0,0]
+
+        if self.bell_remaining == 0:
+            print("Warning: using bell state from empty bell buffer", file=sys.stderr)
+            print("Please check bell buffer size", file=sys.stderr)
 
         def _activate_callback(trans):
             if not self.bell_idle_tag:
@@ -25,7 +30,12 @@ class BellRouter(AbstractRouter):
             self.bell_idle_tag.end()
             self.bell_idle_tag.apply()
             self.bell_idle_tag.start_time -= self.region.bell_rate_recip # type: ignore
-        
+            self.bell_remaining -= 1
+
+            bell_route_tag = self.vol_tracker.make_tag(tag_type=SpaceTimeVolumeType.BELL_ROUTING_VOLUME)
+            bell_route_tag.duration = self.region.height
+            bell_route_tag.apply()
+
         trans = Transaction([buffer_patch], [buffer_patch], on_activate_callback=_activate_callback)
 
         return trans

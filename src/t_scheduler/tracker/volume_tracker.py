@@ -53,6 +53,7 @@ class SpaceTimeVolumeType(Enum):
     ROUTING_VOLUME = 2
     T_IDLE_VOLUME = 3
     BELL_IDLE_VOLUME = 4
+    BELL_ROUTING_VOLUME = 5
 
 class SpaceTimeVolumeTrackingTag:
     def __init__(self, timer_source, tracker, tag_type, mult=1):
