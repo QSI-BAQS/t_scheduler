@@ -59,3 +59,62 @@ class GSPrepGate(BaseGate):
             else:
                 self.transaction.release(scheduler.time)  # type: ignore
 
+
+
+class BellGate(BaseGate):
+    targ: int
+    timer: int = 0
+    duration: int = 0
+
+    pre = tuple() # type: ignore
+    post = tuple() # type: ignore
+
+    def __init__(
+        self,
+        targ: int,
+        move_duration: int = 2,
+        corr_duration: int = 2,
+        is_input = True
+    ):
+        """
+            Note: targ_orig is only used for repr().
+        """
+        self.targ = targ
+
+        self.gate_type: GateType = GateType.BELL_IN if is_input else GateType.BELL_OUT
+        self.duration = move_duration
+        self.correction_duration = corr_duration
+        self.state = "JOINT"
+
+        super().__init__()
+
+    def available(self) -> bool:
+        return all(g.completed() for g in self.pre)
+
+    def __repr__(self):
+        return (f"BELL{self.targ}")
+
+    def activate(self, transaction: BaseTransaction):
+        '''
+        Activate this gate with the provided transaction
+        '''
+        transaction.activate()
+        transaction.lock_move(self)
+        self.transaction = transaction  # type: ignore
+
+    def cleanup(self, scheduler):
+        '''
+        Update our state --> setting us to be incomplete if necessary
+        '''
+        if self.completed():
+            self.transaction.unlock()  # type: ignore
+            if self.state == "JOINT":
+                self.timer = 0
+                self.state = "CORRECTION"
+                self.duration = self.correction_duration
+                self.transaction.lock_measure(self)  # type: ignore
+                if self.vol_tag:
+                    self.vol_tag.end(offset=1)
+                    # print(self, self.vol_tag.duration)
+            else:
+                self.transaction.release(scheduler.time)  # type: ignore

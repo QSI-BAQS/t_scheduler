@@ -105,6 +105,22 @@ class ScheduleOrchestrator:
         
         print("prepare done", self.time)
 
+    def run_bell(self, bell_gates, time_limit=float('inf')):
+        # Process our gate queue
+        queue_backup = self.queued
+
+        self.queued = bell_gates
+
+        while (self.queued or self.active) and self.time < time_limit:
+            self.schedule_pass()
+        
+        if set(bell_gates).difference(self.processed):
+            raise Exception(f"Bell IO didn't finish in the time limit ({time_limit})")
+
+        self.queued = queue_backup
+        
+        print("bell done", self.time)
+
     def schedule_pass(self, prewarm=False):
         if not prewarm:
             # Process our gate queue
