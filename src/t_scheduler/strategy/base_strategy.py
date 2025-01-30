@@ -31,7 +31,7 @@ class BaseStrategy:
         If nonlocal, then we dispatch to alloc_nonlocal.
         '''
 
-        if gate.gate_type == GateType.T_STATE:
+        if gate.gate_type in {GateType.T_STATE, GateType.BELL_IN, GateType.BELL_OUT}:
             return self.alloc_nonlocal(gate)
         elif gate.gate_type == GateType.GRAPH_STATE_PREP:
             return self.alloc_gsprep_gate(gate)

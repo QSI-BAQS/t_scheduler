@@ -1,5 +1,7 @@
 from collections import deque
 
+from ..base.gate import GateType
+
 from ..base import Transaction, Response, ResponseStatus, Patch
 from ..region import MagicStateFactoryRegion
 
@@ -101,7 +103,9 @@ class MagicStateFactoryRouter(AbstractRouter):
         return fragment
 
 
-    def generic_transaction(self, source_patch, *args, target_orientation=None, **kwargs):
+    def generic_transaction(self, source_patch, *args, target_orientation=None, gate_type=GateType.T_STATE, **kwargs):
+        if gate_type != GateType.T_STATE:
+            return Response()
         local_y, local_x = self.region.tl((source_patch.y - self.region.offset[0], source_patch.x - self.region.offset[1]))
         trans = self._request_transaction(local_x, *args, **kwargs)
         if trans:

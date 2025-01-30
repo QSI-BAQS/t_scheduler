@@ -3,6 +3,8 @@ from typing import List
 
 from collections import deque
 
+from ..base.gate import GateType
+
 from ..base import (Patch, 
                     PatchOrientation, 
                     PatchType, 
@@ -262,7 +264,9 @@ class TreeFilledBufferRouter(AbstractRouter):
                     TreeNode(tree_node, tree_node.path + fragment[::-1])
                 )
             tree_node.children = new_children
-    def generic_transaction(self, source_patch, *args, target_orientation=None, **kwargs):
+    def generic_transaction(self, source_patch, *args, target_orientation=None, gate_type = GateType.T_STATE, **kwargs):
+        if gate_type != GateType.T_STATE:
+            return Response()
         reg_col = self.clamp(source_patch.x - self.region.offset[1], 0, self.region.width - 1)
         trans = self._request_transaction(reg_col // 2, **kwargs)
         if trans:

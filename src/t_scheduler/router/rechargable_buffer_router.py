@@ -1,5 +1,7 @@
 from typing import List
 
+from ..base.gate import GateType
+
 from .abstract_router import AbstractRouter, export_router
 from ..base import Transaction, Response, ResponseStatus, Patch
 from ..region import MagicStateBufferRegion
@@ -84,11 +86,11 @@ class RechargableBufferRouter(AbstractRouter):
         path = [self.region[row, best_col] for row in range(self.region.height)][::-1]
         return Transaction(path, [], connect_col=path[-1].local_x)
 
-    def generic_transaction(self, source_patch, *args, target_orientation=None, **kwargs):
+    def generic_transaction(self, source_patch, *args, target_orientation=None, gate_type = GateType.T_STATE, **kwargs):
         local_y, local_x = self.region.tl((source_patch.y - self.region.offset[0], source_patch.x - self.region.offset[1]))
 
         trans = self._request_transaction(local_x, **kwargs)
-        if trans:
+        if trans and gate_type == GateType.T_STATE:
             return Response(ResponseStatus.SUCCESS, trans)
         trans = self.request_passthrough(local_x, **kwargs)
         if trans:

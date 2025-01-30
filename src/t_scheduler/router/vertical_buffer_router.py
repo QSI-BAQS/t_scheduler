@@ -1,5 +1,7 @@
 from typing import List
 
+from ..base.gate import GateType
+
 from ..base import Patch, Transaction, Response, ResponseStatus
 from ..region import PrefilledMagicStateRegion, WidgetRegion
 from .abstract_router import AbstractRouter, export_router
@@ -180,7 +182,9 @@ class VerticalFilledBufferRouter(AbstractRouter):
         return True
 
 
-    def generic_transaction(self, source_patch, *args, target_orientation=None, **kwargs):
+    def generic_transaction(self, source_patch, *args, target_orientation=None, gate_type = GateType.T_STATE, **kwargs):
+        if gate_type != GateType.T_STATE:
+            return Response()
         buffer_cols = []
         reg_col = self.clamp(source_patch.x - self.region.offset[1], 0, self.region.width - 1)
         buffer_cols.append(reg_col)

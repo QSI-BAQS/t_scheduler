@@ -22,6 +22,8 @@ class GateType(Enum):
     T_STATE = 3
     IMPLEMENTATION_DEFINED = 4
     GRAPH_STATE_PREP = 5
+    BELL_IN = 6
+    BELL_OUT = 7
 
 
 class BaseGate(ABC):

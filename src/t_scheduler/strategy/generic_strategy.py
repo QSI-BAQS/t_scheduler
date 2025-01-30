@@ -186,7 +186,7 @@ class GenericStrategy(BaseStrategy):
         while dfs_stack:
             curr_router, curr_downstream_idx, source_patch = dfs_stack.pop()
             if len(curr_router.downstream) == 0:
-                resp : Response = curr_router.generic_transaction(source_patch)
+                resp : Response = curr_router.generic_transaction(source_patch, gate_type=gate.gate_type)
 
                 if resp.status == ResponseStatus.SUCCESS:
                     # Resource found in curr router!
@@ -205,7 +205,7 @@ class GenericStrategy(BaseStrategy):
             # Recurse!
             downstream_router = curr_router.downstream[curr_downstream_idx]
 
-            resp : Response = curr_router.generic_transaction(source_patch, target_orientation=downstream_router.region.rotation) # type: ignore
+            resp : Response = curr_router.generic_transaction(source_patch, target_orientation=downstream_router.region.rotation, gate_type=gate.gate_type) # type: ignore
             if resp.status == ResponseStatus.SUCCESS:
                 # Resource found in curr router!
                 # Now check if path available...
@@ -236,9 +236,9 @@ class GenericStrategy(BaseStrategy):
             upstream_col = upstream_patch.x - upstream_router.region.offset[1]
             # print(upstream_router, translated_downstream, (downstream_patch.x, downstream_patch.y), upstream_col, (upstream_patch.x, upstream_patch.y))
             if upstream_router == self.register_router:
-                resp: Response = upstream_router.generic_transaction(upstream_patch, upstream_col, target_orientation=curr_router.region.rotation)
+                resp: Response = upstream_router.generic_transaction(upstream_patch, upstream_col, target_orientation=curr_router.region.rotation, gate_type=gate.gate_type)
             else:
-                resp: Response = upstream_router.generic_transaction(downstream_patch, upstream_patch)
+                resp: Response = upstream_router.generic_transaction(downstream_patch, upstream_patch, gate_type=gate.gate_type)
             
             if resp.status == ResponseStatus.SUCCESS:
                 transactions = TransactionList()
