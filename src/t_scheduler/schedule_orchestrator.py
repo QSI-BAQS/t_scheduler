@@ -53,6 +53,8 @@ class ScheduleOrchestrator:
         self.vol_tracker = SpaceTimeVolumeTracker(self)
         self.strategy.register_vol_tracker(self.vol_tracker) # type: ignore
 
+        self.tock_obj = {}
+
     def save_tikz_frame(self):
         from lattice_surgery_draw.primitives.composers import TexFile
         with open(f"out/{self.time}.tex", "w") as f:
@@ -75,6 +77,7 @@ class ScheduleOrchestrator:
 
     def schedule(self):
         print("schedule")
+        start_tock = self.time
         self.queued.extend(self.waiting)
 
         while self.queued or self.active:
@@ -87,6 +90,8 @@ class ScheduleOrchestrator:
                     if cell.reg_vol_tag.duration is None:
                         cell.reg_vol_tag.end()
                     cell.reg_vol_tag.apply()
+
+        self.tock_obj["t_schedule"] = self.time - start_tock
 
     def prepare_gs(self, gs_dag_roots, all_gs_gates=tuple(), time_limit=float('inf')):
         # Process our gate queue
@@ -104,9 +109,12 @@ class ScheduleOrchestrator:
         self.queued = queue_backup
         
         print("prepare done", self.time)
+        self.tock_obj["graph_state"] = self.time
 
     def run_bell(self, bell_gates, time_limit=float('inf')):
         # Process our gate queue
+        start_tock = self.time
+
         queue_backup = self.queued
 
         self.queued = bell_gates
@@ -120,6 +128,11 @@ class ScheduleOrchestrator:
         self.queued = queue_backup
         
         print("bell done", self.time)
+        duration = self.time - start_tock
+        if "bell" not in self.tock_obj:
+            self.tock_obj["bell"] = duration
+        else:
+            self.tock_obj["bell2"] = duration
 
     def schedule_pass(self, prewarm=False):
         if not prewarm:
@@ -220,6 +233,9 @@ class ScheduleOrchestrator:
 
     def get_total_cycles(self) -> int:
         return self.time
+    
+    def get_tock_stats(self):
+        return self.tock_obj
 
     def json_debug(self):
         import json

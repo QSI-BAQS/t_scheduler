@@ -33,6 +33,7 @@ class BellRouter(AbstractRouter):
             self.bell_remaining -= 1
 
             bell_route_tag = self.vol_tracker.make_tag(tag_type=SpaceTimeVolumeType.BELL_ROUTING_VOLUME)
+            bell_route_tag.start()
             bell_route_tag.duration = self.region.height
             bell_route_tag.apply()
 
