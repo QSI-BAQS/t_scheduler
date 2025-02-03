@@ -6,6 +6,8 @@ from .tracker import *
 from .base import *
 from .base.gate import RotateGate
 
+TOCK_PHASES = ["graph_state", "bell", "t_schedule", "bell2"]
+
 class ScheduleOrchestrator:
     def __init__(
         self,
@@ -223,9 +225,8 @@ class ScheduleOrchestrator:
         #         volume += len(gate_cells)
         # return volume
         return {
-            tag_type.name: value
-            for tag_type, value in 
-            self.vol_tracker.duration.items()
+            tag_type.name: self.vol_tracker.duration.get(tag_type, 0)
+            for tag_type in SpaceTimeVolumeType
         }
 
     def get_T_stats(self):
@@ -235,7 +236,10 @@ class ScheduleOrchestrator:
         return self.time
     
     def get_tock_stats(self):
-        return self.tock_obj
+        return {
+            tock_type: self.tock_obj.get(tock_type, 0)
+            for tock_type in TOCK_PHASES
+        }
 
     def json_debug(self):
         import json
