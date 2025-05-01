@@ -2,18 +2,35 @@ from enum import Enum
 from typing import Dict
 
 class TSourceTrackingTag:
+    '''
+        Tags and tracks the source of a T state
+        Used to check if a factory contributes to the spac-time volume
+        : tracker : Resource state tracker 
+        : source : source object
+    '''
     def __init__(self, tracker, source: str):
         self.source = source
         self.tracker = tracker
     
     def apply(self):
+        '''
+            Applies the T state to the computation
+            Wipes the source and triggers an update on the tracker to increase the t usage for this source     
+        '''
         self.tracker.t_usage[self.source] = self.tracker.t_usage.get(self.source, 0) + 1
         self.source = None
 
     def copy(self):
+        '''
+            Copy constructor
+        '''
         return TSourceTrackingTag(self.tracker, self.source)
 
 class SpaceTimeVolumeTrackingContext(list):
+    '''
+        Context tracker for space-time volume
+        Tracks sources, factories and   
+    '''
     def __init__(self, tracker):
         self.tracker = tracker
         self.factory_tag: TFactorySpaceTimeVolumeTrackingTag | None = None

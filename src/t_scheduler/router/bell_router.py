@@ -19,9 +19,9 @@ class BellRouter(AbstractRouter):
     def _make_transaction(self):
         buffer_patch = self.region[0,0]
 
-        if self.bell_remaining == 0:
-            print("Warning: using bell state from empty bell buffer", file=sys.stderr)
-            print("Please check bell buffer size", file=sys.stderr)
+        #if self.bell_remaining == 0:
+            #print("Warning: using bell state from empty bell buffer", file=sys.stderr)
+            #print("Please check bell buffer size", file=sys.stderr)
 
         def _activate_callback(trans):
             if not self.bell_idle_tag:
